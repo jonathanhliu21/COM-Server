@@ -12,8 +12,24 @@ import typing as t
 
 import serial
 
-class Connection:
-    """A connection object with a Serial port.
+class BaseConnection:
+    """A base connection object with a Serial port.
+
+    This is meant to be used with the HTTP API. 
+    If you want to talk with the Arduino via Serial, 
+    either directly use `pyserial` or use the `Connection` class.
+
+    How this works is that it creates a pyserial object given the parameters, which opens the connection. 
+    The user can manually open and close the connection. It is closed by default when the initializer is called.
+    It spawns a thread that continuously looks for serial data and puts it in a buffer. 
+    When the user wants to send, it will interrupt the getting of data and send the data, 
+    then resume the getting of data. 
+
+    This class contains the four basic functions needed to talk with the serial port:
+    - `connect()`: opens a connection with the serial port
+    - `disconnect()`: closes the connection with the serial port
+    - `send()`: sends data to the serial port
+    - `read()`: reads data from the serial port
     """
 
     def __init__(self, baud: int, port: str, *args, timeout: float = 1, send_interval: int = 1, queue_size: int = 256, **kwargs) -> None:
@@ -26,8 +42,8 @@ class Connection:
             - `port` (str): The serial port
             - `timeout` (float) (optional): How long the program should wait, in seconds, for Serial data before exiting. By default 1.
             - `send_interval` (int) (optional): Indicates how much time, in seconds, the program should wait before sending another message. 
-            This does NOT mean that it will be able to send every `send_interval` seconds. It means that the `send()` function will exit if
-            the interval has not reached `send_interval` seconds By default 1.
+            Not that this does NOT mean that it will be able to send every `send_interval` seconds. It means that the `send()` function will 
+            exit if the interval has not reached `send_interval` seconds. By default 1.
             - `queue_size` (int) (optional): The number of previous receives that the program should keep. Must be nonnegative. By default 256.
             - `kwargs`: Will be passed to pyserial
         
@@ -251,3 +267,8 @@ class Connection:
         self.rcv_queue = [] # stores previous received strings
         self.busy = False # to make thread-safe; indicates if Serial port is currently being used, threads will wait until this is False until doing operations
 
+class Connection(BaseConnection):
+    """A more user-friendly interface with the Serial port.
+
+    Not implemented yet
+    """
