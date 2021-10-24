@@ -15,9 +15,8 @@ import serial
 class BaseConnection:
     """A base connection object with a Serial port.
 
-    This is meant to be used with the HTTP API. 
     If you want to talk with the Arduino via Serial, 
-    either directly use `pyserial` or use the `Connection` class.
+    either directly use `pyserial` directly or use the `Connection` class.
 
     How this works is that it creates a pyserial object given the parameters, which opens the connection. 
     The user can manually open and close the connection. It is closed by default when the initializer is called.
@@ -122,6 +121,9 @@ class BaseConnection:
         then concatenates args with a space (or what was given in `concatenate`) in between them, 
         encodes to `utf-8` `bytes` object, adds carriage return to the end ("\\r\\n") (or what was given as `ending`), then sends.
 
+        If the interval is too small, then what will most likely happen is that the program will delay anyways
+        because it will wait for the receive thread to finish receiving its data before continuing.
+
         If the program has not waited long enough before sending, then the function will return `false`.
 
         If `check_type` is True, then it will process each argument, then concatenate, encode, and send.
@@ -146,11 +148,6 @@ class BaseConnection:
         if (self.conn is None):
             return False
         
-
-        # check if it should send by using send_interval.
-        if (time.time() - self.last_sent <= self.send_interval):
-            return False
-
         # check `check_type`, then converts each element
         send_data = []
         if (check_type):
@@ -164,22 +161,29 @@ class BaseConnection:
         # wait until serial port is not busy, then make busy and send
         while (self.busy):
             time.sleep(0.01)
+        
+        # check if it should send by using send_interval.
+        if (time.time() - self.last_sent <= self.send_interval):
+            return False
+        
         self.busy = True
 
         # check that the timeout has not been reached by comparing current time to time before send
         tm_bf_send = time.time()
         self.conn.write(send_data) # write data
+        self.conn.flush()
 
         # unset busy
         self.last_sent = time.time()
         self.busy = False
 
-        if (time.time() - tm_bf_send > self.timeout):
+        if (time.time() - tm_bf_send >= self.timeout):
             # timeout reached, return False
             time.sleep(0.1) # give time to make receive thread get data
             return False
-        
-        time.sleep(0.1) # give time to make receive thread get data
+
+        if (self.send_interval < 0.1):  
+            time.sleep(0.1) # give time to make receive thread get data
 
         return True
 
