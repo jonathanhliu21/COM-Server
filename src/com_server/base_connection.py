@@ -6,11 +6,12 @@ Contains implementation of Connection object.
 """
 
 import json
-import time
 import threading
+import time
 import typing as t
 
 import serial
+
 
 class BaseConnection:
     """A base connection object with a Serial port.
@@ -45,26 +46,26 @@ class BaseConnection:
             exit if the interval has not reached `send_interval` seconds. By default 1.
             - `queue_size` (int) (optional): The number of previous receives that the program should keep. Must be nonnegative. By default 256.
             - `kwargs`: Will be passed to pyserial
-        
+
         Returns: nothing
         """
 
         # from above
         self.baud = int(baud)
         self.port = str(port)
-        self.timeout = abs(float(timeout)) # make sure positive
+        self.timeout = abs(float(timeout))  # make sure positive
         self.pass_to_pyserial = kwargs
-        self.queue_size = abs(int(queue_size)) # make sure positive
-        self.send_interval = abs(int(send_interval)) # make sure positive
+        self.queue_size = abs(int(queue_size))  # make sure positive
+        self.send_interval = abs(int(send_interval))  # make sure positive
 
         # initialize Serial object
         self.conn = None
 
         # other
-        self.last_sent = time.time() # prevents from sending too rapidly
+        self.last_sent = time.time()  # prevents from sending too rapidly
 
-        self.rcv_queue = [] # stores previous received strings
-        self.busy = False # to make thread-safe; indicates if Serial port is currently being used, threads will wait until this is False until doing operations
+        self.rcv_queue = []  # stores previous received strings
+        self.busy = False  # to make thread-safe; indicates if Serial port is currently being used, threads will wait until this is False until doing operations
 
     def __repr__(self) -> str:
         """Returns string representation of self
@@ -73,8 +74,8 @@ class BaseConnection:
         return f"Connection<id=0x{hex(id(self))}, " \
             f"{{port={self.port}, baud={self.baud}, timeout={self.timeout}, queue_size={self.queue_size}, send_interval={self.send_interval}, " \
             f"Serial={self.conn}, " \
-            f"last_sent={self.last_sent}, rcv_queue={str(self.rcv_queue)}, busy={self.busy}}}" 
-    
+            f"last_sent={self.last_sent}, rcv_queue={str(self.rcv_queue)}, busy={self.busy}}}"
+
     def connect(self) -> None:
         """Begins connection to the Serial port.
 
@@ -89,13 +90,14 @@ class BaseConnection:
             # return if initialized already
             return
 
-        self.conn = serial.Serial(port=self.port, baudrate=self.baud, timeout=self.timeout, **self.pass_to_pyserial)
+        self.conn = serial.Serial(
+            port=self.port, baudrate=self.baud, timeout=self.timeout, **self.pass_to_pyserial)
 
-        time.sleep(2) # wait for other end to start up properly
+        time.sleep(2)  # wait for other end to start up properly
 
         # start receive thread
         threading.Thread(target=self._rcv_thread, daemon=True).start()
-    
+
     def disconnect(self) -> None:
         """Closes connection to the Serial port.
 
@@ -109,11 +111,11 @@ class BaseConnection:
         if (self.conn is None):
             # return if not open
             return
-        
+
         self.conn.close()
         self._reset()
         self.conn = None
-        
+
     def send(self, *args: "tuple[t.Any]", check_type: bool = True, ending: str = "\r\n", concatenate: str = ' ') -> bool:
         """Sends data to the port
 
@@ -147,7 +149,7 @@ class BaseConnection:
         # check if connection open
         if (self.conn is None):
             return False
-        
+
         # check `check_type`, then converts each element
         send_data = []
         if (check_type):
@@ -161,16 +163,16 @@ class BaseConnection:
         # wait until serial port is not busy, then make busy and send
         while (self.busy):
             time.sleep(0.01)
-        
+
         # check if it should send by using send_interval.
         if (time.time() - self.last_sent <= self.send_interval):
             return False
-        
+
         self.busy = True
 
         # check that the timeout has not been reached by comparing current time to time before send
         tm_bf_send = time.time()
-        self.conn.write(send_data) # write data
+        self.conn.write(send_data)  # write data
         self.conn.flush()
 
         # unset busy
@@ -179,11 +181,11 @@ class BaseConnection:
 
         if (time.time() - tm_bf_send >= self.timeout):
             # timeout reached, return False
-            time.sleep(0.1) # give time to make receive thread get data
+            time.sleep(0.1)  # give time to make receive thread get data
             return False
 
-        if (self.send_interval < 0.1):  
-            time.sleep(0.1) # give time to make receive thread get data
+        if (self.send_interval < 0.1):
+            time.sleep(0.1)  # give time to make receive thread get data
 
         return True
 
@@ -199,7 +201,7 @@ class BaseConnection:
                 - 0 will return the most recent received data
                 - 1 will return the 2nd most recent received data
                 - ...
-        
+
         Parameters:
         - `num_before` (int) (optional): Which receive object to return
 
@@ -219,7 +221,7 @@ class BaseConnection:
             return self.rcv_queue[-1-num_before]
         except IndexError:
             return None
-    
+
     def _check_output(self, output: str) -> str:
         """Argument processing
             - If the argument is `bytes` then decodes to `str`
@@ -237,9 +239,9 @@ class BaseConnection:
             ret = json.dumps(list(output)).strip()
         else:
             ret = str(output).strip()
-        
+
         return ret
-    
+
     def _rcv_thread(self) -> None:
         """Thread that continuously reads incoming data from Serial port.
         """
@@ -258,16 +260,15 @@ class BaseConnection:
                 if (len(self.rcv_queue) > self.queue_size):
                     # if greater than queue size, then pop first element
                     self.rcv_queue.pop(0)
- 
-            self.busy = False 
-            time.sleep(0.1) # give others time to process write data
-    
+
+            self.busy = False
+            time.sleep(0.1)  # give others time to process write data
+
     def _reset(self) -> None:
         """Resets all IO variables
         """
 
-        self.last_sent = time.time() # prevents from sending too rapidly
+        self.last_sent = time.time()  # prevents from sending too rapidly
 
-        self.rcv_queue = [] # stores previous received strings
-        self.busy = False # to make thread-safe; indicates if Serial port is currently being used, threads will wait until this is False until doing operations
-
+        self.rcv_queue = []  # stores previous received strings
+        self.busy = False  # to make thread-safe; indicates if Serial port is currently being used, threads will wait until this is False until doing operations
