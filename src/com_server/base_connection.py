@@ -22,8 +22,9 @@ class BaseConnection:
     How this works is that it creates a pyserial object given the parameters, which opens the connection. 
     The user can manually open and close the connection. It is closed by default when the initializer is called.
     It spawns a thread that continuously looks for serial data and puts it in a buffer. 
-    When the user wants to send, it will interrupt the getting of data and send the data, 
-    then resume the getting of data. 
+    When the user wants to send something, it will pass the send data to a queue,
+    and the thread will process the queue and will continuously send the contents in the queue
+    until it is empty, or it has reached 0.5 seconds.
 
     This class contains the four basic methods needed to talk with the serial port:
     - `connect()`: opens a connection with the serial port
@@ -33,7 +34,7 @@ class BaseConnection:
     """
 
     def __init__(self, baud: int, port: str, *args, timeout: float = 1, send_interval: int = 1, queue_size: int = 256, **kwargs) -> None:
-        """Initializes the Connection class. 
+        """Initializes the Base Connection class. 
 
         `baud`, `port`, `timeout`, and `kwargs` will be passed to pyserial.  
 
@@ -43,8 +44,9 @@ class BaseConnection:
             - `timeout` (float) (optional): How long the program should wait, in seconds, for Serial data before exiting. By default 1.
             - `send_interval` (int) (optional): Indicates how much time, in seconds, the program should wait before sending another message. 
             Not that this does NOT mean that it will be able to send every `send_interval` seconds. It means that the `send()` function will 
-            exit if the interval has not reached `send_interval` seconds. By default 1.
+            exit if the interval has not reached `send_interval` seconds. NOT recommended to set to small values. By default 1.
             - `queue_size` (int) (optional): The number of previous receives that the program should keep. Must be nonnegative. By default 256.
+            - `sep` (str) (optional): What the string should read until. By default "\n"
             - `kwargs`: Will be passed to pyserial
 
         Returns: nothing
@@ -65,6 +67,7 @@ class BaseConnection:
         self.last_sent = time.time()  # prevents from sending too rapidly
 
         self.rcv_queue = []  # stores previous received strings
+        self.to_send = [] # queue data to send
         self.busy = False  # to make thread-safe; indicates if Serial port is currently being used, threads will wait until this is False until doing operations
 
     def __repr__(self) -> str:
@@ -96,7 +99,7 @@ class BaseConnection:
         time.sleep(2)  # wait for other end to start up properly
 
         # start receive thread
-        threading.Thread(target=self._rcv_thread, daemon=True).start()
+        threading.Thread(target=self._io_thread, daemon=True).start()
 
     def disconnect(self) -> None:
         """Closes connection to the Serial port.
@@ -123,8 +126,14 @@ class BaseConnection:
         then concatenates args with a space (or what was given in `concatenate`) in between them, 
         encodes to `utf-8` `bytes` object, adds carriage return to the end ("\\r\\n") (or what was given as `ending`), then sends.
 
-        If the interval is too small, then what will most likely happen is that the program will delay anyways
-        because it will wait for the receive thread to finish receiving its data before continuing.
+        Note that the data does not send immediately and instead will be added to a queue. 
+        The queue size limit is 65536 byte objects. Anything more that is trying to be sent will not be added to the queue.
+        Sending data too rapidly (e.g. making `send_interval` too small) is not recommended,
+        as the queue will get too large and the send data will get backed up and will be delayed
+        since it takes a considerable amount of time for data to be sent through the Serial port.
+        
+        After receiving, the IO thread will spend 0.5 seconds just sending everything in the queue
+        until it is empty or until it has reached the 0.5 seconds.
 
         If the program has not waited long enough before sending, then the function will return `false`.
 
@@ -150,6 +159,11 @@ class BaseConnection:
         if (self.conn is None):
             return False
 
+        # check if it should send by using send_interval.
+        if (time.time() - self.last_sent <= self.send_interval):
+            return False
+        self.last_sent = time.time()
+
         # check `check_type`, then converts each element
         send_data = []
         if (check_type):
@@ -160,39 +174,18 @@ class BaseConnection:
         # add ending to string
         send_data = (send_data + ending).encode("utf-8")
 
-        # wait until serial port is not busy, then make busy and send
-        while (self.busy):
-            time.sleep(0.01)
-
-        # check if it should send by using send_interval.
-        if (time.time() - self.last_sent <= self.send_interval):
-            return False
-
-        self.busy = True
-
-        # check that the timeout has not been reached by comparing current time to time before send
-        tm_bf_send = time.time()
-        self.conn.write(send_data)  # write data
-        self.conn.flush()
-
-        # unset busy
-        self.last_sent = time.time()
-        self.busy = False
-
-        if (time.time() - tm_bf_send >= self.timeout):
-            # timeout reached, return False
-            time.sleep(0.1)  # give time to make receive thread get data
-            return False
-
-        if (self.send_interval < 0.1):
-            time.sleep(0.1)  # give time to make receive thread get data
+        if (len(self.to_send) < 65536):
+            # only append if limit has not been reached
+            self.to_send.append(send_data)
+        
+        # print(self.to_send)
 
         return True
 
-    def receive(self, num_before: int = 0) -> t.Union[str, None]:
+    def receive(self, num_before: int = 0) -> t.Union[bytes, None]:
         """Returns the most recent receive object
 
-        The receive thread will continuously detect receive data and put it in the `rcv_queue`. 
+        The receive thread will continuously detect receive data and put the `bytes` objects in the `rcv_queue`. 
         If there are no parameters, the function will return the most recent received data.
         If `num_before` is greater than 0, then will return `num_before`th previous data.
             - Note: Must be less than the current size of the queue and greater or equal to 0 
@@ -201,12 +194,15 @@ class BaseConnection:
                 - 0 will return the most recent received data
                 - 1 will return the 2nd most recent received data
                 - ...
+        
+        Note that the data will be read as ALL the data available in the Serial port,
+        or `Serial.read_all()`.
 
         Parameters:
         - `num_before` (int) (optional): Which receive object to return
 
         Returns:
-        - A string representing the data
+        - A `bytes` representing the data
         - `None` if no data was found or port not open
         """
 
@@ -242,27 +238,37 @@ class BaseConnection:
 
         return ret
 
-    def _rcv_thread(self) -> None:
-        """Thread that continuously reads incoming data from Serial port.
+    def _io_thread(self) -> None:
+        """Thread that interacts with Serial port.
+
+        Will continuously read data and add bytes to queue (`rcv_queue`).
+        Will also take send queue (`to_send`) and send contents one at a time.
         """
 
         while (self.conn is not None):
             # keep on trying to poll data as long as connection is still alive
             if (self.conn.in_waiting):
-                while (self.busy):
-                    # wait for all operations to finish
-                    time.sleep(0.01)
+                # read everything from Serial buffer
+                incoming = self.conn.read_all()
 
-                self.busy = True
-                incoming = self.conn.readall().decode("utf-8")
-
+                # add to queue
                 self.rcv_queue.append(incoming)
                 if (len(self.rcv_queue) > self.queue_size):
                     # if greater than queue size, then pop first element
                     self.rcv_queue.pop(0)
+            
+            # sending data (send one at a time in queue for 0.5 seconds)
+            st_t = time.time() # start time
+            while (time.time() - st_t < 0.5):
+                if (len(self.to_send) > 0):
+                    self.conn.write(self.to_send.pop(0))
+                    self.conn.flush()
+                else:
+                    # break out if all sent
+                    break
+                time.sleep(0.01)
 
-            self.busy = False
-            time.sleep(0.1)  # give others time to process write data
+            time.sleep(0.01)  # rest CPU
 
     def _reset(self) -> None:
         """Resets all IO variables
@@ -271,4 +277,5 @@ class BaseConnection:
         self.last_sent = time.time()  # prevents from sending too rapidly
 
         self.rcv_queue = []  # stores previous received strings
+        self.to_send = [] # queue data to send
         self.busy = False  # to make thread-safe; indicates if Serial port is currently being used, threads will wait until this is False until doing operations
