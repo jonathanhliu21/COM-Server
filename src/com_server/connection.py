@@ -14,13 +14,19 @@ class Connection(base_connection.BaseConnection):
     """A more user-friendly interface with the Serial port.
 
     In addition to the four basic methods (see `BaseConnection`),
-    it makes other methods that may also be useful to the user.
+    it makes other methods that may also be useful to the user
+    when communicating with the classes.
     
     Some of the methods include:
+    - `receive_str()`: Receives as a string rather than bytes object
     - `get_first_response()`: Gets the first response from the Serial port after sending something (breaks when timeout reached)
     - `send_for_response()`: Continues sending something until the connection receives a given response (breaks when timeout reached)
     - `wait_for_response()`: Waits until the connection receives a given response (breaks when timeout reached)
     - `send_after_response()`: Only send something after the connection receives a given response (breaks when timeout reached)
+
+    Other methods can generally help the user with interacting with the classes:
+    - `all_ports()`: Lists all available COM ports.
+    - `start()`: A function that takes in a `main` function and calls it repeatedly with a delay.
     """
 
     def get_first_response(self, *args: "tuple[t.Any]", **kwargs) -> str:
@@ -43,7 +49,7 @@ class Connection(base_connection.BaseConnection):
         """Continues sending something until the connection receives a given response
 
         This method will call `send()` and `receive()` repeatedly (calls again if does not match given `response` parameter).
-        See `send()` for more details on `*args` and `**kwargs`
+        See `send()` for more details on `*args` and `**kwargs`.
         Will return `true` on success and `false` on failure (reached timeout)
 
         Parameters:
@@ -55,6 +61,12 @@ class Connection(base_connection.BaseConnection):
 
         Returns:
         - `true` on success: The incoming received data matched `response`.
-        - `false` on failure: Incoming data did not match `response`.
+        - `false` on failure: Incoming data did not match `response`, or `timeout` was reached.
+        """
+    
+    def wait_for_response(self, response: str) -> bool:
+        """Waits until the connection receives a given response
 
+        This method will call `receive()` repeatedly until it
+        returns a string that matches `response`
         """
