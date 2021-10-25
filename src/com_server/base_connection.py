@@ -106,7 +106,7 @@ class BaseConnection:
     def disconnect(self) -> None:
         """Closes connection to the Serial port.
 
-        When called, calls `Serial.close()` then makes the connection `None`. If it is currently, closed, then just returns.
+        When called, calls `Serial.close()` then makes the connection `None`. If it is currently closed then just returns.
 
         Parameters: None
 
