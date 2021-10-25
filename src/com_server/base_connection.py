@@ -14,7 +14,7 @@ import serial
 
 
 class BaseConnection:
-    """A base connection object with a Serial port.
+    """A base connection object with a Serial or COM port.
 
     If you want to talk with the Arduino via Serial, 
     either directly use `pyserial` directly or use the `Connection` class.
