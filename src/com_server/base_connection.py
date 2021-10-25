@@ -24,7 +24,10 @@ class BaseConnection:
     It spawns a thread that continuously looks for serial data and puts it in a buffer. 
     When the user wants to send something, it will pass the send data to a queue,
     and the thread will process the queue and will continuously send the contents in the queue
-    until it is empty, or it has reached 0.5 seconds.
+    until it is empty, or it has reached 0.5 seconds. This thread will be referred as the "IO thread".
+
+    If used in a `while(true)` loop, it is highly recommended to put a `time.sleep()` within the loop,
+    so the main thread won't use up so many resources and slow down the IO thread.
 
     This class contains the four basic methods needed to talk with the serial port:
     - `connect()`: opens a connection with the serial port
@@ -58,7 +61,7 @@ class BaseConnection:
         self.timeout = abs(float(timeout))  # make sure positive
         self.pass_to_pyserial = kwargs
         self.queue_size = abs(int(queue_size))  # make sure positive
-        self.send_interval = abs(int(send_interval))  # make sure positive
+        self.send_interval = abs(float(send_interval))  # make sure positive
 
         # initialize Serial object
         self.conn = None
@@ -128,9 +131,14 @@ class BaseConnection:
 
         Note that the data does not send immediately and instead will be added to a queue. 
         The queue size limit is 65536 byte objects. Anything more that is trying to be sent will not be added to the queue.
-        Sending data too rapidly (e.g. making `send_interval` too small) is not recommended,
-        as the queue will get too large and the send data will get backed up and will be delayed
+        Sending data too rapidly (e.g. making `send_interval` too small, varies from computer to computer) is not recommended,
+        as the queue will get too large and the send data will get backed up and will be delayed,
         since it takes a considerable amount of time for data to be sent through the Serial port.
+        Additionally, parts of the send queue will be all sent at once 
+        instead of waiting for a receive for each send,
+        which may end up with unexpected behavior in some programs.
+        To prevent these problems, either make the value of `send_interval` larger,
+        or add a delay within the main thread. 
         
         After receiving, the IO thread will spend 0.5 seconds just sending everything in the queue
         until it is empty or until it has reached the 0.5 seconds.
