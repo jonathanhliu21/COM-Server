@@ -71,7 +71,6 @@ class BaseConnection:
 
         self.rcv_queue = []  # stores previous received strings
         self.to_send = [] # queue data to send
-        self.busy = False  # to make thread-safe; indicates if Serial port is currently being used, threads will wait until this is False until doing operations
 
     def __repr__(self) -> str:
         """Returns string representation of self
@@ -80,7 +79,7 @@ class BaseConnection:
         return f"Connection<id=0x{hex(id(self))}, " \
             f"{{port={self.port}, baud={self.baud}, timeout={self.timeout}, queue_size={self.queue_size}, send_interval={self.send_interval}, " \
             f"Serial={self.conn}, " \
-            f"last_sent={self.last_sent}, rcv_queue={str(self.rcv_queue)}, busy={self.busy}}}"
+            f"last_sent={self.last_sent}, rcv_queue={str(self.rcv_queue)}, send_queue={str(self.to_send)}}}"
 
     def connect(self) -> None:
         """Begins connection to the Serial port.
@@ -286,4 +285,3 @@ class BaseConnection:
 
         self.rcv_queue = []  # stores previous received strings
         self.to_send = [] # queue data to send
-        self.busy = False  # to make thread-safe; indicates if Serial port is currently being used, threads will wait until this is False until doing operations
