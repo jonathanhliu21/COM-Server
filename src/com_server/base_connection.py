@@ -25,7 +25,7 @@ class BaseConnection:
     When the user wants to send, it will interrupt the getting of data and send the data, 
     then resume the getting of data. 
 
-    This class contains the four basic functions needed to talk with the serial port:
+    This class contains the four basic methods needed to talk with the serial port:
     - `connect()`: opens a connection with the serial port
     - `disconnect()`: closes the connection with the serial port
     - `send()`: sends data to the serial port
