@@ -12,6 +12,13 @@ import typing as t
 
 import serial
 
+class ConnectException(Exception):
+    """Connecting/disconnecting errors
+    """
+
+    def __init__(self, msg: str) -> None:
+        super().__init__(msg)
+
 
 class BaseConnection:
     """A base connection object with a Serial or COM port.
@@ -26,6 +33,8 @@ class BaseConnection:
     and the thread will process the queue and will continuously send the contents in the queue
     until it is empty, or it has reached 0.5 seconds. This thread will be referred as the "IO thread".
 
+    All data will be encoded and decoded using `utf-8`.
+
     If used in a `while(true)` loop, it is highly recommended to put a `time.sleep()` within the loop,
     so the main thread won't use up so many resources and slow down the IO thread.
 
@@ -36,7 +45,7 @@ class BaseConnection:
     - `read()`: reads data from the serial port
     """
 
-    def __init__(self, baud: int, port: str, *args, timeout: float = 1, send_interval: int = 1, queue_size: int = 256, **kwargs) -> None:
+    def __init__(self, baud: int, port: str, *args, exception: bool = True, timeout: float = 1, send_interval: int = 1, queue_size: int = 256, **kwargs) -> None:
         """Initializes the Base Connection class. 
 
         `baud`, `port`, `timeout`, and `kwargs` will be passed to pyserial.  
@@ -45,12 +54,12 @@ class BaseConnection:
             - `baud` (int): The baud rate of the Serial connection 
             - `port` (str): The serial port
             - `timeout` (float) (optional): How long the program should wait, in seconds, for Serial data before exiting. By default 1.
+            - `exception` (bool) (optional): Raise an exception when there is a user error in the functions rather than just returning. By default True.
             - `send_interval` (int) (optional): Indicates how much time, in seconds, the program should wait before sending another message. 
-            Not that this does NOT mean that it will be able to send every `send_interval` seconds. It means that the `send()` function will 
+            Note that this does NOT mean that it will be able to send every `send_interval` seconds. It means that the `send()` function will 
             exit if the interval has not reached `send_interval` seconds. NOT recommended to set to small values. By default 1.
             - `queue_size` (int) (optional): The number of previous receives that the program should keep. Must be nonnegative. By default 256.
-            - `sep` (str) (optional): What the string should read until. By default "\n"
-            - `kwargs`: Will be passed to pyserial
+            - `kwargs`: Will be passed to pyserial.
 
         Returns: nothing
         """
@@ -58,6 +67,7 @@ class BaseConnection:
         # from above
         self.baud = int(baud)
         self.port = str(port)
+        self.exception = bool(exception)
         self.timeout = abs(float(timeout))  # make sure positive
         self.pass_to_pyserial = kwargs
         self.queue_size = abs(int(queue_size))  # make sure positive
@@ -92,6 +102,10 @@ class BaseConnection:
         """
 
         if (self.conn is not None):
+            if (self.exception):
+                # raise exception if true
+                raise ConnectException("Connection already established")
+
             # return if initialized already
             return
 
@@ -114,6 +128,10 @@ class BaseConnection:
         """
 
         if (self.conn is None):
+            if (self.exception):
+                # raise exception if true
+                raise ConnectException("No connection established")
+
             # return if not open
             return
 
@@ -164,6 +182,10 @@ class BaseConnection:
 
         # check if connection open
         if (self.conn is None):
+            if (self.exception):
+                # raise exception if true
+                raise ConnectException("No connection established")
+
             return False
 
         # check if it should send by using send_interval.
@@ -206,7 +228,7 @@ class BaseConnection:
         or `Serial.read_all()`.
 
         Parameters:
-        - `num_before` (int) (optional): Which receive object to return
+        - `num_before` (int) (optional): Which receive object to return. By default None.
 
         Returns:
         - A `bytes` representing the data
@@ -214,15 +236,28 @@ class BaseConnection:
         """
 
         if (self.conn is None):
+            if (self.exception):
+                # raise exception if true
+                raise ConnectException("No connection established")
+
             return None
 
         if (num_before < 0):
             # num before has to be nonnegative
+
+            if (self.exception):
+                # raise exception if true
+                raise ValueError("num_before has to be nonnegative")
+
             return None
+        
+        if (self.exception):
+            # return immediately if exception is true so errors can be thrown and the code won't reach the try/except
+            return self.rcv_queue[-1-num_before]
 
         try:
             return self.rcv_queue[-1-num_before]
-        except IndexError:
+        except IndexError as e:
             return None
 
     def _check_output(self, output: str) -> str:
