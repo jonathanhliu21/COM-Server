@@ -58,18 +58,31 @@ class Connection(base_connection.BaseConnection):
         - `None` if no data was found or port not open
         """
     
-    def conv_bytes_to_str(self, read_until: t.Union[str, None] = None) -> str:
+    def conv_bytes_to_str(self, rcv: bytes, read_until: t.Union[str, None] = None) -> t.Union[str, None]:
         """Convert bytes receive object to a string.
 
         Parameters:
+        - `rcv` (bytes): A bytes object. If None, then the function will return None.
         - `read_until` (str, None) (optional): Will return a string that terminates with `read_until`, excluding `read_until`. 
         For example, if the string was `"abcdefg123456\\n"`, and `read_until` was `\\n`, then it will return `"abcdefg123456"`.
-        If `read_until` is None, the it will return the entire string. By default None.
+        If there are multiple occurrences of `read_until`, then it will return the string that terminates with the first one.
+        If `read_until` is None or it doesn't exist, the it will return the entire string. By default None.
 
         Returns:
-        - A `bytes` representing the data
-        - `None` if no data was found or port not open
+        - A `str` representing the data
+        - None if `rcv` is None
         """
+
+        if (rcv is None):
+            return None
+
+        res = rcv.decode("utf-8")
+
+        try:
+            return res[0:res.index(str(read_until))] 
+        except (ValueError, TypeError):
+            # read_until does not exist or it is None, so return the entire thing
+            return res
 
     def get_first_response(self, is_bytes: bool = True, *args: "tuple[t.Any]", **kwargs) -> t.Union[bytes, str]:
         """Gets the first response from the Serial port after sending something.
