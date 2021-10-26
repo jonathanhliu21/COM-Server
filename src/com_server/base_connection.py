@@ -228,7 +228,7 @@ class BaseConnection:
         or `Serial.read_all()`.
 
         Parameters:
-        - `num_before` (int) (optional): Which receive object to return. By default None.
+        - `num_before` (int) (optional): Which receive object to return. Must be nonnegative. By default None.
 
         Returns:
         - A `bytes` representing the data
@@ -251,10 +251,6 @@ class BaseConnection:
 
             return None
         
-        if (self.exception):
-            # return immediately if exception is true so errors can be thrown and the code won't reach the try/except
-            return self.rcv_queue[-1-num_before]
-
         try:
             return self.rcv_queue[-1-num_before]
         except IndexError as e:
