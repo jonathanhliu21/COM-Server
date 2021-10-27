@@ -58,7 +58,7 @@ class Connection(base_connection.BaseConnection):
         - `None` if no data was found or port not open
         """
     
-    def conv_bytes_to_str(self, rcv: bytes, read_until: t.Union[str, None] = None) -> t.Union[str, None]:
+    def conv_bytes_to_str(self, rcv: bytes, read_until: t.Union[str, None] = None, strip: bool = True) -> t.Union[str, None]:
         """Convert bytes receive object to a string.
 
         Parameters:
@@ -67,6 +67,8 @@ class Connection(base_connection.BaseConnection):
         For example, if the string was `"abcdefg123456\\n"`, and `read_until` was `\\n`, then it will return `"abcdefg123456"`.
         If there are multiple occurrences of `read_until`, then it will return the string that terminates with the first one.
         If `read_until` is None or it doesn't exist, the it will return the entire string. By default None.
+        - `strip` (bool) (optional): If True, then strips spaces and newlines from either side of the processed string before returning.
+        If False, returns the processed string in its entirety. By default True.
 
         Returns:
         - A `str` representing the data
@@ -79,7 +81,12 @@ class Connection(base_connection.BaseConnection):
         res = rcv.decode("utf-8")
 
         try:
-            return res[0:res.index(str(read_until))] 
+            ret = res[0:res.index(str(read_until))] # sliced string
+            if (strip):
+                return ret.strip()
+            else:
+                return ret
+
         except (ValueError, TypeError):
             # read_until does not exist or it is None, so return the entire thing
             return res
