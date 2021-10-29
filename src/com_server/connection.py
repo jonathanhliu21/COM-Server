@@ -28,36 +28,6 @@ class Connection(base_connection.BaseConnection):
     - `run_func()`: A method that takes in a `main` function and calls it repeatedly with a delay.
     """
 
-    def receive_str(self, read_until: t.Union[str, None] = None, num_before: int = 0):
-        """Returns the most recent receive object as a string.
-
-        The receive thread will continuously detect receive data and put the `bytes` objects in the `rcv_queue`. 
-        If there are no parameters, the method will return the most recent received data.
-        If `num_before` is greater than 0, then will return `num_before`th previous data.
-            - Note: Must be less than the current size of the queue and greater or equal to 0 
-                - If not, returns None (no data)
-            - Example:
-                - 0 will return the most recent received data
-                - 1 will return the 2nd most recent received data
-                - ...
-        
-        Note that the data will be read as ALL the data available in the Serial port,
-        or `Serial.read_all()`.
-
-        This method will take in the input from `receive()` and put it in 
-        `conv_bytes_to_str()`, then return it.
-
-        Parameters:
-        - `read_until` (str, None) (optional): Will return a string that terminates with `read_until`, excluding `read_until`. 
-        For example, if the string was `"abcdefg123456\\n"`, and `read_until` was `\\n`, then it will return `"abcdefg123456"`.
-        If `read_until` is None, the it will return the entire string. By default None.
-        - `num_before` (int) (optional): Which receive object to return. By default 0.
-
-        Returns:
-        - A `bytes` representing the data
-        - `None` if no data was found or port not open
-        """
-    
     def conv_bytes_to_str(self, rcv: bytes, read_until: t.Union[str, None] = None, strip: bool = True) -> t.Union[str, None]:
         """Convert bytes receive object to a string.
 
@@ -91,6 +61,40 @@ class Connection(base_connection.BaseConnection):
             # read_until does not exist or it is None, so return the entire thing
             return res
 
+    def receive_str(self, read_until: t.Union[str, None] = None, num_before: int = 0, strip: bool = True) -> str:
+        """Returns the most recent receive object as a string.
+
+        The receive thread will continuously detect receive data and put the `bytes` objects in the `rcv_queue`. 
+        If there are no parameters, the method will return the most recent received data.
+        If `num_before` is greater than 0, then will return `num_before`th previous data.
+            - Note: Must be less than the current size of the queue and greater or equal to 0 
+                - If not, returns None (no data)
+            - Example:
+                - 0 will return the most recent received data
+                - 1 will return the 2nd most recent received data
+                - ...
+        
+        Note that the data will be read as ALL the data available in the Serial port,
+        or `Serial.read_all()`.
+
+        This method will take in the input from `receive()` and put it in 
+        `conv_bytes_to_str()`, then return it.
+
+        Parameters:
+        - `read_until` (str, None) (optional): Will return a string that terminates with `read_until`, excluding `read_until`. 
+        For example, if the string was `"abcdefg123456\\n"`, and `read_until` was `\\n`, then it will return `"abcdefg123456"`.
+        If `read_until` is None, the it will return the entire string. By default None.
+        - `num_before` (int) (optional): Which receive object to return. By default 0.
+        - `strip` (bool) (optional): If True, then strips the received and processed string of whitespace and newlines, then 
+        returns the result. If False, then returns the raw result. By default True.
+
+        Returns:
+        - A `bytes` representing the data
+        - `None` if no data was found or port not open
+        """
+
+        return self.conv_bytes_to_str(self.receive(num_before=num_before), read_until=read_until, strip=strip)
+    
     def get_first_response(self, is_bytes: bool = True, *args: "tuple[t.Any]", **kwargs) -> t.Union[bytes, str]:
         """Gets the first response from the Serial port after sending something.
 
