@@ -9,6 +9,7 @@ import time
 import typing as t
 
 from . import base_connection
+from . import tools
 
 class Connection(base_connection.BaseConnection):
     """A more user-friendly interface with the Serial port.
@@ -158,7 +159,7 @@ class Connection(base_connection.BaseConnection):
         If given a bytes, then directly compares the bytes object to the response.
         """
     
-    def all_ports(self) -> t.Generator:
+    def all_ports(self, **kwargs) -> t.Generator:
         """Lists all available Serial ports.
         
         Calls `tools.all_ports()`, which itself calls `serial.tools.list_ports.comports()`.
@@ -168,4 +169,6 @@ class Connection(base_connection.BaseConnection):
 
         Returns: A generator-like object (see link above)
         """
+
+        return tools.all_ports(**kwargs)
     
