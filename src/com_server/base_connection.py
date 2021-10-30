@@ -79,7 +79,7 @@ class BaseConnection:
         # other
         self.last_sent = time.time()  # prevents from sending too rapidly
 
-        self.rcv_queue = []  # stores previous received strings
+        self.rcv_queue = []  # stores previous received strings and timestamps, tuple (timestamp, str)
         self.to_send = [] # queue data to send
 
     def __repr__(self) -> str:
@@ -211,7 +211,7 @@ class BaseConnection:
 
         return True
 
-    def receive(self, num_before: int = 0) -> t.Union[bytes, None]:
+    def receive(self, num_before: int = 0) -> "t.Union[tuple[bytes], None]":
         """Returns the most recent receive object
 
         The receive thread will continuously detect receive data and put the `bytes` objects in the `rcv_queue`. 
@@ -231,7 +231,7 @@ class BaseConnection:
         - `num_before` (int) (optional): Which receive object to return. Must be nonnegative. By default None.
 
         Returns:
-        - A `bytes` representing the data
+        - A `tuple` representing the `(timestamp received, data in bytes)`
         - `None` if no data was found or port not open
         """
 
@@ -290,7 +290,7 @@ class BaseConnection:
                 incoming = self.conn.read_all()
 
                 # add to queue
-                self.rcv_queue.append(incoming)
+                self.rcv_queue.append((time.time(), incoming)) # tuple (timestamp, str)
                 if (len(self.rcv_queue) > self.queue_size):
                     # if greater than queue size, then pop first element
                     self.rcv_queue.pop(0)
