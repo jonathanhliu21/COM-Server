@@ -106,7 +106,7 @@ class Connection(base_connection.BaseConnection):
 
         return (rcv_tuple[0], str_data)
     
-    def get_first_response(self, is_bytes: bool = True, *args: "tuple[t.Any]", check_type: bool = True, ending: str = "\r\n", concatenate: str = ' ', read_until: t.Union[str, None]) -> t.Union[bytes, str, None]:
+    def get_first_response(self, *args: "tuple[t.Any]", is_bytes: bool = True, check_type: bool = True, ending: str = "\r\n", concatenate: str = ' ', read_until: t.Union[str, None] = None) -> t.Union[bytes, str, None]:
         """Gets the first response from the Serial port after sending something.
 
         This method works almost the same as `send()` (see `self.send()`). 
@@ -123,8 +123,43 @@ class Connection(base_connection.BaseConnection):
 
         Returns:
         - A string or bytes representing the first response from the Serial port.
-        - None if there was no data or timeout reached.
+        - None if there was no data, timeout reached, or send interval not reached.
         """
+
+        send_time = time.time() # tracks send time
+        send_success = self.send(*args, check_type=check_type, ending=ending, concatenate=concatenate)
+
+        # for receiving string or bytes
+        rcv_func = self.receive if is_bytes else self.receive_str
+        
+        if (not send_success):
+            return None
+
+        r = None 
+        if (is_bytes):
+            r = rcv_func()
+        else:
+            # strings have read_until option
+            r = rcv_func(read_until=read_until)
+
+        st = time.time()
+
+        # compares send time to receive time; return the first receive object where the send time < receive time
+        while (r is None or r[0] < send_time):
+            if (time.time() - st > self.timeout):
+                # reached timeout
+
+                return None
+            
+            if (is_bytes):
+                r = rcv_func()
+            else:
+                # strings have read_until option
+                r = rcv_func(read_until=read_until)
+
+            time.sleep(0.05)
+        
+        return r[1]
     
     def send_for_response(self, response: t.Union[str, bytes], *args: "tuple[t.Any]", strip: bool = True, check_type: bool = True, ending: str = "\r\n", concatenate: str = ' ') -> bool:
         """Continues sending something until the connection receives a given response.
