@@ -207,8 +207,6 @@ class BaseConnection:
             # only append if limit has not been reached
             self.to_send.append(send_data)
         
-        # print(self.to_send)
-
         return True
 
     def receive(self, num_before: int = 0) -> "t.Union[tuple[bytes], None]":
