@@ -59,9 +59,12 @@ class Connection(base_connection.BaseConnection):
 
         except (ValueError, TypeError):
             # read_until does not exist or it is None, so return the entire thing
-            return res
+            if (strip):
+                return res.strip()
+            else: 
+                return res
 
-    def receive_str(self, read_until: t.Union[str, None] = None, num_before: int = 0, strip: bool = True) -> str:
+    def receive_str(self, read_until: t.Union[str, None] = None, num_before: int = 0, strip: bool = True) -> "t.Union[None, tuple[str]]":
         """Returns the most recent receive object as a string.
 
         The receive thread will continuously detect receive data and put the `bytes` objects in the `rcv_queue`. 
@@ -89,37 +92,44 @@ class Connection(base_connection.BaseConnection):
         returns the result. If False, then returns the raw result. By default True.
 
         Returns:
-        - A `bytes` representing the data
+        - A `tuple` representing the `(timestamp received, string data)`
         - `None` if no data was found or port not open
         """
+        
+        rcv_tuple = self.receive(num_before=num_before)
+        if (rcv_tuple is None):
+            # return if None
+            return None
 
-        return self.conv_bytes_to_str(self.receive(num_before=num_before), read_until=read_until, strip=strip)
+        str_data = self.conv_bytes_to_str(rcv_tuple[1], read_until=read_until, strip=strip)
+
+        return (rcv_tuple[0], str_data)
     
-    def get_first_response(self, is_bytes: bool = True, *args: "tuple[t.Any]", **kwargs) -> t.Union[bytes, str]:
+    def get_first_response(self, is_bytes: bool = True, *args: "tuple[t.Any]", check_type: bool = True, ending: str = "\r\n", concatenate: str = ' ', read_until: t.Union[str, None]) -> t.Union[bytes, str, None]:
         """Gets the first response from the Serial port after sending something.
 
         This method works almost the same as `send()` (see `self.send()`). 
         It also returns a string representing the first response from the Serial port after sending.
-        All `*args` and `**kwargs` will be sent to `send()`.
+        All `*args` and `check_type`, `ending`, and `concatenate`, will be sent to `send()`.
 
         If there is no response after reaching the timeout, then it breaks out of the method.
 
         Parameters:
         - `is_bytes`: If False, then passes to `conv_bytes_to_str()` and returns a string
-        with `read_until` being in the `**kwargs`. If `read_until` is not in `**kwargs`, 
-        then the method will assume that everything should be read. If True, then returns
-        raw `bytes` data. By default True.
+        with given options `read_until` and `strip`. See `conv_bytes_to_str()` for more details.
+        If True, then returns raw `bytes` data. By default True.
         - See `send()`
 
         Returns:
-        - A string representing the first response from the Serial port.
+        - A string or bytes representing the first response from the Serial port.
+        - None if there was no data or timeout reached.
         """
     
-    def send_for_response(self, response: t.Union[str, bytes], *args: "tuple[t.Any]", strip: bool = True, **kwargs) -> bool:
+    def send_for_response(self, response: t.Union[str, bytes], *args: "tuple[t.Any]", strip: bool = True, check_type: bool = True, ending: str = "\r\n", concatenate: str = ' ') -> bool:
         """Continues sending something until the connection receives a given response.
 
         This method will call `send()` and `receive()` repeatedly (calls again if does not match given `response` parameter).
-        See `send()` for more details on `*args` and `**kwargs`, as these will be passed to the method.
+        See `send()` for more details on `*args` and `check_type`, `ending`, and `concatenate`, as these will be passed to the method.
         Will return `true` on success and `false` on failure (reached timeout)
 
         Parameters:
