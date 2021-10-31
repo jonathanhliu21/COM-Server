@@ -65,7 +65,7 @@ class Connection(base_connection.BaseConnection):
             else: 
                 return res
 
-    def receive_str(self, read_until: t.Union[str, None] = None, num_before: int = 0, strip: bool = True) -> "t.Union[None, tuple[str]]":
+    def receive_str(self, num_before: int = 0, read_until: t.Union[str, None] = None, strip: bool = True) -> "t.Union[None, tuple[str]]":
         """Returns the most recent receive object as a string.
 
         The receive thread will continuously detect receive data and put the `bytes` objects in the `rcv_queue`. 
@@ -85,17 +85,21 @@ class Connection(base_connection.BaseConnection):
         `conv_bytes_to_str()`, then return it.
 
         Parameters:
+        - `num_before` (int) (optional): Which receive object to return. By default 0.
         - `read_until` (str, None) (optional): Will return a string that terminates with `read_until`, excluding `read_until`. 
         For example, if the string was `"abcdefg123456\\n"`, and `read_until` was `\\n`, then it will return `"abcdefg123456"`.
         If `read_until` is None, the it will return the entire string. By default None.
-        - `num_before` (int) (optional): Which receive object to return. By default 0.
         - `strip` (bool) (optional): If True, then strips the received and processed string of whitespace and newlines, then 
         returns the result. If False, then returns the raw result. By default True.
 
         Returns:
         - A `tuple` representing the `(timestamp received, string data)`
-        - `None` if no data was found or port not open
+        - `None` if no connection (if self.exception == False), data was found, or port not open
         """
+
+        # checks if connection is open.
+        if (not self._check_connect()):
+            return None
         
         rcv_tuple = self.receive(num_before=num_before)
         if (rcv_tuple is None):
@@ -106,7 +110,7 @@ class Connection(base_connection.BaseConnection):
 
         return (rcv_tuple[0], str_data)
     
-    def get_first_response(self, *args: "tuple[t.Any]", is_bytes: bool = True, check_type: bool = True, ending: str = "\r\n", concatenate: str = ' ', read_until: t.Union[str, None] = None) -> t.Union[bytes, str, None]:
+    def get_first_response(self, *args: "tuple[t.Any]", is_bytes: bool = True, check_type: bool = True, ending: str = "\r\n", concatenate: str = ' ', read_until: t.Union[str, None] = None, strip: bool = True) -> t.Union[bytes, str, None]:
         """Gets the first response from the Serial port after sending something.
 
         This method works almost the same as `send()` (see `self.send()`). 
@@ -119,12 +123,22 @@ class Connection(base_connection.BaseConnection):
         - `is_bytes`: If False, then passes to `conv_bytes_to_str()` and returns a string
         with given options `read_until` and `strip`. See `conv_bytes_to_str()` for more details.
         If True, then returns raw `bytes` data. By default True.
-        - See `send()`
+        - `check_type` (bool) (optional): If types in *args should be checked. By default True.
+        - `ending` (str) (optional): The ending of the bytes object to be sent through the Serial port. By default a carraige return ("\\r\\n")
+        - `concatenate` (str) (optional): What the strings in args should be concatenated by
+        - `read_until` (str, None) (optional): Will return a string that terminates with `read_until`, excluding `read_until`. 
+        For example, if the string was `"abcdefg123456\\n"`, and `read_until` was `\\n`, then it will return `"abcdefg123456"`.
+        If `read_until` is None, the it will return the entire string. By default None.
+        - `strip` (bool) (optional): If True, then strips the received and processed string of whitespace and newlines, then 
+        returns the result. If False, then returns the raw result. By default True.
 
         Returns:
         - A string or bytes representing the first response from the Serial port.
-        - None if there was no data, timeout reached, or send interval not reached.
+        - None if there was no connection (if self.exception == False), no data, timeout reached, or send interval not reached.
         """
+
+        if (not self._check_connect()):
+            return None
 
         send_time = time.time() # tracks send time
         send_success = self.send(*args, check_type=check_type, ending=ending, concatenate=concatenate)
@@ -140,7 +154,7 @@ class Connection(base_connection.BaseConnection):
             r = rcv_func()
         else:
             # strings have read_until option
-            r = rcv_func(read_until=read_until)
+            r = rcv_func(read_until=read_until, strip=strip)
 
         st = time.time()
 
@@ -161,6 +175,34 @@ class Connection(base_connection.BaseConnection):
         
         return r[1]
     
+    def wait_for_response(self, response: t.Union[str, bytes], read_until: t.Union[str, None] = None, strip: bool = True) -> bool:
+        """Waits until the connection receives a given response.
+
+        This method will call `receive()` repeatedly until it
+        returns a string that matches `response` whose timestamp
+        is greater than the call timestamp.
+
+        Parameters:
+        - `response` (str) (bytes): The receive data that the program is loking for.
+        If given a string, then compares the string to the response after it is decoded in `utf-8`.
+        If given a bytes, then directly compares the bytes object to the response.
+        - `read_until` (str, None) (optional): Will return a string that terminates with `read_until`, excluding `read_until`. 
+        For example, if the string was `"abcdefg123456\\n"`, and `read_until` was `\\n`, then it will return `"abcdefg123456"`.
+        If `read_until` is None, the it will return the entire string. By default None.
+        - `strip` (bool) (optional): If True, then strips the received and processed string of whitespace and newlines, then 
+        returns the result. If False, then returns the raw result. By default True.
+        """
+
+        if (isinstance(response, str)):
+            return self._wait_for_response_str(response, read_until=read_until, strip=strip)
+        elif(isinstance(response, bytes)):
+            return self._wait_for_response_bytes(response)
+        else:
+            if (self.exception):
+                raise TypeError("response must be bytes or str") 
+            else:
+                return False
+
     def send_for_response(self, response: t.Union[str, bytes], *args: "tuple[t.Any]", strip: bool = True, check_type: bool = True, ending: str = "\r\n", concatenate: str = ' ') -> bool:
         """Continues sending something until the connection receives a given response.
 
@@ -179,21 +221,21 @@ class Connection(base_connection.BaseConnection):
 
         Returns:
         - `true` on success: The incoming received data matched `response`.
-        - `false` on failure: Incoming data did not match `response`, or `timeout` was reached.
+        - `false` on failure: Connection not established (if self.exception == False), incoming data did not match `response`, or `timeout` was reached, or send interval has not been reached.
         """
 
-    def wait_for_response(self, response: t.Union[str, bytes]) -> bool:
-        """Waits until the connection receives a given response.
+        if (not self._check_connect()):
+            return False
+        
+        try:
+            self.last_sent_outer # this is for the interval for calling send_for_response
+        except NameError:
+            self.last_sent_outer = 0.0
 
-        This method will call `receive()` repeatedly until it
-        returns a string that matches `response`
-
-        Parameters:
-        - `response` (str) (bytes): The receive data that the program is loking for.
-        If given a string, then compares the string to the response after it is decoded in `utf-8`.
-        If given a bytes, then directly compares the bytes object to the response.
-        """
-    
+        # check interval
+        if (time.time() - self.last_sent < self.send_interval):
+            return False
+ 
     def all_ports(self, **kwargs) -> t.Generator:
         """Lists all available Serial ports.
         
@@ -206,4 +248,34 @@ class Connection(base_connection.BaseConnection):
         """
 
         return tools.all_ports(**kwargs)
+    
+    def _check_connect(self) -> bool:
+        """
+        Checks if a connection has been established.
+        Raises exception or returns false if not.
+        """
+
+        if (self.conn is None):
+            if (self.exception):
+                raise base_connection.ConnectException("No connection established")
+            
+            else:
+                return False
+        
+        return True
+    
+    def _wait_for_response_str(self, response: str, read_until: t.Union[str, None] = None, strip: bool = True) -> bool:
+        """
+        `self._wait_for_response` but for strings
+        """
+
+        call_time = time.time() # call timestamp
+
+    def _wait_for_response_bytes(self, response: bytes) -> bool:
+        """
+        `self._wait_for_response` but for bytes
+        """
+
+        call_time = time.time() # call timestamp
+
     
