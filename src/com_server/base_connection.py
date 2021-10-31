@@ -209,7 +209,7 @@ class BaseConnection:
         
         return True
 
-    def receive(self, num_before: int = 0) -> "t.Union[tuple[bytes], None]":
+    def receive(self, num_before: int = 0) -> "t.Union[tuple[float, bytes], None]":
         """Returns the most recent receive object
 
         The receive thread will continuously detect receive data and put the `bytes` objects in the `rcv_queue`. 
