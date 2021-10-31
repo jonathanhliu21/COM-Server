@@ -20,13 +20,14 @@ class Connection(base_connection.BaseConnection):
     
     Some of the methods include:
     - `receive_str()`: Receives as a string rather than bytes object
+    - `get()`: Gets first response after the time that the method was called.
     - `get_first_response()`: Gets the first response from the Serial port after sending something (breaks when timeout reached)
     - `send_for_response()`: Continues sending something until the connection receives a given response (breaks when timeout reached)
     - `wait_for_response()`: Waits until the connection receives a given response (breaks when timeout reached)
 
     Other methods can generally help the user with interacting with the classes:
     - `all_ports()`: Lists all available COM ports.
-- `run_func()`: A method that takes in a `main` method and calls it repeatedly with a delay.
+    - `run_func()`: A method that takes in a `main` method and calls it repeatedly with a delay.
     """
 
     def conv_bytes_to_str(self, rcv: bytes, read_until: t.Union[str, None] = None, strip: bool = True) -> t.Union[str, None]:
@@ -120,6 +121,7 @@ class Connection(base_connection.BaseConnection):
         If there is no response after reaching the timeout, then it breaks out of the method.
 
         Parameters:
+        - `*args`: Everything that is to be sent, each as a separate parameter. Must have at least one parameter.
         - `is_bytes`: If False, then passes to `conv_bytes_to_str()` and returns a string
         with given options `read_until` and `strip`. See `conv_bytes_to_str()` for more details.
         If True, then returns raw `bytes` data. By default True.
@@ -188,7 +190,7 @@ class Connection(base_connection.BaseConnection):
         If given a bytes, then directly compares the bytes object to the response.
         If given anything else, converts to string.
         - `after_timestamp` (float): Look for responses that came after given time as the UNIX timestamp.
-        By default the time that the function was called, or `time.time()`
+        By default the time that the method was called, or `time.time()`
 
         These parameters only apply if `response` is a string:
         - `read_until` (str, None) (optional): Will return a string that terminates with `read_until`, excluding `read_until`. 
@@ -214,7 +216,7 @@ class Connection(base_connection.BaseConnection):
         else:
             return self._wait_for_response_str(str(response), timestamp=after_timestamp, read_until=read_until, strip=strip)
 
-    def send_for_response(self, response: t.Union[str, bytes], *args: "tuple[t.any]", strip: bool = True, check_type: bool = True, ending: str = "\r\n", concatenate: str = ' ') -> bool:
+    def send_for_response(self, response: t.Union[str, bytes], *args: "tuple[t.any]", read_until: t.Union[str, None] = None, strip: bool = True, check_type: bool = True, ending: str = "\r\n", concatenate: str = ' ') -> bool:
         """continues sending something until the connection receives a given response.
 
         This method will call `send()` and `receive()` repeatedly (calls again if does not match given `response` parameter).
@@ -225,13 +227,20 @@ class Connection(base_connection.BaseConnection):
         - `response` (str, bytes): The receive data that the program looks for after sending.
         If given a string, then compares the string to the response after it is decoded in `utf-8`.
         If given a bytes, then directly compares the bytes object to the response.
-        - `strip` (bool) (optional). If True, then strips receive of spaces and newlines 
-        at the end before comparing to parameter `response`. Applies for both `str` and `bytes`. 
-        If False, then compares the raw data to parameter `response`. 
-        - All other parameters will be passed to `send()`. For other parameters, see `send()` 
+        - `*args`: Everything that is to be sent, each as a separate parameter. Must have at least one parameter.
+        - `check_type` (bool) (optional): If types in *args should be checked. By default True.
+        - `ending` (str) (optional): The ending of the bytes object to be sent through the Serial port. By default a carraige return ("\\r\\n")
+        - `concatenate` (str) (optional): What the strings in args should be concatenated by
+
+        These parameters only apply if `response` is a string:
+        - `read_until` (str, None) (optional): Will return a string that terminates with `read_until`, excluding `read_until`. 
+        For example, if the string was `"abcdefg123456\\n"`, and `read_until` was `\\n`, then it will return `"abcdefg123456"`.
+        If `read_until` is None, the it will return the entire string. By default None.
+        - `strip` (bool) (optional): If True, then strips the received and processed string of whitespace and newlines, then 
+        returns the result. If False, then returns the raw result. By default True.
 
         Returns:
-        - `true` on success: The incoming received data matched `response`.
+        - `true` on success: The incoming received data matching `response`.
         - `false` on failure: Connection not established (if self.exception == False), incoming data did not match `response`, or `timeout` was reached, or send interval has not been reached.
         """
 
@@ -240,12 +249,29 @@ class Connection(base_connection.BaseConnection):
         
         try:
             self.last_sent_outer # this is for the interval for calling send_for_response
-        except NameError:
+        except AttributeError:
+            # declare variable if not declared yet
             self.last_sent_outer = 0.0
 
         # check interval
-        if (time.time() - self.last_sent < self.send_interval):
+        if (time.time() - self.last_sent_outer < self.send_interval):
             return False
+        self.last_sent_outer = time.time()
+
+        st_t = time.time() # for timeout
+
+        while (True):
+            if (time.time() - st_t > self.timeout):
+                # timeout reached
+                return False 
+            
+            self.send(*args, check_type=check_type, ending=ending, concatenate=concatenate)
+            send_t = time.time()
+
+            if (self.wait_for_response(response=response, after_timestamp=send_t, read_until=read_until, strip=strip)):
+                return True
+
+            time.sleep(0.01)
  
     def all_ports(self, **kwargs) -> t.Generator:
         """Lists all available Serial ports.
