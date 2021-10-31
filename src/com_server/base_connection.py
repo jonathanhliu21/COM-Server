@@ -54,9 +54,9 @@ class BaseConnection:
             - `baud` (int): The baud rate of the Serial connection 
             - `port` (str): The serial port
             - `timeout` (float) (optional): How long the program should wait, in seconds, for Serial data before exiting. By default 1.
-            - `exception` (bool) (optional): Raise an exception when there is a user error in the functions rather than just returning. By default True.
+            - `exception` (bool) (optional): Raise an exception when there is a user error in the methods rather than just returning. By default True.
             - `send_interval` (int) (optional): Indicates how much time, in seconds, the program should wait before sending another message. 
-            Note that this does NOT mean that it will be able to send every `send_interval` seconds. It means that the `send()` function will 
+            Note that this does NOT mean that it will be able to send every `send_interval` seconds. It means that the `send()` method will 
             exit if the interval has not reached `send_interval` seconds. NOT recommended to set to small values. By default 1.
             - `queue_size` (int) (optional): The number of previous receives that the program should keep. Must be nonnegative. By default 256.
             - `kwargs`: Will be passed to pyserial.
@@ -160,7 +160,7 @@ class BaseConnection:
         After receiving, the IO thread will spend 0.5 seconds just sending everything in the queue
         until it is empty or until it has reached the 0.5 seconds.
 
-        If the program has not waited long enough before sending, then the function will return `false`.
+        If the program has not waited long enough before sending, then the method will return `false`.
 
         If `check_type` is True, then it will process each argument, then concatenate, encode, and send.
             - If the argument is `bytes` then decodes to `str`
@@ -213,7 +213,7 @@ class BaseConnection:
         """Returns the most recent receive object
 
         The receive thread will continuously detect receive data and put the `bytes` objects in the `rcv_queue`. 
-        If there are no parameters, the function will return the most recent received data.
+        If there are no parameters, the method will return the most recent received data.
         If `num_before` is greater than 0, then will return `num_before`th previous data.
             - Note: Must be less than the current size of the queue and greater or equal to 0 
                 - If not, returns None (no data)
