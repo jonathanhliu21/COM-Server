@@ -26,14 +26,14 @@ class Connection(base_connection.BaseConnection):
 
     Other methods can generally help the user with interacting with the classes:
     - `all_ports()`: Lists all available COM ports.
-    - `run_func()`: A method that takes in a `main` function and calls it repeatedly with a delay.
+- `run_func()`: A method that takes in a `main` method and calls it repeatedly with a delay.
     """
 
     def conv_bytes_to_str(self, rcv: bytes, read_until: t.Union[str, None] = None, strip: bool = True) -> t.Union[str, None]:
         """Convert bytes receive object to a string.
 
         Parameters:
-        - `rcv` (bytes): A bytes object. If None, then the function will return None.
+        - `rcv` (bytes): A bytes object. If None, then the method will return None.
         - `read_until` (str, None) (optional): Will return a string that terminates with `read_until`, excluding `read_until`. 
         For example, if the string was `"abcdefg123456\\n"`, and `read_until` was `\\n`, then it will return `"abcdefg123456"`.
         If there are multiple occurrences of `read_until`, then it will return the string that terminates with the first one.
@@ -65,7 +65,7 @@ class Connection(base_connection.BaseConnection):
             else: 
                 return res
 
-    def receive_str(self, num_before: int = 0, read_until: t.Union[str, None] = None, strip: bool = True) -> "t.Union[None, tuple[str]]":
+    def receive_str(self, num_before: int = 0, read_until: t.Union[str, None] = None, strip: bool = True) -> "t.Union[None, tuple[float, str]]":
         """Returns the most recent receive object as a string.
 
         The receive thread will continuously detect receive data and put the `bytes` objects in the `rcv_queue`. 
@@ -175,36 +175,47 @@ class Connection(base_connection.BaseConnection):
         
         return r[1]
     
-    def wait_for_response(self, response: t.Union[str, bytes], read_until: t.Union[str, None] = None, strip: bool = True) -> bool:
+    def wait_for_response(self, response: t.Union[str, bytes], after_timestamp: float = -1.0, read_until: t.Union[str, None] = None, strip: bool = True) -> bool:
         """Waits until the connection receives a given response.
 
         This method will call `receive()` repeatedly until it
         returns a string that matches `response` whose timestamp
-        is greater than the call timestamp.
+        is greater than given timestamp (`after_timestamp`).
 
         Parameters:
-        - `response` (str) (bytes): The receive data that the program is loking for.
+        - `response` (str, bytes): The receive data that the program is loking for.
         If given a string, then compares the string to the response after it is decoded in `utf-8`.
         If given a bytes, then directly compares the bytes object to the response.
+        If given anything else, converts to string.
+        - `after_timestamp` (float): Look for responses that came after given time as the UNIX timestamp.
+        By default the time that the function was called, or `time.time()`
+
+        These parameters only apply if `response` is a string:
         - `read_until` (str, None) (optional): Will return a string that terminates with `read_until`, excluding `read_until`. 
         For example, if the string was `"abcdefg123456\\n"`, and `read_until` was `\\n`, then it will return `"abcdefg123456"`.
         If `read_until` is None, the it will return the entire string. By default None.
         - `strip` (bool) (optional): If True, then strips the received and processed string of whitespace and newlines, then 
         returns the result. If False, then returns the raw result. By default True.
+
+        Returns:
+        - True on success
+        - False on failure: timeout reached because response has not been received.
         """
 
-        if (isinstance(response, str)):
-            return self._wait_for_response_str(response, read_until=read_until, strip=strip)
-        elif(isinstance(response, bytes)):
-            return self._wait_for_response_bytes(response)
-        else:
-            if (self.exception):
-                raise TypeError("response must be bytes or str") 
-            else:
-                return False
+        after_timestamp = float(after_timestamp)
+        if (after_timestamp < 0):
+            # negative number to indicate program to use current time, time in parameter does not work
+            after_timestamp = time.time()
 
-    def send_for_response(self, response: t.Union[str, bytes], *args: "tuple[t.Any]", strip: bool = True, check_type: bool = True, ending: str = "\r\n", concatenate: str = ' ') -> bool:
-        """Continues sending something until the connection receives a given response.
+        if (isinstance(response, str)):
+            return self._wait_for_response_str(response, timestamp=after_timestamp, read_until=read_until, strip=strip)
+        elif (isinstance(response, bytes)):
+            return self._wait_for_response_bytes(response, timestamp=after_timestamp)
+        else:
+            return self._wait_for_response_str(str(response), timestamp=after_timestamp, read_until=read_until, strip=strip)
+
+    def send_for_response(self, response: t.Union[str, bytes], *args: "tuple[t.any]", strip: bool = True, check_type: bool = True, ending: str = "\r\n", concatenate: str = ' ') -> bool:
+        """continues sending something until the connection receives a given response.
 
         This method will call `send()` and `receive()` repeatedly (calls again if does not match given `response` parameter).
         See `send()` for more details on `*args` and `check_type`, `ending`, and `concatenate`, as these will be passed to the method.
@@ -264,18 +275,45 @@ class Connection(base_connection.BaseConnection):
         
         return True
     
-    def _wait_for_response_str(self, response: str, read_until: t.Union[str, None] = None, strip: bool = True) -> bool:
+    def _wait_for_response_str(self, response: str, timestamp: float, read_until: t.Union[str, None], strip: bool) -> bool:
         """
         `self._wait_for_response` but for strings
         """
 
-        call_time = time.time() # call timestamp
+        call_time = time.time() # call timestamp, for timeout
 
-    def _wait_for_response_bytes(self, response: bytes) -> bool:
+        r = self.receive_str(read_until=read_until, strip=strip)
+
+        while (r is None or r[0] < timestamp or r[1] != response):
+            # timestamp needs to be greater than start of method and response needs to match
+            if (time.time() - call_time > self.timeout):
+                # timeout reached
+                return False 
+
+
+            r = self.receive_str(read_until=read_until, strip=strip)
+            time.sleep(0.01)
+        
+        # correct response has been received
+        return True
+
+    def _wait_for_response_bytes(self, response: bytes, timestamp: float) -> bool:
         """
         `self._wait_for_response` but for bytes
         """
 
-        call_time = time.time() # call timestamp
-
+        call_time = time.time() # call timestamp, for timeout
     
+        r = self.receive()
+
+        while (r is None or r[0] < timestamp or r[1] != response):
+            # timestamp needs to be greater than start of method and response needs to match
+            if (time.time() - call_time > self.timeout):
+                # timeout reached
+                return False
+            
+            r = self.receive()
+            time.sleep(0.01)
+        
+        # correct response has been received
+        return True
