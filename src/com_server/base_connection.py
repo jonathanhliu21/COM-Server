@@ -12,6 +12,8 @@ import typing as t
 
 import serial
 
+from . import disconnect
+
 class ConnectException(Exception):
     """Connecting/disconnecting errors
     """
@@ -45,7 +47,19 @@ class BaseConnection:
     - `read()`: reads data from the serial port
     """
 
-    def __init__(self, baud: int, port: str, *args, exception: bool = True, timeout: float = 1, send_interval: int = 1, queue_size: int = 256, **kwargs) -> None:
+    def __init__(
+        self, 
+        baud: int, 
+        port: str, 
+        *args, 
+        exception: bool = True, 
+        timeout: float = 1, 
+        send_interval: int = 1, 
+        queue_size: int = 256, 
+        handle_disconnect: bool = True,
+        exit_on_disconnect: bool = False, 
+        **kwargs
+        ) -> None:
         """Initializes the Base Connection class. 
 
         `baud`, `port`, `timeout`, and `kwargs` will be passed to pyserial.  
@@ -59,6 +73,8 @@ class BaseConnection:
             Note that this does NOT mean that it will be able to send every `send_interval` seconds. It means that the `send()` method will 
             exit if the interval has not reached `send_interval` seconds. NOT recommended to set to small values. By default 1.
             - `queue_size` (int) (optional): The number of previous receives that the program should keep. Must be nonnegative. By default 256.
+            - `handle_disconnect` (bool) (optional): Whether the program should spawn a thread to detect if the Arduino has disconnected or not. By default True.
+            - `exit_on_disconnect` (bool) (optional): If the program should exit if Arduino disconnected. Does NOT work on Windows. By default False.
             - `kwargs`: Will be passed to pyserial.
 
         Returns: nothing
@@ -81,6 +97,10 @@ class BaseConnection:
 
         self.rcv_queue = []  # stores previous received strings and timestamps, tuple (timestamp, str)
         self.to_send = [] # queue data to send
+
+        if (handle_disconnect):
+            # start disconnect thread
+            disconnect.disconnect_handler(self, exit_on_fail=bool(exit_on_disconnect))
 
     def __repr__(self) -> str:
         """Returns string representation of self
