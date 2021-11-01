@@ -193,7 +193,7 @@ class BaseConnection:
         - `*args`: Everything that is to be sent, each as a separate parameter. Must have at least one parameter.
         - `check_type` (bool) (optional): If types in *args should be checked. By default True.
         - `ending` (str) (optional): The ending of the bytes object to be sent through the Serial port. By default a carraige return ("\\r\\n")
-        - `concatenate` (str) (optional): What the strings in args should be concatenated by
+        - `concatenate` (str) (optional): What the strings in args should be concatenated by. By default a space `' '`
 
         Returns:
         - `true` on success (everything has been sent through)
