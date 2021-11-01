@@ -25,7 +25,7 @@ class ConnectException(Exception):
 class BaseConnection:
     """A base connection object with a Serial or COM port.
 
-    If you want to talk with the Arduino via Serial, 
+    If you want to communicate via Serial, it is recommended to
     either directly use `pyserial` directly or use the `Connection` class.
 
     How this works is that it creates a pyserial object given the parameters, which opens the connection. 
@@ -73,8 +73,8 @@ class BaseConnection:
             Note that this does NOT mean that it will be able to send every `send_interval` seconds. It means that the `send()` method will 
             exit if the interval has not reached `send_interval` seconds. NOT recommended to set to small values. By default 1.
             - `queue_size` (int) (optional): The number of previous receives that the program should keep. Must be nonnegative. By default 256.
-            - `handle_disconnect` (bool) (optional): Whether the program should spawn a thread to detect if the Arduino has disconnected or not. By default True.
-            - `exit_on_disconnect` (bool) (optional): If the program should exit if Arduino disconnected. Does NOT work on Windows. By default False.
+            - `handle_disconnect` (bool) (optional): Whether the program should spawn a thread to detect if the Serial port has disconnected or not. By default True.
+            - `exit_on_disconnect` (bool) (optional): If the program should exit if Serial port disconnected. Does NOT work on Windows. By default False.
             - `kwargs`: Will be passed to pyserial.
 
         Returns: nothing
