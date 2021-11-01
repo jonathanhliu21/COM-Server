@@ -19,8 +19,8 @@ class Connection(base_connection.BaseConnection):
     when communicating with the classes.
     
     Some of the methods include:
-    - `receive_str()`: Receives as a string rather than bytes object
     - `get()`: Gets first response after the time that the method was called.
+    - `receive_str()`: Receives as a string rather than bytes object
     - `get_first_response()`: Gets the first response from the Serial port after sending something (breaks when timeout reached)
     - `send_for_response()`: Continues sending something until the connection receives a given response (breaks when timeout reached)
     - `wait_for_response()`: Waits until the connection receives a given response (breaks when timeout reached)
@@ -65,6 +65,40 @@ class Connection(base_connection.BaseConnection):
                 return res.strip()
             else: 
                 return res
+    
+    def get(self, given_type: t.Type, read_until: t.Union[str, None] = None, strip: bool = True) -> t.Union[None, bytes, str]:
+        """Gets first response after this method is called.
+
+        This method differs from `receive()` because `receive()` returns
+        the last element of the receive buffer, which could contain objects
+        that were received before this function was called. This function
+        waits for something to be received after it is called until it either
+        gets the object or until the timeout is reached.
+
+        Parameters:
+        - `given_type` (type): either `bytes` or `str`, indicating which one to return. 
+        Will raise exception if type is invalid, REGARDLESS of `self.exception`.
+        - `read_until` (str, None) (optional): Will return a string that terminates with `read_until`, excluding `read_until`. 
+        For example, if the string was `"abcdefg123456\\n"`, and `read_until` was `\\n`, then it will return `"abcdefg123456"`.
+        If there are multiple occurrences of `read_until`, then it will return the string that terminates with the first one.
+        If `read_until` is None or it doesn't exist, the it will return the entire string. By default None.
+        - `strip` (bool) (optional): If True, then strips spaces and newlines from either side of the processed string before returning.
+        If False, returns the processed string in its entirety. By default True.
+
+        Returns:
+        - None if no data received (timeout reached)
+        - A `bytes` object indicating the data received if `type` is `bytes`
+        """
+
+        call_time = time.time() # time that the function was called
+
+        if (given_type != str and given_type != bytes):
+            raise TypeError("given_type must be str or bytes")
+        
+        if (given_type == str):
+            return self._get_str(call_time, read_until=read_until, strip=strip)
+        else:
+            return self._get_bytes(call_time)
 
     def receive_str(self, num_before: int = 0, read_until: t.Union[str, None] = None, strip: bool = True) -> "t.Union[None, tuple[float, str]]":
         """Returns the most recent receive object as a string.
@@ -273,7 +307,7 @@ class Connection(base_connection.BaseConnection):
 
             time.sleep(0.01)
  
-    def all_ports(self, **kwargs) -> t.Generator:
+    def all_ports(self, **kwargs) -> t.Any:
         """Lists all available Serial ports.
         
         Calls `tools.all_ports()`, which itself calls `serial.tools.list_ports.comports()`.
@@ -300,6 +334,52 @@ class Connection(base_connection.BaseConnection):
                 return False
         
         return True
+    
+    def _get_str(self, _call_time: float, read_until: t.Union[None, str], strip: bool = True) -> t.Union[str, None]:
+        """
+        `get()` but for strings
+        """
+
+        r = self.receive_str(read_until=read_until, strip=strip)
+
+        if (r is None):
+            return None
+
+        st_t = time.time() # for timeout
+
+        while (r[0] < _call_time):
+            if (time.time() - st_t > self.timeout):
+                # timeout reached
+                return None 
+
+            r = self.receive_str(read_until=read_until, strip=strip)
+            time.sleep(0.01)
+        
+        # r received
+        return r[1]
+    
+    def _get_bytes(self, _call_time: float) -> t.Union[bytes, None]:
+        """
+        `get()` but for bytes
+        """
+
+        r = self.receive()
+
+        if (r is None):
+            return None
+
+        st_t = time.time() # for timeout
+
+        while (r[0] < _call_time):
+            if (time.time() - st_t > self.timeout):
+                # timeout reached
+                return None 
+
+            r = self.receive()
+            time.sleep(0.01)
+        
+        # r received
+        return r[1]
     
     def _wait_for_response_str(self, response: str, timestamp: float, read_until: t.Union[str, None], strip: bool) -> bool:
         """

@@ -10,7 +10,7 @@ import typing as t
 import serial
 import serial.tools.list_ports
 
-def all_ports(**kwargs) -> t.Generator:
+def all_ports(**kwargs) -> t.Any:
     """Gets all ports from serial interface.
 
     Gets ports from Serial interface by calling `serial.tools.list_ports.comports()`.
