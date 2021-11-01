@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 """
-
+Contains implementation of connection object.
 """
 
 import time
@@ -27,7 +27,6 @@ class Connection(base_connection.BaseConnection):
 
     Other methods can generally help the user with interacting with the classes:
     - `all_ports()`: Lists all available COM ports.
-    - `run_func()`: A method that takes in a `main` method and calls it repeatedly with a delay.
     """
 
     def conv_bytes_to_str(self, rcv: bytes, read_until: t.Union[str, None] = None, strip: bool = True) -> t.Union[str, None]:
