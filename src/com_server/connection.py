@@ -8,8 +8,8 @@ Contains implementation of connection object.
 import time
 import typing as t
 
-from . import base_connection
-from . import tools
+from . import base_connection, tools
+
 
 class Connection(base_connection.BaseConnection):
     """A more user-friendly interface with the Serial port.
@@ -17,7 +17,7 @@ class Connection(base_connection.BaseConnection):
     In addition to the four basic methods (see `BaseConnection`),
     it makes other methods that may also be useful to the user
     when communicating with the classes.
-    
+
     Some of the methods include:
     - `get()`: Gets first response after the time that the method was called.
     - `receive_str()`: Receives as a string rather than bytes object
@@ -52,7 +52,7 @@ class Connection(base_connection.BaseConnection):
         res = rcv.decode("utf-8")
 
         try:
-            ret = res[0:res.index(str(read_until))] # sliced string
+            ret = res[0:res.index(str(read_until))]  # sliced string
             if (strip):
                 return ret.strip()
             else:
@@ -62,9 +62,9 @@ class Connection(base_connection.BaseConnection):
             # read_until does not exist or it is None, so return the entire thing
             if (strip):
                 return res.strip()
-            else: 
+            else:
                 return res
-    
+
     def get(self, given_type: t.Type, read_until: t.Union[str, None] = None, strip: bool = True) -> t.Union[None, bytes, str]:
         """Gets first response after this method is called.
 
@@ -89,11 +89,11 @@ class Connection(base_connection.BaseConnection):
         - A `bytes` object indicating the data received if `type` is `bytes`
         """
 
-        call_time = time.time() # time that the function was called
+        call_time = time.time()  # time that the function was called
 
         if (given_type != str and given_type != bytes):
             raise TypeError("given_type must be str or bytes")
-        
+
         if (given_type == str):
             return self._get_str(call_time, read_until=read_until, strip=strip)
         else:
@@ -111,7 +111,7 @@ class Connection(base_connection.BaseConnection):
                 - 0 will return the most recent received data
                 - 1 will return the 2nd most recent received data
                 - ...
-        
+
         Note that the data will be read as ALL the data available in the Serial port,
         or `Serial.read_all()`.
 
@@ -134,16 +134,17 @@ class Connection(base_connection.BaseConnection):
         # checks if connection is open.
         if (not self._check_connect()):
             return None
-        
+
         rcv_tuple = self.receive(num_before=num_before)
         if (rcv_tuple is None):
             # return if None
             return None
 
-        str_data = self.conv_bytes_to_str(rcv_tuple[1], read_until=read_until, strip=strip)
+        str_data = self.conv_bytes_to_str(
+            rcv_tuple[1], read_until=read_until, strip=strip)
 
         return (rcv_tuple[0], str_data)
-    
+
     def get_first_response(self, *args: "tuple[t.Any]", is_bytes: bool = True, check_type: bool = True, ending: str = "\r\n", concatenate: str = ' ', read_until: t.Union[str, None] = None, strip: bool = True) -> t.Union[bytes, str, None]:
         """Gets the first response from the Serial port after sending something.
 
@@ -175,16 +176,17 @@ class Connection(base_connection.BaseConnection):
         if (not self._check_connect()):
             return None
 
-        send_time = time.time() # tracks send time
-        send_success = self.send(*args, check_type=check_type, ending=ending, concatenate=concatenate)
+        send_time = time.time()  # tracks send time
+        send_success = self.send(
+            *args, check_type=check_type, ending=ending, concatenate=concatenate)
 
         # for receiving string or bytes
         rcv_func = self.receive if is_bytes else self.receive_str
-        
+
         if (not send_success):
             return None
 
-        r = None 
+        r = None
         if (is_bytes):
             r = rcv_func()
         else:
@@ -199,7 +201,7 @@ class Connection(base_connection.BaseConnection):
                 # reached timeout
 
                 return None
-            
+
             if (is_bytes):
                 r = rcv_func()
             else:
@@ -207,9 +209,9 @@ class Connection(base_connection.BaseConnection):
                 r = rcv_func(read_until=read_until)
 
             time.sleep(0.05)
-        
+
         return r[1]
-    
+
     def wait_for_response(self, response: t.Union[str, bytes], after_timestamp: float = -1.0, read_until: t.Union[str, None] = None, strip: bool = True) -> bool:
         """Waits until the connection receives a given response.
 
@@ -279,9 +281,9 @@ class Connection(base_connection.BaseConnection):
 
         if (not self._check_connect()):
             return False
-        
+
         try:
-            self.last_sent_outer # this is for the interval for calling send_for_response
+            self.last_sent_outer  # this is for the interval for calling send_for_response
         except AttributeError:
             # declare variable if not declared yet
             self.last_sent_outer = 0.0
@@ -291,24 +293,25 @@ class Connection(base_connection.BaseConnection):
             return False
         self.last_sent_outer = time.time()
 
-        st_t = time.time() # for timeout
+        st_t = time.time()  # for timeout
 
         while (True):
             if (time.time() - st_t > self.timeout):
                 # timeout reached
-                return False 
-            
-            self.send(*args, check_type=check_type, ending=ending, concatenate=concatenate)
+                return False
+
+            self.send(*args, check_type=check_type,
+                      ending=ending, concatenate=concatenate)
             send_t = time.time()
 
             if (self.wait_for_response(response=response, after_timestamp=send_t, read_until=read_until, strip=strip)):
                 return True
 
             time.sleep(0.01)
- 
+
     def all_ports(self, **kwargs) -> t.Any:
         """Lists all available Serial ports.
-        
+
         Calls `tools.all_ports()`, which itself calls `serial.tools.list_ports.comports()`.
         For more information, see [here](https://pyserial.readthedocs.io/en/latest/tools.html#module-serial.tools.list_ports).
 
@@ -318,7 +321,7 @@ class Connection(base_connection.BaseConnection):
         """
 
         return tools.all_ports(**kwargs)
-    
+
     def _check_connect(self) -> bool:
         """
         Checks if a connection has been established.
@@ -327,13 +330,14 @@ class Connection(base_connection.BaseConnection):
 
         if (self.conn is None):
             if (self.exception):
-                raise base_connection.ConnectException("No connection established")
-            
+                raise base_connection.ConnectException(
+                    "No connection established")
+
             else:
                 return False
-        
+
         return True
-    
+
     def _get_str(self, _call_time: float, read_until: t.Union[None, str], strip: bool = True) -> t.Union[str, None]:
         """
         `get()` but for strings
@@ -344,19 +348,19 @@ class Connection(base_connection.BaseConnection):
         if (r is None):
             return None
 
-        st_t = time.time() # for timeout
+        st_t = time.time()  # for timeout
 
         while (r[0] < _call_time):
             if (time.time() - st_t > self.timeout):
                 # timeout reached
-                return None 
+                return None
 
             r = self.receive_str(read_until=read_until, strip=strip)
             time.sleep(0.01)
-        
+
         # r received
         return r[1]
-    
+
     def _get_bytes(self, _call_time: float) -> t.Union[bytes, None]:
         """
         `get()` but for bytes
@@ -367,25 +371,25 @@ class Connection(base_connection.BaseConnection):
         if (r is None):
             return None
 
-        st_t = time.time() # for timeout
+        st_t = time.time()  # for timeout
 
         while (r[0] < _call_time):
             if (time.time() - st_t > self.timeout):
                 # timeout reached
-                return None 
+                return None
 
             r = self.receive()
             time.sleep(0.01)
-        
+
         # r received
         return r[1]
-    
+
     def _wait_for_response_str(self, response: str, timestamp: float, read_until: t.Union[str, None], strip: bool) -> bool:
         """
         `self._wait_for_response` but for strings
         """
 
-        call_time = time.time() # call timestamp, for timeout
+        call_time = time.time()  # call timestamp, for timeout
 
         r = self.receive_str(read_until=read_until, strip=strip)
 
@@ -393,12 +397,11 @@ class Connection(base_connection.BaseConnection):
             # timestamp needs to be greater than start of method and response needs to match
             if (time.time() - call_time > self.timeout):
                 # timeout reached
-                return False 
-
+                return False
 
             r = self.receive_str(read_until=read_until, strip=strip)
             time.sleep(0.01)
-        
+
         # correct response has been received
         return True
 
@@ -407,8 +410,8 @@ class Connection(base_connection.BaseConnection):
         `self._wait_for_response` but for bytes
         """
 
-        call_time = time.time() # call timestamp, for timeout
-    
+        call_time = time.time()  # call timestamp, for timeout
+
         r = self.receive()
 
         while (r is None or r[0] < timestamp or r[1] != response):
@@ -416,9 +419,9 @@ class Connection(base_connection.BaseConnection):
             if (time.time() - call_time > self.timeout):
                 # timeout reached
                 return False
-            
+
             r = self.receive()
             time.sleep(0.01)
-        
+
         # correct response has been received
         return True
