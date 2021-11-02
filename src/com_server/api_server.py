@@ -33,10 +33,17 @@ class Base_Rest_Connection:
         If you want custom endpoints that do custom things with a `Connection`
         object, then you need a class that extends this class which contains 
         methods that have the `add_endpoint` decorator with the endpoint. 
-        The method needs a parameter with the connection object and a nested class 
+        The method needs a parameter with a declared `connection` object and a nested class 
         that is implemented like the `flask_restful` classes. See [here](https://flask-restful.readthedocs.io)
         for more info on how to implement those classes and `flask_restful`
-        in general. 
+        in general. The method then needs to return the class.
+
+        Another way you can create custom endpoints is by initializing this
+        base class with an endpoint parameter, then adding the `add_endpoint`
+        decorator to a function that has a parameter with a declared 
+        `connection` object and a nested class that is implemented like
+        `flask_restful` classes. See link above for more info. The function then
+        needs to return the class.
 
         Note that the functions cannot have methods `__init__()`,
         as that is reserved for initalizing with a connection object
