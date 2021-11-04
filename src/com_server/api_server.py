@@ -75,7 +75,7 @@ class RestApiHandler:
 
         # other
         self.all_endpoints = [] # list of all endpoints in tuple (endpoint str, resource class)
-        self.registered = False
+        self.registered = False # keeps track if registered or not
     
     def add_endpoint(self, endpoint: str) -> t.Callable:
         """Decorator that adds an endpoint
@@ -164,7 +164,7 @@ class RestApiHandler:
                             return resource.delete(**args, **kwargs)
                 
             # append to list of all endpoints
-            self.all_endpoints.append((endpoint, resource))
+            self.all_endpoints.append((endpoint, Res))
 
             return func
         
@@ -184,6 +184,10 @@ class RestApiHandler:
         """
 
         self.conn.connect() # connection Connection obj
+
+        # register all endpoints to flask_restful
+        for endpoint, resource in self.all_endpoints:
+            self.api.add_resource(resource, endpoint)
 
         self.app.run(**kwargs) 
 
