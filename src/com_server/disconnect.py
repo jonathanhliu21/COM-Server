@@ -53,8 +53,7 @@ def disconnect_handler(obj: t.Any, exit_on_fail: bool) -> None:
 
     # detect Windows for disconnect, as interrupting main thread is not supported
     if (os.name == "nt"):
-        if (exit_on_fail):
-            raise EnvironmentError("exit_on_fail is not supported on Windows")
+        exit_on_fail = False
 
     threading.Thread(target=_disc_thread, daemon=True, args=(
         obj, exit_on_fail)).start()  # start thread
