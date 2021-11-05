@@ -17,7 +17,7 @@ from . import base_connection, connection # for typing
 class EndpointExistsException(Exception):
     pass
 
-class ConnectionResource:
+class ConnectionResource(flask_restful.Resource):
     """A custom resource object that is built to be used with `RestApiHandler`.
 
     This class is to be extended and used like the `Resource` class.
@@ -75,7 +75,7 @@ class RestApiHandler:
 
         # other
         self.all_endpoints = [] # list of all endpoints in tuple (endpoint str, resource class)
-        self.registered = False # keeps track if registered or not
+        self.registered = None # keeps track of who is registered; None if not registered
     
     def add_endpoint(self, endpoint: str) -> t.Callable:
         """Decorator that adds an endpoint
@@ -91,6 +91,13 @@ class RestApiHandler:
         For more information, see the `flask_restful` [documentation](https://flask-restful.readthedocs.io).
 
         Note that duplicate endpoints will result in an exception.
+        If there are two classes of the same name, even in different
+        endpoints, the program will append underscores to the name
+        until there are no more repeats. For example, if one function
+        returned a class named "Hello" and another function returned a
+        class also named "Hello", then the second class name will be 
+        changed to "Hello_". This happens because `flask_restful` 
+        interprets duplicate class names as duplicate endpoints.
 
         Parameters:
         - `endpoint`: The endpoint to the resource. Cannot repeat.
@@ -107,9 +114,24 @@ class RestApiHandler:
             if (endpoint in check):
                 raise EndpointExistsException(f"Endpoint \"{endpoint}\" already exists")
             
+            # check that resource is not None, if it is, did not return class
+            if (resource is None):
+                raise TypeError("function that the decorator is above must return a class")
+            
             # check if resource is subclass of ConnectionResource
             if (not issubclass(resource, ConnectionResource)):
                 raise TypeError("resource has to extend com_server.ConnectionResource")
+            
+            # check if resource name is taken, if so, change it (flask_restful interperets duplicate names as multiple endpoints)
+            names = [i.__name__ for _, i in self.all_endpoints]
+            if (resource.__name__ in names):
+                s = f"{resource.__name__}"
+
+                while (s in names):
+                    # append underscore until no matching 
+                    s += "_"
+                
+                resource.__name__ = s
 
         def _outer(func: t.Callable) -> t.Callable:
             """Decorator"""
@@ -119,54 +141,60 @@ class RestApiHandler:
             # checks
             _checks(resource) # will raise exception if fails
 
-            class Res(flask_restful.Resource):
-                """The true flask_restful resource object; checks if connected before handling request."""
+            # req methods; _self is needed as these will be part of class functions
+            def _get(_self, *args, **kwargs):
+                if (not self.registered):
+                    # respond with 400 if not registered
+                    flask_restful.abort(400, message="Not registered; only one connection at a time")
+                else:
+                    return resource._get(**args, **kwargs)
+            
+            def _post(_self, *args, **kwargs):
+                if (not self.registered):
+                    # respond with 400 if not registered
+                    flask_restful.abort(400, message="Not registered; only one connection at a time")
+                else:
+                    return resource._post(**args, **kwargs)
+        
+            def _head(_self, *args, **kwargs):
+                if (not self.registered):
+                    # respond with 400 if not registered
+                    flask_restful.abort(400, message="Not registered; only one connection at a time")
+                else:
+                    return resource._head(**args, **kwargs)
 
-                # see if resource has attributes and makes new responses
-                if (hasattr(resource, "get")):
-                    def get(_self, *args, **kwargs):
-                        if (not self.registered):
-                            # respond with 400 if not registered
-                            flask_restful.abort(400, message="Not registered; only one connection at a time")
-                        else:
-                            return resource.get(**args, **kwargs)
+            def _put(_self, *args, **kwargs):
+                if (not self.registered):
+                    # respond with 400 if not registered
+                    flask_restful.abort(400, message="Not registered; only one connection at a time")
+                else:
+                    return resource._put(**args, **kwargs)
+        
+            def _delete(_self, *args, **kwargs):
+                if (not self.registered):
+                    # respond with 400 if not registered
+                    flask_restful.abort(400, message="Not registered; only one connection at a time")
+                else:
+                    return resource._delete(**args, **kwargs)
                     
-                if (hasattr(resource, "post")):
-                    def post(_self, *args, **kwargs):
-                        if (not self.registered):
-                            # respond with 400 if not registered
-                            flask_restful.abort(400, message="Not registered; only one connection at a time")
-                        else:
-                            return resource.post(**args, **kwargs)
-                
-                if (hasattr(resource, "head")):
-                    def head(_self, *args, **kwargs):
-                        if (not self.registered):
-                            # respond with 400 if not registered
-                            flask_restful.abort(400, message="Not registered; only one connection at a time")
-                        else:
-                            return resource.head(**args, **kwargs)
-
-                if (hasattr(resource, "put")):
-                    def put(_self, *args, **kwargs):
-                        if (not self.registered):
-                            # respond with 400 if not registered
-                            flask_restful.abort(400, message="Not registered; only one connection at a time")
-                        else:
-                            return resource.put(**args, **kwargs)
-                
-                if (hasattr(resource, "delete")):
-                    def delete(_self, *args, **kwargs):
-                        if (not self.registered):
-                            # respond with 400 if not registered
-                            flask_restful.abort(400, message="Not registered; only one connection at a time")
-                        else:
-                            return resource.delete(**args, **kwargs)
-                
-            # append to list of all endpoints
-            self.all_endpoints.append((endpoint, Res))
-
-            return func
+            # replace functions in class with new functions that check if registered
+            if (hasattr(resource, "get")):
+                resource._get = resource.get
+                resource.get = _get
+            if (hasattr(resource, "post")):
+                resource._post = resource.post
+                resource.post = _post
+            if (hasattr(resource, "head")):
+                resource._head = resource.head
+                resource.head = _head
+            if (hasattr(resource, "put")):
+                resource._put = resource.put
+                resource.put = _put
+            if (hasattr(resource, "delete")):
+                resource._delete = resource.delete
+                resource.delete = _delete
+             
+            self.all_endpoints.append((endpoint, resource))
         
         return _outer
     
