@@ -76,6 +76,10 @@ class RestApiHandler:
         # other
         self.all_endpoints = [] # list of all endpoints in tuple (endpoint str, resource class)
         self.registered = None # keeps track of who is registered; None if not registered
+
+        # add /register and /recall endpoints
+        self.api.add_resource(self._register(), "/register")
+        self.api.add_resource(self._recall(), "/recall")
     
     def add_endpoint(self, endpoint: str) -> t.Callable:
         """Decorator that adds an endpoint
@@ -132,6 +136,7 @@ class RestApiHandler:
                     s += "_"
                 
                 resource.__name__ = s
+        
 
         def _outer(func: t.Callable) -> t.Callable:
             """Decorator"""
@@ -143,39 +148,44 @@ class RestApiHandler:
 
             # req methods; _self is needed as these will be part of class functions
             def _get(_self, *args, **kwargs):
-                if (not self.registered):
+                ip = flask.request.remote_addr
+                if (not self.registered or self.registered != ip):
                     # respond with 400 if not registered
                     flask_restful.abort(400, message="Not registered; only one connection at a time")
                 else:
-                    return resource._get(**args, **kwargs)
+                    return resource._get(_self, *args, **kwargs) # resource.[METHOD]() will be replaced with resource._[METHOD] below
             
             def _post(_self, *args, **kwargs):
-                if (not self.registered):
+                ip = flask.request.remote_addr
+                if (not self.registered or self.registered != ip):
                     # respond with 400 if not registered
                     flask_restful.abort(400, message="Not registered; only one connection at a time")
                 else:
-                    return resource._post(**args, **kwargs)
+                    return resource._post(_self, *args, **kwargs)
         
             def _head(_self, *args, **kwargs):
-                if (not self.registered):
+                ip = flask.request.remote_addr
+                if (not self.registered or self.registered != ip):
                     # respond with 400 if not registered
                     flask_restful.abort(400, message="Not registered; only one connection at a time")
                 else:
-                    return resource._head(**args, **kwargs)
+                    return resource._head(_self, *args, **kwargs)
 
             def _put(_self, *args, **kwargs):
-                if (not self.registered):
+                ip = flask.request.remote_addr
+                if (not self.registered or self.registered != ip):
                     # respond with 400 if not registered
                     flask_restful.abort(400, message="Not registered; only one connection at a time")
                 else:
-                    return resource._put(**args, **kwargs)
+                    return resource._put(_self, *args, **kwargs)
         
             def _delete(_self, *args, **kwargs):
-                if (not self.registered):
+                ip = flask.request.remote_addr
+                if (not self.registered or self.registered != ip):
                     # respond with 400 if not registered
                     flask_restful.abort(400, message="Not registered; only one connection at a time")
                 else:
-                    return resource._delete(**args, **kwargs)
+                    return resource._delete(_self, *args, **kwargs)
                     
             # replace functions in class with new functions that check if registered
             if (hasattr(resource, "get")):
@@ -220,3 +230,48 @@ class RestApiHandler:
         self.app.run(**kwargs) 
 
         self.conn.disconnect() # disconnect if stop running
+
+    def _register(self) -> t.Type[ConnectionResource]:
+        """
+        `/register` built-in endpoint
+        """
+
+        class _Register(ConnectionResource):
+            def get(_self):
+                ip = flask.request.remote_addr
+                
+                # check if already registered
+                if (self.registered):
+                    if (self.registered == ip):
+                        flask_restful.abort(400, message="Double registration")
+                    else:
+                        flask_restful.abort(400, message="Not registered; only one connection at a time")
+                
+                self.registered = ip
+
+                return {"message": "OK"}
+        
+        return _Register
+    
+    def _recall(self) -> t.Type[ConnectionResource]:
+        """
+        `/recall` built-in endpoint
+        """
+
+        class _Recall(ConnectionResource):
+            def get(_self):
+                ip = flask.request.remote_addr
+
+                # check if not registered
+                if (not self.registered):
+                    flask_restful.abort(400, message="Nothing has been registered")
+                
+                # check if ip matches
+                if (ip != self.registered):
+                    flask_restful.abort(400, message="Not same user as one in session") 
+                
+                self.registered = None
+                
+                return {"message": "OK"}
+            
+        return _Recall
