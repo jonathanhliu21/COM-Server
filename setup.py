@@ -4,5 +4,8 @@
 from setuptools import setup
 
 setup(
-    install_requires=["pyserial>=3.5"]
+    install_requires=[
+        "pyserial>=3.5",
+        "flask_restful>=0.3.9"
+    ]
 )
