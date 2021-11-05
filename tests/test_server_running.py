@@ -13,8 +13,19 @@ import requests
 from com_server import (BaseConnection, Connection, ConnectionResource,
                         RestApiHandler)
 
-try:
-    requests.get("http://0.0.0.0:8080")
-except requests.exceptions.ConnectionError:
-    pytestmark = pytest.mark.skip(reason="Server not launched. Make sure it is running on 0.0.0.0 with port 8080")
+SERVER = "http://0.0.0.0:8080"
 
+try:
+    requests.get(SERVER)
+except requests.exceptions.ConnectionError:
+    pytestmark = pytest.mark.skip(reason="Server not launched. Make sure it is running on 0.0.0.0 with port 8080, or run \"python3 tests/start_server.py\".")
+
+requests.get(SERVER+"/recall")
+
+def test_register() -> None:
+    r = requests.get(SERVER + "/register")
+    assert r.status_code == 200
+
+def test_unregister() -> None:
+    r = requests.get(SERVER + "/recall")
+    assert r.status_code == 200
