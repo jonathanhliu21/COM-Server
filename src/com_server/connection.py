@@ -259,7 +259,7 @@ class Connection(base_connection.BaseConnection):
         If given a string, then compares the string to the response after it is decoded in `utf-8`.
         If given a bytes, then directly compares the bytes object to the response.
         If given anything else, converts to string.
-        - `after_timestamp` (float): Look for responses that came after given time as the UNIX timestamp.
+        - `after_timestamp` (float) (optional): Look for responses that came after given time as the UNIX timestamp.
         By default the time that the method was called, or `time.time()`
 
         These parameters only apply if `response` is a string:
