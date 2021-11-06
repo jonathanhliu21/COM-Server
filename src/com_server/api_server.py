@@ -39,35 +39,27 @@ class RestApiHandler:
     will be used to ensure that there is only one connection at a time. Finally,
     resource classes have to extend the custom `ConnectionResource` class
     from this library, not the `Resource` from `flask_restful`.
+
+    Register and recall endpoints:
+    - `/register` (GET): An endpoint to register an IP; other endpoints will result in `400` status code
+    if they are accessed without accessing this first; if an IP is already registered then this will
+    result in `400`; IPs must call this first before accessing serial port 
+    - `/recall` (GET): After registered, can call `/recall` to "free" IP from server, allowing other IPs to 
+    call `/register` to use the serial port
     """
 
-    def __init__(self, conn: t.Union[t.Type[base_connection.BaseConnection], t.Type[connection.Connection]], include_builtins: bool = True, **kwargs) -> None:
+    def __init__(self, conn: t.Union[t.Type[base_connection.BaseConnection], t.Type[connection.Connection]], **kwargs) -> None:
         """Constructor for class
 
         Parameters:
         - `conn` (`Connection`): The `Connection` object the API is going to be associated with. 
-        - `include_builtins` (bool) (optional): If the built-in endpoints should be included. If True, then 
-        those endpoints cannot be used as custom endpoints. By default True. The built-in endpoints include:
-            - `/register` (GET): An endpoint to register an IP; other endpoints will result in `400` status code
-            if they are accessed without accessing this first; if an IP is already registered then this will
-            result in `400`; IPs must call this first before accessing serial port 
-            - `/recall` (GET): After registered, can call `/recall` to "free" IP from server, allowing other IPs to 
-            call `/register` to use the serial port
-            - `/send` (POST): Send something through the serial port using `Connection.send()` with parameters in request; equivalent to `Connection.send()`
-            - `/receive` (GET): Respond with the most recent received string from the serial port; equivalent to `Connection.receive_str()`
-            - `/get` (GET): Respond with the first string from serial port after request; equivalent to `Connection.get(str)`
-            - `/send/get_first` (POST): Responds with the first string response from the serial port after sending data, with data and parameters in request; equivalent to `Connection.get_first_response()`
-            - `/get/wait` (POST): Waits until connection receives string data given in request; different response for success and failure; equivalent to `Connection.wait_for_response()`
-            - `/send/get` (POST): Continues sending something until connection receives data given in request; different response for success and failure; equivalent to `Connection.send_for_response()`
-            - `/list_ports` (GET): Lists all available Serial ports
         
-        Note that `/register` and `/recall` is reserved and cannot be used, even if `include_builtins` is False.
+        Note that `/register` and `/recall` is reserved and cannot be used ever in subclasses.
         - `**kwargs`, will be passed to `flask_restful.Api()`
         """
 
         # from above
         self.conn = conn
-        self.include_builtins = include_builtins
 
         # flask, flask_restful
         self.app = flask.Flask(__name__)
@@ -105,9 +97,7 @@ class RestApiHandler:
 
         Parameters:
         - `endpoint`: The endpoint to the resource. Cannot repeat.
-        Built-in endpoints such as `/send` and `/receive` (see list in `self.__init__()`)
-        cannot be used if `include_builtins` is True. Doing so will result in error.
-        `/register` and `/recall` cannot be used at all, even if `include_builtins` is False.
+        `/register` and `/recall` cannot be used.
         """
 
         def _checks(resource: t.Any) -> None:
@@ -233,7 +223,21 @@ class RestApiHandler:
 
     def _register(self) -> t.Type[ConnectionResource]:
         """
-        `/register` built-in endpoint
+        Registers an IP to the server. Note that this is IP-based, not
+        process based, so if there are multiple process on the same computer
+        connecting to this, the server will not be able to detect it and may
+        lead to unexpected behavior.
+
+        Method: GET
+
+        Arguments:
+            None
+        
+        Responses:
+        - `200 OK`: `{"message": "OK"}` if successful
+        - `400 Bad Request`: 
+            - `{"message": "Double registration"}` if this endpoint is reached by an IP while it is registered
+            - `{"message": "Not registered; only one connection at a time"}` if this endpoint is reached while another IP is registered
         """
 
         class _Register(ConnectionResource):
@@ -255,7 +259,18 @@ class RestApiHandler:
     
     def _recall(self) -> t.Type[ConnectionResource]:
         """
-        `/recall` built-in endpoint
+        Unregisters an IP from a server and allows other IPs to use it.
+
+        Method: GET
+
+        Arguments:
+            None
+        
+        Responses:
+        - `200 OK`: `{"message": "OK}` if successful
+        - `400 Bad Request`:
+            - `{"message": "Nothing has been registered"}` if try to call without any IP registered
+            - `{"message": "Not same user as one in session"}` if called with different IP as the one registered
         """
 
         class _Recall(ConnectionResource):
