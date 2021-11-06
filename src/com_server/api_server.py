@@ -198,6 +198,17 @@ class RestApiHandler:
         
         return _outer
     
+    def add_resource(self, *args, **kwargs) -> None:
+        """Calls `flask_restful.add_resource`. Allows adding endpoints
+        without needing a connection.
+
+        See [here](https://flask-restful.readthedocs.io/en/latest/api.html#flask_restful.Api.add_resource)
+        for more info on `add_resource` and [here](https://flask-restful.readthedocs.io)
+        for more info on `flask_restful` in general. 
+        """
+
+        return self.api.add_resource(*args, **kwargs)
+    
     def run(self, **kwargs) -> None:
         """Launches the Flask app.
 
