@@ -164,7 +164,7 @@ class BaseConnection:
 
         If the connection is open and the interval between sending is large enough, 
         then concatenates args with a space (or what was given in `concatenate`) in between them, 
-        encodes to `utf-8` `bytes` object, adds carriage return to the end ("\\r\\n") (or what was given as `ending`), then sends.
+        encodes to `utf-8` `bytes` object, adds carriage return + newline to the end ("\\r\\n") (or what was given as `ending`), then sends.
 
         Note that the data does not send immediately and instead will be added to a queue. 
         The queue size limit is 65536 byte objects. Anything more that is trying to be sent will not be added to the queue.
@@ -192,7 +192,7 @@ class BaseConnection:
         Parameters:
         - `*args`: Everything that is to be sent, each as a separate parameter. Must have at least one parameter.
         - `check_type` (bool) (optional): If types in *args should be checked. By default True.
-        - `ending` (str) (optional): The ending of the bytes object to be sent through the Serial port. By default a carraige return ("\\r\\n")
+        - `ending` (str) (optional): The ending of the bytes object to be sent through the Serial port. By default a carraige return + newline ("\\r\\n")
         - `concatenate` (str) (optional): What the strings in args should be concatenated by. By default a space `' '`
 
         Returns:
