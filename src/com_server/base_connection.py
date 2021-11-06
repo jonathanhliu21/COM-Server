@@ -103,7 +103,8 @@ class BaseConnection:
             disconnect.disconnect_handler(self, exit_on_fail=bool(exit_on_disconnect))
 
     def __repr__(self) -> str:
-        """Returns string representation of self
+        """
+        Returns string representation of self
         """
 
         return f"Connection<id=0x{hex(id(self))}, " \
@@ -327,7 +328,8 @@ class BaseConnection:
             time.sleep(0.01)  # rest CPU
 
     def _reset(self) -> None:
-        """Resets all IO variables
+        """
+        Resets all IO variables
         """
 
         self.last_sent = time.time()  # prevents from sending too rapidly
