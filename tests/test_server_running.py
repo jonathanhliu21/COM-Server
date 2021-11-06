@@ -12,7 +12,7 @@ import sys
 import pytest
 import requests
 from com_server import (BaseConnection, Connection, ConnectionResource,
-                        RestApiHandler)
+                        RestApiHandler, Builtins)
 
 SERVER = "http://0.0.0.0:8080"
 
@@ -32,3 +32,14 @@ def test_register_after_registered() -> None:
 def test_unregister() -> None:
     r = requests.get(SERVER + "/recall")
     assert r.status_code == 200
+
+if (__name__ == "__main__"):
+    # pytest should not run this
+    
+    conn = Connection(115200, "/dev/ttyUSB0")
+    handler = RestApiHandler(conn)
+
+    builtins = Builtins(handler)
+
+    handler.run(host='0.0.0.0', port=8080)
+
