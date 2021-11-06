@@ -12,6 +12,8 @@ if (__name__ == "__main__"):
     conn = com_server.Connection(115200, "/dev/ttyUSB0")
     handler = com_server.RestApiHandler(conn)
 
+    builtins = com_server.Builtins(handler)
+
     @handler.add_endpoint("/hello_world")
     def hello_world_test(conn):
         class Hello_World_(com_server.ConnectionResource):
