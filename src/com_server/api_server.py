@@ -73,6 +73,13 @@ class RestApiHandler:
         self.api.add_resource(self._register(), "/register")
         self.api.add_resource(self._recall(), "/recall")
     
+    def __repr__(self) -> str:
+        """Printing the API object"""
+
+        return f"RestApiHandler<id={hex(id(self))}>" \
+            f"{{app={self.app}, api={self.api}, conn={self.conn}, " \
+            f"registered={self.registered}, endpoints={self.all_endpoints}}}"
+    
     def add_endpoint(self, endpoint: str) -> t.Callable:
         """Decorator that adds an endpoint
 
