@@ -19,7 +19,9 @@ class Connection(base_connection.BaseConnection):
     when communicating with the classes.
 
     Some of the methods include:
-    - `get()`: Gets first response after the time that the method was called.
+    - `get()`: Gets first response after the time that the method was called
+    - `get_all_rcv()`: Returns the entire receive queue
+    - `get_all_rcv_str()`: Returns the entire receive queue, converted to strings
     - `receive_str()`: Receives as a string rather than bytes object
     - `get_first_response()`: Gets the first response from the Serial port after sending something (breaks when timeout reached)
     - `send_for_response()`: Continues sending something until the connection receives a given response (breaks when timeout reached)
@@ -98,6 +100,39 @@ class Connection(base_connection.BaseConnection):
             return self._get_str(call_time, read_until=read_until, strip=strip)
         else:
             return self._get_bytes(call_time)
+
+    def get_all_rcv(self) -> "list[tuple[float, bytes]]":
+        """Returns the entire receive queue
+
+        The queue will be a `queue_size`-sized list that contains
+        tuples (timestamp received, received bytes).
+
+        Returns:
+        - A list of tuples indicating the timestamp received and the bytes object received
+        """
+
+        return self.rcv_queue
+
+    def get_all_rcv_str(self, read_until: t.Union[str, None] = None, strip: bool = True) -> "list[tuple[float, bytes]]":
+        """Returns entire receive queue as string.
+
+        Each bytes object will be passed into `conv_bytes_to_str()`.
+        This means that `read_until` and `strip` will apply to 
+        EVERY element in the receive queue before returning.
+
+        Parameters:
+        - `read_until` (str, None) (optional): Will return a string that terminates with `read_until`, excluding `read_until`. 
+        For example, if the string was `"abcdefg123456\\n"`, and `read_until` was `\\n`, then it will return `"abcdefg123456"`.
+        If there are multiple occurrences of `read_until`, then it will return the string that terminates with the first one.
+        If `read_until` is None or it doesn't exist, the it will return the entire string. By default None.
+        - `strip` (bool) (optional): If True, then strips spaces and newlines from either side of the processed string before returning.
+        If False, returns the processed string in its entirety. By default True.
+
+        Returns:
+        - A list of tuples indicating the timestamp received and the converted string from bytes 
+        """
+
+        return [(ts, self.conv_bytes_to_str(rcv, read_until=read_until, strip=strip)) for ts, rcv in self.rcv_queue]
 
     def receive_str(self, num_before: int = 0, read_until: t.Union[str, None] = None, strip: bool = True) -> "t.Union[None, tuple[float, str]]":
         """Returns the most recent receive object as a string.
