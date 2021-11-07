@@ -138,7 +138,7 @@ class BaseConnection:
         time.sleep(2)  # wait for other end to start up properly
 
         # start receive thread
-        threading.Thread(name="IO-thread", target=self._io_thread, daemon=True).start()
+        threading.Thread(name="Serial-IO-thread", target=self._io_thread, daemon=True).start()
 
     def disconnect(self) -> None:
         """Closes connection to the Serial port.
