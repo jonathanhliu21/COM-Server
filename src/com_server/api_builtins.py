@@ -124,7 +124,7 @@ class Builtins:
             parser.add_argument("ending", default="\r\n", help="Ending that will be appended to the end of data before sending over serial port; default carriage return + newline")
             parser.add_argument("concatenate", default=' ', help="What the strings in data should be concatenated by if list; by default a space")
 
-            def post(self):
+            def post(self) -> dict:
                 args = self.parser.parse_args(strict=True)
 
                 # no need for check_type because everything will be parsed as a string
@@ -176,7 +176,7 @@ class Builtins:
             parser.add_argument("read_until", default=None, help="What character the string should read until")
             parser.add_argument("strip", type=bool, default=False, help="If the string should be stripped of whitespaces and newlines before responding")
 
-            def get(self):
+            def get(self) -> dict:
                 res = conn.receive_str()
 
                 return {
@@ -185,7 +185,7 @@ class Builtins:
                     "data": res[1] if isinstance(res, tuple) else None
                 }
 
-            def post(self):
+            def post(self) -> dict:
                 args = self.parser.parse_args(strict=True)
 
                 res = conn.receive_str(num_before=args["num_before"], read_until=args["read_until"], strip=args["strip"])
@@ -231,7 +231,7 @@ class Builtins:
             parser.add_argument("read_until", default=None, help="What character the string should read until")
             parser.add_argument("strip", type=bool, default=False, help="If the string should be stripped of whitespaces and newlines before responding")
 
-            def get(self):
+            def get(self) -> dict:
                 all_rcv = conn.get_all_rcv_str()
 
                 return {
@@ -240,7 +240,7 @@ class Builtins:
                     "data": [data for _, data in all_rcv]
                 }
 
-            def post(self):
+            def post(self) -> dict:
                 args = self.parser.parse_args(strict=True)
 
                 all_rcv = conn.get_all_rcv_str(read_until=args["read_until"], strip=args["strip"])
@@ -289,7 +289,7 @@ class Builtins:
             parser.add_argument("read_until", default=None, help="What character the string should read until")
             parser.add_argument("strip", type=bool, default=False, help="If the string should be stripped of whitespaces and newlines before responding")
 
-            def get(self):
+            def get(self) -> dict:
                 got = conn.get(str)
 
                 if (got is None):
@@ -300,7 +300,7 @@ class Builtins:
                     "data": got
                 }
 
-            def post(self):
+            def post(self) -> dict:
                 args = self.parser.parse_args(strict=True)
 
                 got = conn.get(str, read_until=args["read_until"], strip=args["strip"])
@@ -337,8 +337,7 @@ class Builtins:
 
         Response:
         - `200 OK`:
-            - `{"message": "OK", "timestamp": ..., "data": "..."}` where "timestamp"
-            is the Unix epoch time that the message was received and "data" is the
+            - `{"message": "OK", "data": "..."}` where "data" is the
             data that was processed. 
         - `502 Bad Gateway`: 
             - `{"message": "Nothing received"}` if nothing was received from the serial port
@@ -346,7 +345,27 @@ class Builtins:
         """ 
 
         class _GetFirst(ConnectionResource):
-            pass
+
+            parser = reqparse.RequestParser()
+            
+            parser.add_argument("data", required=True, action='append', help="Data the serial port should send; is required")
+            parser.add_argument("ending", default="\r\n", help="Ending that will be appended to the end of data before sending over serial port; default carriage return + newline")
+            parser.add_argument("concatenate", default=' ', help="What the strings in data should be concatenated by if list; by default a space")
+            parser.add_argument("read_until", default=None, help="What character the string should read until")
+            parser.add_argument("strip", type=bool, default=False, help="If the string should be stripped of whitespaces and newlines before responding")
+
+            def post(self) -> dict:
+                args = self.parser.parse_args(strict=True)
+
+                res = conn.get_first_response(*args["data"], is_bytes=False, ending=args["ending"], concatenate=args["concatenate"], read_until=args["read_until"], strip=args["strip"])
+
+                if (res is None):
+                    flask_restful.abort(502, message="Nothing received")
+                
+                return {
+                    "message": "OK",
+                    "data": res
+                }
 
         return _GetFirst
     
