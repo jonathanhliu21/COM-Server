@@ -287,7 +287,7 @@ class Connection(base_connection.BaseConnection):
             return self._wait_for_response_str(str(response), timestamp=after_timestamp, read_until=read_until, strip=strip)
 
     def send_for_response(self, response: t.Union[str, bytes], *args: "tuple[t.any]", read_until: t.Union[str, None] = None, strip: bool = True, check_type: bool = True, ending: str = "\r\n", concatenate: str = ' ') -> bool:
-        """continues sending something until the connection receives a given response.
+        """Continues sending something until the connection receives a given response.
 
         This method will call `send()` and `receive()` repeatedly (calls again if does not match given `response` parameter).
         See `send()` for more details on `*args` and `check_type`, `ending`, and `concatenate`, as these will be passed to the method.
@@ -337,6 +337,11 @@ class Connection(base_connection.BaseConnection):
 
             self.send(*args, check_type=check_type,
                       ending=ending, concatenate=concatenate)
+
+            if (time.time() - st_t > self.timeout):
+                # timeout reached
+                return False
+
             send_t = time.time()
 
             if (self.wait_for_response(response=response, after_timestamp=send_t, read_until=read_until, strip=strip)):
