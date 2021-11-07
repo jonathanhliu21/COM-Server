@@ -259,7 +259,7 @@ class RestApiHandler:
         """
 
         class _Register(ConnectionResource):
-            def get(_self):
+            def get(_self) -> dict:
                 ip = flask.request.remote_addr
                 
                 # check if already registered
@@ -292,7 +292,7 @@ class RestApiHandler:
         """
 
         class _Recall(ConnectionResource):
-            def get(_self):
+            def get(_self) -> dict:
                 ip = flask.request.remote_addr
 
                 # check if not registered
