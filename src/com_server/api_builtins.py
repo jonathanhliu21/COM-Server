@@ -224,7 +224,30 @@ class Builtins:
         """ 
 
         class _ReceiveAll(ConnectionResource):
-            pass
+            
+            parser = reqparse.RequestParser()
+            parser.add_argument("read_until", default=None, help="What character the string should read until")
+            parser.add_argument("strip", type=bool, default=False, help="If the string should be stripped of whitespaces and newlines before responding")
+
+            def get(self):
+                all_rcv = conn.get_all_rcv_str()
+
+                return {
+                    "message": "OK",
+                    "timestamps": [ts for ts, _ in all_rcv],
+                    "data": [data for _, data in all_rcv]
+                }
+
+            def post(self):
+                args = self.parser.parse_args(strict=True)
+
+                all_rcv = conn.get_all_rcv_str(read_until=args["read_until"], strip=args["strip"])
+
+                return {
+                    "message": "OK",
+                    "timestamps": [ts for ts, _ in all_rcv],
+                    "data": [data for _, data in all_rcv]
+                }
 
         return _ReceiveAll
     
