@@ -445,7 +445,25 @@ class Builtins:
         """
 
         class _SendResponse(ConnectionResource):
-            pass
+
+            parser = reqparse.RequestParser()
+            
+            parser.add_argument("response", required=True, help="Which response the program should wait for; is required")
+            parser.add_argument("data", required=True, action='append', help="Data the serial port should send; is required")
+            parser.add_argument("ending", default="\r\n", help="Ending that will be appended to the end of data before sending over serial port; default carriage return + newline")
+            parser.add_argument("concatenate", default=' ', help="What the strings in data should be concatenated by if list; by default a space")
+            parser.add_argument("read_until", default=None, help="What character the string should read until")
+            parser.add_argument("strip", type=bool, default=False, help="If the string should be stripped of whitespaces and newlines before responding")
+
+            def post(self) -> dict:
+                args = self.parser.parse_args(strict=True)
+
+                res = conn.send_for_response(args["response"], *args["data"], ending=args["ending"], concatenate=args["concatenate"], read_until=args["read_until"], strip=args["strip"])
+
+                if (not res):
+                    flask_restful.abort(502, message="Nothing received")
+
+                return {"message": "OK"}
 
         return _SendResponse
     
