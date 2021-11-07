@@ -163,6 +163,23 @@ def _test_wait():
     r = requests.post(SERVER+"/get/wait", data=data2)
     print(r.text)
 
+@pytest.mark.skip(reason="No way of testing without delaying; test manually")
+def _test_send_response():
+    """NOTE: This only works with a certain program on the Arduino."""
+    # tests get first; pytest should not run
+
+    t = time.time()
+    data = {
+        "response": f"Got: \"sent at: {t}\"",
+        "data": f"sent at: {t}",
+        "ending": '\n',
+        "concatenate": ";",
+        "strip": True
+    }
+
+    r = requests.post(SERVER+"/send/get", data=data)
+    print(r.text)
+
 def test_unregister() -> None:
     r = requests.get(SERVER + "/recall")
     assert r.status_code == 200
@@ -177,7 +194,8 @@ if (__name__ == "__main__"):
     test_d = {
         "get": _test_get_first,
         "get_first": _test_get_first,
-        "wait": _test_wait
+        "wait": _test_wait,
+        "sendres": _test_send_response
     }
 
     if (len(sys.argv) > 1 and sys.argv[1] in test_d):
