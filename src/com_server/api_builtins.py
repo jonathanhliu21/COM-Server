@@ -396,7 +396,22 @@ class Builtins:
         """
 
         class _WaitResponse(ConnectionResource):
-            pass
+
+            parser = reqparse.RequestParser()
+            
+            parser.add_argument("response", required=True, help="Which response the program should wait for; is required")
+            parser.add_argument("read_until", default=None, help="What character the string should read until")
+            parser.add_argument("strip", type=bool, default=False, help="If the string should be stripped of whitespaces and newlines before responding")
+
+            def post(self) -> dict:
+                args = self.parser.parse_args(strict=True)
+                
+                res = conn.wait_for_response(response=args["response"], read_until=args["read_until"], strip=args["strip"])
+
+                if (not res):
+                    flask_restful.abort(502, message="Nothing received")
+                
+                return {"message": "OK"}
         
         return _WaitResponse
     
