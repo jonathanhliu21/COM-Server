@@ -113,7 +113,7 @@ class Connection(base_connection.BaseConnection):
 
         return self.rcv_queue
 
-    def get_all_rcv_str(self, read_until: t.Union[str, None] = None, strip: bool = True) -> "list[tuple[float, bytes]]":
+    def get_all_rcv_str(self, read_until: t.Union[str, None] = None, strip: bool = True) -> "list[tuple[float, str]]":
         """Returns entire receive queue as string.
 
         Each bytes object will be passed into `conv_bytes_to_str()`.
