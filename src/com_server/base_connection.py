@@ -25,7 +25,7 @@ class ConnectException(Exception):
 class BaseConnection:
     """A base connection object with a Serial or COM port.
 
-    If you want to talk with the Arduino via Serial, 
+    If you want to communicate via Serial, it is recommended to
     either directly use `pyserial` directly or use the `Connection` class.
 
     How this works is that it creates a pyserial object given the parameters, which opens the connection. 
@@ -73,8 +73,8 @@ class BaseConnection:
             Note that this does NOT mean that it will be able to send every `send_interval` seconds. It means that the `send()` method will 
             exit if the interval has not reached `send_interval` seconds. NOT recommended to set to small values. By default 1.
             - `queue_size` (int) (optional): The number of previous receives that the program should keep. Must be nonnegative. By default 256.
-            - `handle_disconnect` (bool) (optional): Whether the program should spawn a thread to detect if the Arduino has disconnected or not. By default True.
-            - `exit_on_disconnect` (bool) (optional): If the program should exit if Arduino disconnected. Does NOT work on Windows. By default False.
+            - `handle_disconnect` (bool) (optional): Whether the program should spawn a thread to detect if the Serial port has disconnected or not. By default True.
+            - `exit_on_disconnect` (bool) (optional): If the program should exit if Serial port disconnected. Does NOT work on Windows. By default False.
             - `kwargs`: Will be passed to pyserial.
 
         Returns: nothing
@@ -103,10 +103,11 @@ class BaseConnection:
             disconnect.disconnect_handler(self, exit_on_fail=bool(exit_on_disconnect))
 
     def __repr__(self) -> str:
-        """Returns string representation of self
+        """
+        Returns string representation of self
         """
 
-        return f"Connection<id=0x{hex(id(self))}, " \
+        return f"Connection<id=0x{hex(id(self))}>" \
             f"{{port={self.port}, baud={self.baud}, timeout={self.timeout}, queue_size={self.queue_size}, send_interval={self.send_interval}, " \
             f"Serial={self.conn}, " \
             f"last_sent={self.last_sent}, rcv_queue={str(self.rcv_queue)}, send_queue={str(self.to_send)}}}"
@@ -164,7 +165,7 @@ class BaseConnection:
 
         If the connection is open and the interval between sending is large enough, 
         then concatenates args with a space (or what was given in `concatenate`) in between them, 
-        encodes to `utf-8` `bytes` object, adds carriage return to the end ("\\r\\n") (or what was given as `ending`), then sends.
+        encodes to `utf-8` `bytes` object, adds carriage return + newline to the end ("\\r\\n") (or what was given as `ending`), then sends.
 
         Note that the data does not send immediately and instead will be added to a queue. 
         The queue size limit is 65536 byte objects. Anything more that is trying to be sent will not be added to the queue.
@@ -192,8 +193,8 @@ class BaseConnection:
         Parameters:
         - `*args`: Everything that is to be sent, each as a separate parameter. Must have at least one parameter.
         - `check_type` (bool) (optional): If types in *args should be checked. By default True.
-        - `ending` (str) (optional): The ending of the bytes object to be sent through the Serial port. By default a carraige return ("\\r\\n")
-        - `concatenate` (str) (optional): What the strings in args should be concatenated by
+        - `ending` (str) (optional): The ending of the bytes object to be sent through the Serial port. By default a carraige return + newline ("\\r\\n")
+        - `concatenate` (str) (optional): What the strings in args should be concatenated by. By default a space `' '`
 
         Returns:
         - `true` on success (everything has been sent through)
@@ -327,7 +328,8 @@ class BaseConnection:
             time.sleep(0.01)  # rest CPU
 
     def _reset(self) -> None:
-        """Resets all IO variables
+        """
+        Resets all IO variables
         """
 
         self.last_sent = time.time()  # prevents from sending too rapidly
