@@ -109,8 +109,8 @@ def test_rcv_all() -> None:
     assert r.status_code == 200
 
 @pytest.mark.skip(reason="No way of testing without delaying; test manually")
-def test_get() -> None:
-    # tests get req
+def _test_get() -> None:
+    # tests get req; pytest should not run
 
     data = {
         "data": f"sent at: {time.time()}",
@@ -127,6 +127,20 @@ def test_get() -> None:
     assert r.status_code == 200
     assert loaded["message"] == "OK"
 
+@pytest.mark.skip(reason="No way of testing without delaying; test manually")
+def _test_get_first():
+    # tests get first; pytest should not run
+
+    data = {
+        "data": f"sent at: {time.time()}",
+        "ending": "\n",
+        "concatenate": ";",
+        "strip": True
+    }
+
+    r = requests.post(SERVER+"/send/get_first", data=data) 
+    print(r.text, data)
+
 def test_unregister() -> None:
     r = requests.get(SERVER + "/recall")
     assert r.status_code == 200
@@ -137,7 +151,14 @@ if (__name__ == "__main__"):
 
     # write manual tests here
     
-    test_get()
+    # maps args to functions to test
+    test_d = {
+        "get": _test_get_first,
+        "get_first": _test_get_first
+    }
+
+    if (len(sys.argv) > 1 and sys.argv[1] in test_d):
+        test_d[sys.argv[1]]()
 
     # end write manual tests
 
