@@ -10,6 +10,7 @@ import typing as t
 
 import flask
 import flask_restful
+import waitress
 
 from . import base_connection, connection # for typing
 
@@ -216,8 +217,8 @@ class RestApiHandler:
 
         return self.api.add_resource(*args, **kwargs)
     
-    def run(self, **kwargs) -> None:
-        """Launches the Flask app.
+    def run_dev(self, **kwargs) -> None:
+        """Launches the Flask app as a development server.
 
         All arguments in `**kwargs` will be passed to `Flask.run()`.
         For more information, see [here](https://flask.palletsprojects.com/en/2.0.x/api/#flask.Flask.run).
@@ -229,13 +230,33 @@ class RestApiHandler:
         - `debug`: If the app should be used in debug mode. 
         """
 
-        self.conn.connect() # connection Connection obj
+        self.conn.connect() # connect the Connection obj
 
         # register all endpoints to flask_restful
         for endpoint, resource in self.all_endpoints:
             self.api.add_resource(resource, endpoint)
 
         self.app.run(**kwargs) 
+
+        self.conn.disconnect() # disconnect if stop running
+    
+    def run_prod(self, **kwargs) -> None:
+        """Launches the Flask app as a waitress production server.
+
+        All arguments in `**kwargs` will be passed to `waitress.serve()`.
+        For more information, see [here](https://docs.pylonsproject.org/projects/waitress/en/stable/arguments.html#arguments).
+        For waitress documentation, see [here](https://docs.pylonsproject.org/projects/waitress/en/stable/).
+
+        If nothing is included, then runs on `http://0.0.0.0:8080`
+        """
+
+        self.conn.connect() # connect the Connection obj
+
+        # register all endpoints to flask_restful
+        for endpoint, resource in self.all_endpoints:
+            self.api.add_resource(resource, endpoint)
+        
+        waitress.serve(self.app, **kwargs)
 
         self.conn.disconnect() # disconnect if stop running
 
