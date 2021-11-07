@@ -5,13 +5,13 @@
 Contains class with builtin functions that match `Connection` object
 
 Endpoints include:
-    - `/send` (POST): Send something through the serial port using `Connection.send()` with parameters in request; equivalent to `Connection.send()`
-    - `/receive` (GET, POST): Respond with the most recent received string from the serial port; equivalent to `Connection.receive_str()`
-    - `/receive/all` (GET, POST): Returns the entire receive queue; equivalent to `Connection.get_all_rcv_str()`
-    - `/get` (GET, POST): Respond with the first string from serial port after request; equivalent to `Connection.get(str)`
-    - `/send/get_first` (POST): Responds with the first string response from the serial port after sending data, with data and parameters in request; equivalent to `Connection.get_first_response()`
-    - `/get/wait` (POST): Waits until connection receives string data given in request; different response for success and failure; equivalent to `Connection.wait_for_response()`
-    - `/send/get` (POST): Continues sending something until connection receives data given in request; different response for success and failure; equivalent to `Connection.send_for_response()`
+    - `/send` (POST): Send something through the serial port using `Connection.send()` with parameters in request; equivalent to `Connection.send(...)`
+    - `/receive` (GET, POST): Respond with the most recent received string from the serial port; equivalent to `Connection.receive_str(...)`
+    - `/receive/all` (GET, POST): Returns the entire receive queue; equivalent to `Connection.get_all_rcv_str(...)`
+    - `/get` (GET, POST): Respond with the first string from serial port after request; equivalent to `Connection.get(str, ...)`
+    - `/send/get_first` (POST): Responds with the first string response from the serial port after sending data, with data and parameters in request; equivalent to `Connection.get_first_response(is_bytes=False, ...)`
+    - `/get/wait` (POST): Waits until connection receives string data given in request; different response for success and failure; equivalent to `Connection.wait_for_response(...)`
+    - `/send/get` (POST): Continues sending something until connection receives data given in request; different response for success and failure; equivalent to `Connection.send_for_response(...)`
     - `/list_ports` (GET): Lists all available Serial ports
 
 The above endpoints will not be valid if the class is used
@@ -22,19 +22,19 @@ import typing as t
 from flask_restful import reqparse
 import flask_restful
 
-from . import RestApiHandler, ConnectionResource, Connection
+from . import RestApiHandler, ConnectionResource, Connection, all_ports
 
 class Builtins:
     """Contains implementations of endpoints that call methods of `Connection` object
     
     Endpoints include:
-        - `/send` (POST): Send something through the serial port using `Connection.send()` with parameters in request; equivalent to `Connection.send()`
-        - `/receive` (GET, POST): Respond with the most recent received string from the serial port; equivalent to `Connection.receive_str()`
-        - `/receive/all` (GET, POST): Returns the entire receive queue; equivalent to `Connection.get_all_rcv_str()`
-        - `/get` (GET, POST): Respond with the first string from serial port after request; equivalent to `Connection.get(str)`
-        - `/send/get_first` (POST): Responds with the first string response from the serial port after sending data, with data and parameters in request; equivalent to `Connection.get_first_response()`
-        - `/get/wait` (POST): Waits until connection receives string data given in request; different response for success and failure; equivalent to `Connection.wait_for_response()`
-        - `/send/get` (POST): Continues sending something until connection receives data given in request; different response for success and failure; equivalent to `Connection.send_for_response()`
+        - `/send` (POST): Send something through the serial port using `Connection.send()` with parameters in request; equivalent to `Connection.send(...)`
+        - `/receive` (GET, POST): Respond with the most recent received string from the serial port; equivalent to `Connection.receive_str(...)`
+        - `/receive/all` (GET, POST): Returns the entire receive queue; equivalent to `Connection.get_all_rcv_str(...)`
+        - `/get` (GET, POST): Respond with the first string from serial port after request; equivalent to `Connection.get(str, ...)`
+        - `/send/get_first` (POST): Responds with the first string response from the serial port after sending data, with data and parameters in request; equivalent to `Connection.get_first_response(is_bytes=False, ...)`
+        - `/get/wait` (POST): Waits until connection receives string data given in request; different response for success and failure; equivalent to `Connection.wait_for_response(...)`
+        - `/send/get` (POST): Continues sending something until connection receives data given in request; different response for success and failure; equivalent to `Connection.send_for_response(...)`
         - `/list_ports` (GET): Lists all available Serial ports
 
     The above endpoints will not be valid if the class is used
@@ -77,15 +77,23 @@ class Builtins:
         # /receive
         self.handler.add_endpoint("/receive")(self.receive)
 
+        # /receive/all
+        self.handler.add_endpoint("/receive/all")(self.receive_all)
+
         # /get
+        self.handler.add_endpoint("/get")(self.get)
 
         # /send/get_first
+        self.handler.add_endpoint("/send/get_first")(self.get_first_response)
 
         # /get/wait
+        self.handler.add_endpoint("/get/wait")(self.wait_for_response)
 
         # /send/get
+        self.handler.add_endpoint("/send/get")(self.send_for_response)
 
         # /list_ports
+        self.handler.add_endpoint("/list_ports")(self.list_all)
     
     # throwaway variable at beginning because it is part of class, "self" would be passed
     def send(_, conn: Connection) -> t.Type[ConnectionResource]:
@@ -103,8 +111,10 @@ class Builtins:
         won't affect "data" if the size of the list is equal to 1. By default a space.
 
         Responses:
-        - `200 OK`: `{"message": "OK"}` if sent through
-        - `502 Bad Gateway`: `{"message": "Failed to send"}` if something went wrong with sending (`Connection.send()` returned false)
+        - `200 OK`: 
+            - `{"message": "OK"}` if send through
+        - `502 Bad Gateway`: 
+            - `{"message": "Failed to send"}` if something went wrong with sending (i.e. `Connection.send()` returned false)
         """
 
         class _Sending(ConnectionResource):
@@ -131,11 +141,10 @@ class Builtins:
     def receive(_, conn: Connection) -> t.Type[ConnectionResource]:
         """
         Endpoint to get data that was recently received.
-        If POST, calls `Connection.receive_str()` with arguments given in request.
-        If GET, calls `Connection.receive_str()` with default arguments (except strip=True). This means
+        If POST, calls `Connection.receive_str(...)` with arguments given in request.
+        If GET, calls `Connection.receive_str(...)` with default arguments (except strip=True). This means
         that it responds with the latest received string with everything included after 
         being stripped of whitespaces and newlines.
-        Response is a list containing timestamp and string.
 
         Method: GET, POST
 
@@ -187,3 +196,187 @@ class Builtins:
                 }
         
         return _Receiving
+    
+    def receive_all(_, conn: Connection) -> t.Type[ConnectionResource]:
+        """
+        Returns the entire receive queue. Calls `Connection.get_all_rcv_str(...)`.
+        If POST then uses arguments in request.
+        If GET then uses default arguments (except strip=True), which means that
+        that it responds with the latest received string with everything included after 
+        being stripped of whitespaces and newlines.
+
+        Method: GET, POST
+
+        Arguments (POST only):
+        - "read_until" (str, null) (optional): Will return a string that terminates with
+        character in "read_until", excluding that character or string. For example,
+        if the bytes was `b'123456'` and "read_until" was 6, then it will return
+        `'12345'`. If ommitted, then returns the entire string. By default returns entire string.
+        - "strip" (bool) (optional): If true, then strips received and processed string of
+        whitespaces and newlines and responds with result. Otherwise, returns raw string. 
+        By default False.
+
+        Response:
+        - `200 OK`:
+            - `{"message": "OK", "timestamps": [...], "data": [...]}`: where "timestamps" 
+            contains the list of timestamps in the receive queue and "data" contains the 
+            list of data in the receive queue. The indices for "timestamps" and "data" match.
+        """ 
+
+        class _ReceiveAll(ConnectionResource):
+            pass
+
+        return _ReceiveAll
+    
+    def get(_, conn: Connection) -> t.Type[ConnectionResource]:
+        """
+        Waits for the first string from the serial port after request.
+        If no string after timeout (specified on server side), then responds with 502.
+        Calls `Connection.get(str, ...)`.
+        If POST then uses arguments in request. 
+        If GET then uses default arguments (except strip=True), which means that
+        that it responds with the latest received string with everything included after 
+        being stripped of whitespaces and newlines.
+
+        Method: GET, POST
+
+        Arguments (POST only):
+        - "read_until" (str, null) (optional): Will return a string that terminates with
+        character in "read_until", excluding that character or string. For example,
+        if the bytes was `b'123456'` and "read_until" was 6, then it will return
+        `'12345'`. If ommitted, then returns the entire string. By default returns entire string.
+        - "strip" (bool) (optional): If true, then strips received and processed string of
+        whitespaces and newlines and responds with result. Otherwise, returns raw string. 
+        By default False.
+
+        Response:
+        - `200 OK`:
+            - `{"message": "OK", "timestamp": ..., "data": "..."}` where "timestamp"
+            is the Unix epoch time that the message was received and "data" is the
+            data that was processed. 
+        - `502 Bad Gateway`: 
+            - `{"message": "Nothing received"}` if nothing was received from the serial port
+            within the timeout specified on the server side.   
+        """
+
+        class _Get(ConnectionResource):
+            pass
+
+        return _Get
+
+    def get_first_response(_, conn: Connection) -> t.Type[ConnectionResource]:
+        """
+        Respond with the first string received from the 
+        serial port after sending something given in request.
+        Calls `Connection.get_first_response(is_bytes=False, ...)`.
+
+        Method: POST
+
+        Arguments:
+        - "data" (str, list): Everything that is to be sent, each as a separate parameter. Must have at least one parameter.
+        - "ending" (str) (optional): The ending of the bytes object to be sent through the Serial port. By default a carraige return ("\\r\\n")
+        - "concatenate" (str) (optional): What the strings in args should be concatenated by
+        - "read_until" (str, None) (optional): Will return a string that terminates with `read_until`, excluding `read_until`. 
+        For example, if the string was `"abcdefg123456\\n"`, and `read_until` was `\\n`, then it will return `"abcdefg123456"`.
+        If `read_until` is None, the it will return the entire string. By default None.
+        - "strip" (bool) (optional): If True, then strips the received and processed string of whitespace and newlines, then 
+        returns the result. If False, then returns the raw result. By default False. 
+
+        Response:
+        - `200 OK`:
+            - `{"message": "OK", "timestamp": ..., "data": "..."}` where "timestamp"
+            is the Unix epoch time that the message was received and "data" is the
+            data that was processed. 
+        - `502 Bad Gateway`: 
+            - `{"message": "Nothing received"}` if nothing was received from the serial port
+            within the timeout specified on the server side.   
+        """ 
+
+        class _GetFirst(ConnectionResource):
+            pass
+
+        return _GetFirst
+    
+    def wait_for_response(_, conn: Connection) -> t.Type[ConnectionResource]:
+        """
+        Waits until connection receives string data given in request.
+        Calls `Connection.wait_for_response(...)`.
+
+        Method: POST
+
+        Arguments:
+        - "response" (str): The string the program is waiting to receive.
+        Compares to response to `Connection.receive_str()`.
+        - "read_until" (str, None) (optional): Will return a string that terminates with `read_until`, excluding `read_until`. 
+        For example, if the string was `"abcdefg123456\\n"`, and `read_until` was `\\n`, then it will return `"abcdefg123456"`.
+        If `read_until` is None, the it will return the entire string. By default None.
+        - "strip" (bool) (optional): If True, then strips the received and processed string of whitespace and newlines, then 
+        returns the result. If False, then returns the raw result. By default False. 
+
+        Response:
+        - `200 OK`:
+            - `{"message": "OK"}` if everything was able to send through
+        - `502 Bad Gateway`: 
+            - `{"message": "Nothing received"}` if nothing was received from the serial port
+            within the timeout specified on the server side.   
+        """
+
+        class _WaitResponse(ConnectionResource):
+            pass
+        
+        return _WaitResponse
+    
+    def send_for_response(_, conn: Connection) -> t.Type[ConnectionResource]:
+        """
+        Continues sending something until connection receives data given in request.
+        Calls `Connection.send_for_response(...)`
+
+        Method: POST
+
+        Arguments:
+        - "response" (str): The string the program is waiting to receive.
+        Compares to response to `Connection.receive_str()`.
+        - "data" (str, list): Everything that is to be sent, each as a separate parameter. Must have at least one parameter.
+        - "ending" (str) (optional): The ending of the bytes object to be sent through the Serial port. By default a carraige return ("\\r\\n")
+        - "concatenate" (str) (optional): What the strings in args should be concatenated by
+        - "read_until" (str, None) (optional): Will return a string that terminates with `read_until`, excluding `read_until`. 
+        For example, if the string was `"abcdefg123456\\n"`, and `read_until` was `\\n`, then it will return `"abcdefg123456"`.
+        If `read_until` is None, the it will return the entire string. By default None.
+        - "strip" (bool) (optional): If True, then strips the received and processed string of whitespace and newlines, then 
+        returns the result. If False, then returns the raw result. By default False. 
+
+        Response:
+        - `200 OK`:
+            - `{"message": "OK"}` if everything was able to send through
+        - `502 Bad Gateway`: 
+            - `{"message": "Nothing received"}` if nothing was received from the serial port
+            within the timeout specified on the server side.   
+        """
+
+        class _SendResponse(ConnectionResource):
+            pass
+
+        return _SendResponse
+    
+    def list_all(_, conn: ConnectionResource) -> t.Type[ConnectionResource]:
+        """
+        Lists all available Serial ports. Calls `com_server.tools.all_ports()`
+        and returns list of lists of size 3: [`port`, `description`, `technical description`]
+
+        Method: GET
+
+        Arguments:
+            None
+        
+        Returns:
+        - `200 OK`:
+            - `{"message": "OK", ports = [["...", "...", "..."], "..."]}` where "ports"
+            is a list of lists of size 3, each one indicating the port, description, and
+            technical description
+        """
+
+        class _ListAll(ConnectionResource):
+            pass
+            
+        return _ListAll
+
