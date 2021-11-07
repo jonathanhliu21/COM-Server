@@ -9,6 +9,7 @@ Make sure server is running on local computer with host "0.0.0.0" and port "8080
 import json
 import os
 import sys
+import time
 
 import pytest
 import requests
@@ -107,10 +108,37 @@ def test_rcv_all() -> None:
     assert "message" in loaded and loaded["message"] == "OK" and isinstance(loaded["timestamps"], list) and isinstance(loaded["data"], list)
     assert r.status_code == 200
 
+@pytest.mark.skip(reason="No way of testing without delaying; test manually")
+def test_get() -> None:
+    # tests get req
+
+    data = {
+        "data": f"sent at: {time.time()}",
+        "ending": "\n",
+    }
+
+    r = requests.post(SERVER+"/send", data=data) 
+    print(r.text)
+    
+    r = requests.get(SERVER + "/get")
+    print("get:", r.text, data)
+
+    loaded = json.loads(r.text)
+    assert r.status_code == 200
+    assert loaded["message"] == "OK"
+
 def test_unregister() -> None:
     r = requests.get(SERVER + "/recall")
     assert r.status_code == 200
 
 if (__name__ == "__main__"):
-    # pytest should not run this
-    pass
+    # pytest should not run this; manual tests
+    test_register()
+
+    # write manual tests here
+    
+    test_get()
+
+    # end write manual tests
+
+    test_unregister()
