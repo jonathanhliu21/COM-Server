@@ -467,7 +467,8 @@ class Builtins:
 
         return _SendResponse
     
-    def list_all(_, conn: ConnectionResource) -> t.Type[ConnectionResource]:
+    # both throwaway as connection not needed
+    def list_all(_, __) -> t.Type[ConnectionResource]:
         """
         Lists all available Serial ports. Calls `com_server.tools.all_ports()`
         and returns list of lists of size 3: [`port`, `description`, `technical description`]
@@ -485,7 +486,13 @@ class Builtins:
         """
 
         class _ListAll(ConnectionResource):
-            pass
+            def get(self) -> dict:
+                res = all_ports()
+
+                return {
+                    "message": "OK",
+                    "ports": [[port, desc, tech] for port, desc, tech in res]
+                }
             
         return _ListAll
 
