@@ -196,7 +196,7 @@ class Connection(base_connection.BaseConnection):
         If True, then returns raw `bytes` data. By default True.
         - `check_type` (bool) (optional): If types in *args should be checked. By default True.
         - `ending` (str) (optional): The ending of the bytes object to be sent through the Serial port. By default a carraige return ("\\r\\n")
-        - `concatenate` (str) (optional): What the strings in args should be concatenated by
+        - `concatenate` (str) (optional): What the strings in args should be concatenated by. By default a space `' '`.
         - `read_until` (str, None) (optional): Will return a string that terminates with `read_until`, excluding `read_until`. 
         For example, if the string was `"abcdefg123456\\n"`, and `read_until` was `\\n`, then it will return `"abcdefg123456"`.
         If `read_until` is None, the it will return the entire string. By default None.
@@ -255,7 +255,7 @@ class Connection(base_connection.BaseConnection):
         is greater than given timestamp (`after_timestamp`).
 
         Parameters:
-        - `response` (str, bytes): The receive data that the program is loking for.
+        - `response` (str, bytes): The receive data that the program is looking for.
         If given a string, then compares the string to the response after it is decoded in `utf-8`.
         If given a bytes, then directly compares the bytes object to the response.
         If given anything else, converts to string.
@@ -300,7 +300,7 @@ class Connection(base_connection.BaseConnection):
         - `*args`: Everything that is to be sent, each as a separate parameter. Must have at least one parameter.
         - `check_type` (bool) (optional): If types in *args should be checked. By default True.
         - `ending` (str) (optional): The ending of the bytes object to be sent through the Serial port. By default a carraige return ("\\r\\n")
-        - `concatenate` (str) (optional): What the strings in args should be concatenated by
+        - `concatenate` (str) (optional): What the strings in args should be concatenated by. By default a space `' '`
 
         These parameters only apply if `response` is a string:
         - `read_until` (str, None) (optional): Will return a string that terminates with `read_until`, excluding `read_until`. 
