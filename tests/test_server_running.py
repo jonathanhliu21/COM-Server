@@ -44,7 +44,7 @@ def test_send() -> None:
 
     # normal test (tests send with data)
     r = requests.post(SERVER + "/send", data=data)
-    print(r.text)
+    print("send:", r.text)
     loaded = json.loads(r.text)
     assert "message" in loaded and loaded["message"] == "OK"
     assert r.status_code == 200
@@ -52,7 +52,7 @@ def test_send() -> None:
     # tests parses correctly
     data["notanarg"] = "notanarg"
     r = requests.post(SERVER + "/send", data=data)
-    print(r.text)
+    print("send:", r.text)
     loaded = json.loads(r.text)
     assert "message" in loaded
     assert r.status_code == 400
@@ -60,7 +60,7 @@ def test_send() -> None:
     # tests that send interval is working
     del data["notanarg"]
     r = requests.post(SERVER + "/send", data=data)
-    print(r.text)
+    print("send:", r.text)
     loaded = json.loads(r.text)
     assert "message" in loaded and loaded["message"] == "Failed to send"
     assert r.status_code == 502
@@ -75,23 +75,41 @@ def test_receive() -> None:
 
     # tests post is working
     r = requests.post(SERVER + "/receive", data=data)
-    print(r.text)
+    print("rcv:", r.text)
     loaded = json.loads(r.text)
     assert "message" in loaded and loaded["message"] == "OK" and "timestamp" in loaded and "data" in loaded
     assert r.status_code == 200
 
     # tests get is working
     r = requests.get(SERVER + "/receive", data=data)
-    print(r.text)
+    print("rcv:", r.text)
     loaded = json.loads(r.text)
     assert "message" in loaded and loaded["message"] == "OK" and "timestamp" in loaded and "data" in loaded
     assert r.status_code == 200
 
+def test_rcv_all() -> None:
+    # tests get
+    r = requests.get(SERVER + "/receive/all")
+    print("rcv all:", r.text)
+    loaded = json.loads(r.text)
+    assert "message" in loaded and loaded["message"] == "OK" and isinstance(loaded["timestamps"], list) and isinstance(loaded["data"], list)
+    assert r.status_code == 200
+
+    # tests post
+    data = {
+        "read_until": ";",
+        "strip": True
+    }
+
+    r = requests.post(SERVER + "/receive/all", data=data)
+    print("rcv all:", r.text)
+    loaded = json.loads(r.text)
+    assert "message" in loaded and loaded["message"] == "OK" and isinstance(loaded["timestamps"], list) and isinstance(loaded["data"], list)
+    assert r.status_code == 200
 
 def test_unregister() -> None:
     r = requests.get(SERVER + "/recall")
     assert r.status_code == 200
-
 
 if (__name__ == "__main__"):
     # pytest should not run this
