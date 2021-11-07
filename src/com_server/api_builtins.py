@@ -158,6 +158,7 @@ class Builtins:
         `'12345'`. If ommitted, then returns the entire string. By default returns entire string.
         - "strip" (bool) (optional): If true, then strips received and processed string of
         whitespaces and newlines and responds with result. Otherwise, returns raw string. 
+        Note that using {"strip": False} may not work; it is better to omit it.
         By default False.
 
         Response:
@@ -214,6 +215,7 @@ class Builtins:
         `'12345'`. If ommitted, then returns the entire string. By default returns entire string.
         - "strip" (bool) (optional): If true, then strips received and processed string of
         whitespaces and newlines and responds with result. Otherwise, returns raw string. 
+        Note that using {"strip": False} may not work; it is better to omit it.
         By default False.
 
         Response:
@@ -270,20 +272,46 @@ class Builtins:
         `'12345'`. If ommitted, then returns the entire string. By default returns entire string.
         - "strip" (bool) (optional): If true, then strips received and processed string of
         whitespaces and newlines and responds with result. Otherwise, returns raw string. 
+        Note that using {"strip": False} may not work; it is better to omit it.
         By default False.
 
         Response:
         - `200 OK`:
-            - `{"message": "OK", "timestamp": ..., "data": "..."}` where "timestamp"
-            is the Unix epoch time that the message was received and "data" is the
-            data that was processed. 
+            - `{"message": "OK", "data": "..."}` where "data" is received data
         - `502 Bad Gateway`: 
             - `{"message": "Nothing received"}` if nothing was received from the serial port
             within the timeout specified on the server side.   
         """
 
         class _Get(ConnectionResource):
-            pass
+        
+            parser = reqparse.RequestParser()
+            parser.add_argument("read_until", default=None, help="What character the string should read until")
+            parser.add_argument("strip", type=bool, default=False, help="If the string should be stripped of whitespaces and newlines before responding")
+
+            def get(self):
+                got = conn.get(str)
+
+                if (got is None):
+                    flask_restful.abort(502, message="Nothing received")
+
+                return {
+                    "message": "OK",
+                    "data": got
+                }
+
+            def post(self):
+                args = self.parser.parse_args(strict=True)
+
+                got = conn.get(str, read_until=args["read_until"], strip=args["strip"])
+
+                if (got is None):
+                    flask_restful.abort(502, message="Nothing received")
+
+                return {
+                    "message": "OK",
+                    "data": got
+                }
 
         return _Get
 
@@ -302,8 +330,10 @@ class Builtins:
         - "read_until" (str, None) (optional): Will return a string that terminates with `read_until`, excluding `read_until`. 
         For example, if the string was `"abcdefg123456\\n"`, and `read_until` was `\\n`, then it will return `"abcdefg123456"`.
         If `read_until` is None, the it will return the entire string. By default None.
-        - "strip" (bool) (optional): If True, then strips the received and processed string of whitespace and newlines, then 
-        returns the result. If False, then returns the raw result. By default False. 
+        - "strip" (bool) (optional): If true, then strips received and processed string of
+        whitespaces and newlines and responds with result. Otherwise, returns raw string. 
+        Note that using {"strip": False} may not work; it is better to omit it.
+        By default False.
 
         Response:
         - `200 OK`:
@@ -333,8 +363,10 @@ class Builtins:
         - "read_until" (str, None) (optional): Will return a string that terminates with `read_until`, excluding `read_until`. 
         For example, if the string was `"abcdefg123456\\n"`, and `read_until` was `\\n`, then it will return `"abcdefg123456"`.
         If `read_until` is None, the it will return the entire string. By default None.
-        - "strip" (bool) (optional): If True, then strips the received and processed string of whitespace and newlines, then 
-        returns the result. If False, then returns the raw result. By default False. 
+        - "strip" (bool) (optional): If true, then strips received and processed string of
+        whitespaces and newlines and responds with result. Otherwise, returns raw string. 
+        Note that using {"strip": False} may not work; it is better to omit it.
+        By default False.
 
         Response:
         - `200 OK`:
@@ -365,8 +397,10 @@ class Builtins:
         - "read_until" (str, None) (optional): Will return a string that terminates with `read_until`, excluding `read_until`. 
         For example, if the string was `"abcdefg123456\\n"`, and `read_until` was `\\n`, then it will return `"abcdefg123456"`.
         If `read_until` is None, the it will return the entire string. By default None.
-        - "strip" (bool) (optional): If True, then strips the received and processed string of whitespace and newlines, then 
-        returns the result. If False, then returns the raw result. By default False. 
+        - "strip" (bool) (optional): If true, then strips received and processed string of
+        whitespaces and newlines and responds with result. Otherwise, returns raw string. 
+        Note that using {"strip": False} may not work; it is better to omit it.
+        By default False.
 
         Response:
         - `200 OK`:
