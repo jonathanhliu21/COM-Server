@@ -6,8 +6,10 @@ For testing things with server running.
 Make sure server is running on local computer with host "0.0.0.0" and port "8080" before testing.
 """
 
+import glob
 import json
 import os
+import re
 import sys
 import time
 
@@ -179,6 +181,24 @@ def _test_send_response():
 
     r = requests.post(SERVER+"/send/get", data=data)
     print(r.text)
+
+
+_usb = glob.glob("/dev/ttyUSB[0-9]*")
+_acm = glob.glob("/dev/ttyACM[0-9]*")
+
+@pytest.mark.skipif(not sys.platform.startswith("linux"), len(_usb+_acm) <= 0, reason="port not connected")
+def test_ports_server() -> None:
+
+    r = requests.get(SERVER+"/list_ports")
+    loaded = json.loads(r.text)
+
+    matched = False
+    for i in loaded["ports"]:
+        if (re.match("/dev/ttyUSB*", i[0])):
+            matched = True
+            break
+
+    assert matched
 
 def test_unregister() -> None:
     r = requests.get(SERVER + "/recall")
