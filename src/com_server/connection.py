@@ -385,12 +385,10 @@ class Connection(base_connection.BaseConnection):
 
         r = self.receive_str(read_until=read_until, strip=strip)
 
-        if (r is None):
-            return None
-
         st_t = time.time()  # for timeout
 
-        while (r[0] < _call_time):
+        # wait for r to not be None or for received time to be greater than call time
+        while (r is None or r[0] < _call_time):
             if (time.time() - st_t > self.timeout):
                 # timeout reached
                 return None
@@ -408,12 +406,10 @@ class Connection(base_connection.BaseConnection):
 
         r = self.receive()
 
-        if (r is None):
-            return None
-
         st_t = time.time()  # for timeout
 
-        while (r[0] < _call_time):
+        # wait for r to not be None or for received time to be greater than call time
+        while (r is None or r[0] < _call_time):
             if (time.time() - st_t > self.timeout):
                 # timeout reached
                 return None
