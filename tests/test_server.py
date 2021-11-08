@@ -135,5 +135,5 @@ if (__name__ == "__main__"):
         
         return Hello_World_
     
-    handler.run(host='0.0.0.0', port=8080)
+    handler.run_dev(host='0.0.0.0', port=8080)
     

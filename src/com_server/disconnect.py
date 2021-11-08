@@ -28,8 +28,8 @@ def _disc_thread(obj: t.Any, exit_on_fail: bool) -> None:
     while (True):
         p = _get_all_ports()
 
-        if (obj.port not in p):
-            # disconnect object
+        if (obj.connected and obj.port not in p):
+            # disconnect object if connected
             obj.disconnect()
 
             # if exit, then kill main thread with SIGTERM
@@ -56,5 +56,5 @@ def disconnect_handler(obj: t.Any, exit_on_fail: bool) -> None:
         if (exit_on_fail):
             raise EnvironmentError("exit_on_fail is not supported on Windows")
 
-    threading.Thread(target=_disc_thread, daemon=True, args=(
+    threading.Thread(name="disconnect-detection-thread", target=_disc_thread, daemon=True, args=(
         obj, exit_on_fail)).start()  # start thread

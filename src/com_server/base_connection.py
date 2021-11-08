@@ -45,6 +45,8 @@ class BaseConnection:
     - `disconnect()`: closes the connection with the serial port
     - `send()`: sends data to the serial port
     - `read()`: reads data from the serial port
+
+    It also contains the property `connected` to indicate if it is currently connected to the Serial port.
     """
 
     def __init__(
@@ -136,7 +138,7 @@ class BaseConnection:
         time.sleep(2)  # wait for other end to start up properly
 
         # start receive thread
-        threading.Thread(target=self._io_thread, daemon=True).start()
+        threading.Thread(name="Serial-IO-thread", target=self._io_thread, daemon=True).start()
 
     def disconnect(self) -> None:
         """Closes connection to the Serial port.
@@ -274,6 +276,10 @@ class BaseConnection:
             return self.rcv_queue[-1-num_before]
         except IndexError as e:
             return None
+ 
+    @property
+    def connected(self) -> bool:
+        return self.conn is not None
 
     def _check_output(self, output: str) -> str:
         """Argument processing
