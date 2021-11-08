@@ -8,15 +8,12 @@ Make sure server is running on local computer with host "0.0.0.0" and port "8080
 
 import glob
 import json
-import os
 import re
 import sys
 import time
 
 import pytest
 import requests
-from com_server import (BaseConnection, Connection, ConnectionResource,
-                        RestApiHandler, Builtins)
 
 SERVER = "http://0.0.0.0:8080"
 
@@ -199,6 +196,12 @@ def test_ports_server() -> None:
             break
 
     assert matched
+
+def test_connected() -> None:
+    r = requests.get(SERVER+"/connected")
+    loaded = json.loads(r.text)
+    print(loaded)
+    assert r.status_code == 200 and "connected" in loaded
 
 def test_unregister() -> None:
     r = requests.get(SERVER + "/recall")
