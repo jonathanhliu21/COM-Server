@@ -241,11 +241,11 @@ class RestApiHandler:
         self.conn.disconnect() # disconnect if stop running
     
     def run_prod(self, **kwargs) -> None:
-        """Launches the Flask app as a waitress production server.
+        """Launches the Flask app as a Waitress production server.
 
         All arguments in `**kwargs` will be passed to `waitress.serve()`.
         For more information, see [here](https://docs.pylonsproject.org/projects/waitress/en/stable/arguments.html#arguments).
-        For waitress documentation, see [here](https://docs.pylonsproject.org/projects/waitress/en/stable/).
+        For Waitress documentation, see [here](https://docs.pylonsproject.org/projects/waitress/en/stable/).
 
         If nothing is included, then runs on `http://0.0.0.0:8080`
         """
