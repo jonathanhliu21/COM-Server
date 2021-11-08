@@ -12,10 +12,11 @@ import time
 
 from com_server import Connection
 
-conn = Connection(115200, "/dev/ttyUSB0")
-# conn = Connection(115200, "/dev/ttyUSB...") # if Linux; can be "/dev/ttyACM..."
-# conn = Connection(115200, "/dev/cu.usbserial...") # if Mac; can be "/dev/tty.usbserial..."
-# conn = Connection(115200, "COM...") # if Windows
+# make the Connection object
+conn = Connection(baud=115200, port="/dev/ttyUSB0")
+# conn = Connection(baud=115200, port="/dev/ttyUSB...") # if Linux; can be "/dev/ttyACM..."
+# conn = Connection(baud=115200, port="/dev/cu.usbserial...") # if Mac; can be "/dev/tty.usbserial..."
+# conn = Connection(baud=115200, port="COM...") # if Windows
 
 conn.connect() # connect to serial port
 
