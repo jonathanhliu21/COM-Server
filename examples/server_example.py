@@ -8,7 +8,7 @@ Includes examples of how to add the built-in endpoints and how to make
 your own endpoints.
 """
 
-from com_server import Builtins, Connection, RestApiHandler
+from com_server import Builtins, Connection, ConnectionResource, RestApiHandler
 
 # make the Connection object
 conn = Connection(baud=115200, port="/dev/ttyUSB0")
@@ -42,7 +42,7 @@ Builtins(handler)
 def hello_world(conn: Connection):
     # create a function with a class within it, then return the class
 
-    class Hello_World_Endpoint:
+    class Hello_World_Endpoint(ConnectionResource):
         # classes are implemented like flask_restful classes
         # each method defines a request method (i.e. get() defines what happens when there is a GET request, post() defines what happens when there is a POST request, etc.)
         # to access request parameters, import reqparse from flask_restful (i.e. "from flask_restful import reqparse")

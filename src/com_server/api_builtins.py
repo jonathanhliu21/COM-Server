@@ -484,7 +484,7 @@ class Builtins:
         
         Returns:
         - `200 OK`:
-            - `{"message": "OK", "connected": ...}`: where connected is the connected state
+            - `{"message": "OK", "connected": ...}`: where connected is the connected state: `true` if connected, `false` if not.
         """
 
         class _GetConnectedState(ConnectionResource):
