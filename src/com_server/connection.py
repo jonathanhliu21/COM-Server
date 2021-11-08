@@ -26,6 +26,7 @@ class Connection(base_connection.BaseConnection):
     - `get_first_response()`: Gets the first response from the Serial port after sending something (breaks when timeout reached)
     - `send_for_response()`: Continues sending something until the connection receives a given response (breaks when timeout reached)
     - `wait_for_response()`: Waits until the connection receives a given response (breaks when timeout reached)
+    - `reconnect()`: Attempts to reconnect given a new port
 
     Other methods can generally help the user with interacting with the classes:
     - `all_ports()`: Lists all available COM ports.
@@ -348,6 +349,26 @@ class Connection(base_connection.BaseConnection):
                 return True
 
             time.sleep(0.01)
+    
+    def reconnect(self, port: t.Union[str, None] = None) -> None:
+        """Attempts to reconnect the serial port.
+
+        This will change the `port` attribute then call `self.connect()`.
+        Will raise `ConnectionException` if already connected.
+
+        Note that `reconnect()` can be used instead of `connect()`, but
+        it will connect to the `port` parameter, not the `port` attribute
+        when the class was initialized.
+
+        Parameters:
+        - `port` (str, None) (optional): Program will reconnect to this port. 
+        If None, then will reconnect to previous port. By default None.
+        """
+
+        if (port is not None):
+            self.port = port
+
+        self.connect()
 
     def all_ports(self, **kwargs) -> t.Any:
         """Lists all available Serial ports.
