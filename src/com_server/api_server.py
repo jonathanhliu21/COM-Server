@@ -41,6 +41,10 @@ class RestApiHandler:
     resource classes have to extend the custom `ConnectionResource` class
     from this library, not the `Resource` from `flask_restful`.
 
+    `500 Internal Server Error`s may occur with endpoints dealing with the connection
+    if the serial port is disconnected. Disconnections while the server is running
+    require restarts of the server and may change the port of the Arduino.
+
     Register and recall endpoints:
     - `/register` (GET): An endpoint to register an IP; other endpoints will result in `400` status code
     if they are accessed without accessing this first; if an IP is already registered then this will
