@@ -12,6 +12,7 @@ Endpoints include:
     - `/send/get_first` (POST): Responds with the first string response from the serial port after sending data, with data and parameters in request; equivalent to `Connection.get_first_response(is_bytes=False, ...)`
     - `/get/wait` (POST): Waits until connection receives string data given in request; different response for success and failure; equivalent to `Connection.wait_for_response(...)`
     - `/send/get` (POST): Continues sending something until connection receives data given in request; different response for success and failure; equivalent to `Connection.send_for_response(...)`
+    - `/connected` (GET): Indicates if the serial port is currently connected or not
     - `/list_ports` (GET): Lists all available Serial ports
 
 The above endpoints will not be valid if the class is used
