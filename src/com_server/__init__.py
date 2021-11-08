@@ -19,3 +19,5 @@ from .connection import Connection
 from .tools import all_ports
 
 from .api_builtins import Builtins
+
+__version__ = "0.0.0"
