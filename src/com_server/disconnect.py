@@ -28,8 +28,8 @@ def _disc_thread(obj: t.Any, exit_on_fail: bool) -> None:
     while (True):
         p = _get_all_ports()
 
-        if (obj.port not in p):
-            # disconnect object
+        if (obj.connected and obj.port not in p):
+            # disconnect object if connected
             obj.disconnect()
 
             # if exit, then kill main thread with SIGTERM
