@@ -15,7 +15,7 @@ from com_server import Connection
 # make the Connection object
 conn = Connection(baud=115200, port="/dev/ttyUSB0")
 # conn = Connection(baud=115200, port="/dev/ttyUSB...") # if Linux; can be "/dev/ttyACM..."
-# conn = Connection(baud=115200, port="/dev/cu.usbserial...") # if Mac; can be "/dev/tty.usbserial..."
+# conn = Connection(baud=115200, port="/dev/cu.usbserial...") 
 # conn = Connection(baud=115200, port="COM...") # if Windows
 
 conn.connect() # connect to serial port
