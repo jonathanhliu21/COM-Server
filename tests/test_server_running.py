@@ -22,7 +22,7 @@ try:
     requests.get(SERVER+"/recall")
 except requests.exceptions.ConnectionError:
     pytestmark = pytest.mark.skip(
-        reason="Server not launched. Make sure it is running on 0.0.0.0 with port 8080, or run \"python3 tests/start_server.py\".")
+        reason="Server not launched. Make sure it is running on 0.0.0.0 with port 8080, or run \"com_server -p <port> -b <baud> run\".")
 
 
 def test_register() -> None:
