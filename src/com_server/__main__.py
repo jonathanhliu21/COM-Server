@@ -25,7 +25,7 @@ Usage:
     com_server --version
 
 Options:
-    -p, --serport    The serial port to connect to.
+    -p, --serport    The serial port to connect to. For MacOS, use the "cu.*" port rather than the "tty.*" port.
     -b, --baud       The baud rate of the serial connection.
     --env=<env>      Development or production environment. Value must be 'dev' or 'prod'. [default: dev].
     --host=<host>    The name of the host server (optional) [default: 0.0.0.0].
@@ -51,13 +51,13 @@ def main() -> None:
     if (args["run"]):
         # if asking to run
 
-        baud = args["<baud>"]
-        serport = args["<serport>"]
-        env = args["--env"]
-        host = args["--host"]
-        port = args["--port"]
-        timeout = args["--to"]
-        send_interval = args["--s-int"]
+        baud = args["<baud>"].strip()
+        serport = args["<serport>"].strip()
+        env = args["--env"].strip()
+        host = args["--host"].strip()
+        port = args["--port"].strip()
+        timeout = args["--to"].strip()
+        send_interval = args["--s-int"].strip()
 
         if (env not in ('dev', 'prod')):
             print("Value of <env> must be \"dev\" or \"prod\".")

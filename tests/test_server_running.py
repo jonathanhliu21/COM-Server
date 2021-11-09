@@ -22,7 +22,7 @@ try:
     requests.get(SERVER+"/recall")
 except requests.exceptions.ConnectionError:
     pytestmark = pytest.mark.skip(
-        reason="Server not launched. Make sure it is running on 0.0.0.0 with port 8080, or run \"python3 tests/start_server.py\".")
+        reason="Server not launched. Make sure it is running on 0.0.0.0 with port 8080, or run \"com_server -p <port> -b <baud> run\".")
 
 
 def test_register() -> None:
@@ -180,10 +180,20 @@ def _test_send_response():
     print(r.text)
 
 
-_usb = glob.glob("/dev/ttyUSB[0-9]*")
-_acm = glob.glob("/dev/ttyACM[0-9]*")
+if (sys.platform.startswith("linux")):
+    _usb = glob.glob("/dev/ttyUSB[0-9]*")
+    _acm = glob.glob("/dev/ttyACM[0-9]*")
+    MATCH = "/dev/ttyUSB[0-9]*|/dev/ttyACM[0-9]*"
+elif (sys.platform.startswith("darwin")):
+    _usb = glob.glob("/dev/cu.usbserial*")
+    _acm = []
+    MATCH = "/dev/cu.usbserial.*"
+else:
+    # platform not supported for the test
+    _usb = []
+    _acm = []
 
-@pytest.mark.skipif(not sys.platform.startswith("linux"), len(_usb+_acm) <= 0, reason="port not connected")
+@pytest.mark.skipif(len(_usb+_acm) <= 0, reason="port not connected")
 def test_ports_server() -> None:
 
     r = requests.get(SERVER+"/list_ports")
@@ -191,7 +201,7 @@ def test_ports_server() -> None:
 
     matched = False
     for i in loaded["ports"]:
-        if (re.match("/dev/ttyUSB*", i[0])):
+        if (re.match(MATCH, i[0])):
             matched = True
             break
 

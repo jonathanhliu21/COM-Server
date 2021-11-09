@@ -7,6 +7,7 @@ setup(
     install_requires=[
         "pyserial>=3.5",
         "flask_restful>=0.3.9",
-        "docopt>=0.6.2"
+        "docopt>=0.6.2",
+        "waitress>=2.0.0"
     ]
 )
