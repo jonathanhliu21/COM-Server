@@ -14,27 +14,36 @@ from com_server.tools import all_ports
 
 import pytest
 
-_usb = glob.glob("/dev/ttyUSB[0-9]*")
-_acm = glob.glob("/dev/ttyACM[0-9]*")
+if (sys.platform.startswith("linux")):
+    _usb = glob.glob("/dev/ttyUSB[0-9]*")
+    _acm = glob.glob("/dev/ttyACM[0-9]*")
+    MATCH = "/dev/ttyUSB[0-9]*|/dev/ttyACM[0-9]*"
+elif (sys.platform.startswith("darwin")):
+    _usb = glob.glob("/dev/cu.usbserial*")
+    _acm = []
+    MATCH = "/dev/cu.usbserial.*"
+else:
+    # platform not supported for the test
+    pytestmark = pytest.mark.skip(reason="Test not supported on this platform.")
 
-@pytest.mark.skipif(not sys.platform.startswith("linux"), len(_usb+_acm) <= 0, reason="port not connected")
+@pytest.mark.skipif(len(_usb+_acm) <= 0, reason="port not connected")
 def test_ports():
     """
     Tests if `all_ports` is listing properly.    
     """
 
-    ports = [a for a, _, _ in all_ports() if re.match("/dev/ttyUSB*", a)]
+    ports = [a for a, _, _ in all_ports() if re.match(MATCH, a)]
 
     assert(len(ports) > 0)
 
-@pytest.mark.skipif(not sys.platform.startswith("linux"), len(_usb+_acm) <= 0, reason="port not connected")
+@pytest.mark.skipif(len(_usb+_acm) <= 0, reason="port not connected")
 def test_get_all():
     """
-    Tests if `_get_all_ports()` is listing properly.
+    Tests if `_get_all_ports()` disconnect is listing properly.
     """
 
     ports = _get_all_ports()
 
-    ports_all = [a for a in ports if re.match("/dev/ttyUSB*", a)]
+    ports_all = [a for a in ports if re.match(MATCH, a)]
 
     assert(len(ports_all) > 0)
