@@ -15,7 +15,8 @@ import serial
 from . import disconnect
 
 class ConnectException(Exception):
-    """Connecting/disconnecting errors
+    """
+    Connecting/disconnecting errors
     """
 
     def __init__(self, msg: str) -> None:
