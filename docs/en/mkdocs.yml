@@ -2,3 +2,6 @@ site_name: COM_Server
 
 nav:
   - Home: "index.md"
+  - "User Guide":
+    - "Getting Started": "guide/getting-started.md"
+    - "Library API": "guide/library-api.md"

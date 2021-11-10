@@ -17,6 +17,8 @@ Operating systems:
 Serial ports:
 
 - Arduino UNO
+
+It is likely that this library will not work for non-USB ports. 
  
 ## Links
 - Source code: [https://github.com/jonyboi396825/COM-Server](https://github.com/jonyboi396825/COM-Server)
