@@ -157,11 +157,7 @@ class BaseConnection:
         """
 
         if (self.conn is None):
-            if (self.exception):
-                # raise exception if true
-                raise ConnectException("No connection established")
-
-            # return if not open
+            # return if not open, as threads are already closed
             return
 
         self.conn.close()
