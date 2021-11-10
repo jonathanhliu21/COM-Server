@@ -13,7 +13,7 @@ vers = sys.version_info
 if (vers.major < 3 or (vers.major == 3 and vers.minor < 6)):
     raise EnvironmentError("Python version >= 3.6 is required")
 
-from .api_server import ConnectionResource, RestApiHandler
+from .api_server import ConnectionResource, RestApiHandler, EndpointExistsException
 from .base_connection import BaseConnection, ConnectException
 from .connection import Connection
 from .tools import all_ports
