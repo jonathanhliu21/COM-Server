@@ -1,0 +1,4 @@
+site_name: COM_Server
+
+nav:
+  - Home: "index.md"
