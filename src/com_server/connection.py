@@ -360,6 +360,9 @@ class Connection(base_connection.BaseConnection):
         it will connect to the `port` parameter, not the `port` attribute
         when the class was initialized.
 
+        Also note that this will most likely not work if `handle_disconnect`
+        was initialized to False.
+
         Parameters:
         - `port` (str, None) (optional): Program will reconnect to this port. 
         If None, then will reconnect to previous port. By default None.
