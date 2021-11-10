@@ -24,9 +24,9 @@ class ConnectException(Exception):
 
 
 class BaseConnection:
-    """A base connection object with a Serial or COM port.
+    """A base connection object with a serial or COM port.
 
-    If you want to communicate via Serial, it is recommended to
+    If you want to communicate via serial, it is recommended to
     either directly use `pyserial` directly or use the `Connection` class.
 
     How this works is that it creates a pyserial object given the parameters, which opens the connection. 
@@ -47,7 +47,7 @@ class BaseConnection:
     - `send()`: sends data to the serial port
     - `read()`: reads data from the serial port
 
-    It also contains the property `connected` to indicate if it is currently connected to the Serial port.
+    It also contains the property `connected` to indicate if it is currently connected to the serial port.
 
     **Warning**: Before making this object go out of scope, make sure to call `disconnect()` in order to avoid thread leaks. If this does not happen, then the disconnect thread and IO thread will still be running for an object that has already been deleted.
     """
@@ -71,7 +71,7 @@ class BaseConnection:
         For more information, see [here](https://pyserial.readthedocs.io/en/latest/pyserial_api.html#serial.Serial).
 
         Parameters:
-            - `baud` (int): The baud rate of the Serial connection 
+            - `baud` (int): The baud rate of the serial connection 
             - `port` (str): The serial port
             - `timeout` (float) (optional): How long the program should wait, in seconds, for serial data before exiting. By default 1.
             - `exception` (bool) (optional): Raise an exception when there is a user error in the methods rather than just returning. By default True.
@@ -80,7 +80,7 @@ class BaseConnection:
             exit if the interval has not reached `send_interval` seconds. NOT recommended to set to small values. By default 1.
             - `queue_size` (int) (optional): The number of previous data that was received that the program should keep. Must be nonnegative. By default 256.
             - `handle_disconnect` (bool) (optional): Whether the program should spawn a thread to detect if the serial port has disconnected or not. By default True.
-            - `exit_on_disconnect` (bool) (optional): If the program should exit if Serial port disconnected. Does NOT work on Windows. By default False.
+            - `exit_on_disconnect` (bool) (optional): If the program should exit if serial port disconnected. Does NOT work on Windows. By default False.
             - `kwargs`: Will be passed to pyserial.
 
         Returns: nothing
@@ -117,9 +117,9 @@ class BaseConnection:
             f"last_sent={self.last_sent}, rcv_queue={str(self.rcv_queue)}, send_queue={str(self.to_send)}}}"
     
     def connect(self) -> None:
-        """Begins connection to the Serial port.
+        """Begins connection to the serial port.
 
-        When called, initializes a Serial instance if not initialized already. Also starts the receive thread.
+        When called, initializes a serial instance if not initialized already. Also starts the receive thread.
 
         Parameters: None
 
@@ -147,7 +147,7 @@ class BaseConnection:
             disconnect.disconnect_handler(self, exit_on_fail=bool(self.exit_on_disconnect))
 
     def disconnect(self) -> None:
-        """Closes connection to the Serial port.
+        """Closes connection to the serial port.
 
         When called, calls `Serial.close()` then makes the connection `None`. If it is currently closed then just returns.
 
@@ -179,7 +179,7 @@ class BaseConnection:
         The queue size limit is 65536 byte objects. Anything more that is trying to be sent will not be added to the queue.
         Sending data too rapidly (e.g. making `send_interval` too small, varies from computer to computer) is not recommended,
         as the queue will get too large and the send data will get backed up and will be delayed,
-        since it takes a considerable amount of time for data to be sent through the Serial port.
+        since it takes a considerable amount of time for data to be sent through the serial port.
         Additionally, parts of the send queue will be all sent at once 
         instead of waiting for a receive for each send,
         which may end up with unexpected behavior in some programs.
@@ -201,7 +201,7 @@ class BaseConnection:
         Parameters:
         - `*args`: Everything that is to be sent, each as a separate parameter. Must have at least one parameter.
         - `check_type` (bool) (optional): If types in *args should be checked. By default True.
-        - `ending` (str) (optional): The ending of the bytes object to be sent through the Serial port. By default a carraige return + newline ("\\r\\n")
+        - `ending` (str) (optional): The ending of the bytes object to be sent through the serial port. By default a carraige return + newline ("\\r\\n")
         - `concatenate` (str) (optional): What the strings in args should be concatenated by. By default a space `' '`
 
         Returns:
@@ -251,7 +251,7 @@ class BaseConnection:
                 - 1 will return the 2nd most recent received data
                 - ...
         
-        Note that the data will be read as ALL the data available in the Serial port,
+        Note that the data will be read as ALL the data available in the serial port,
         or `Serial.read_all()`.
 
         Parameters:
@@ -308,7 +308,7 @@ class BaseConnection:
         return ret
 
     def _io_thread(self) -> None:
-        """Thread that interacts with Serial port.
+        """Thread that interacts with serial port.
 
         Will continuously read data and add bytes to queue (`rcv_queue`).
         Will also take send queue (`to_send`) and send contents one at a time.
@@ -317,7 +317,7 @@ class BaseConnection:
         while (self.conn is not None):
             # keep on trying to poll data as long as connection is still alive
             if (self.conn.in_waiting):
-                # read everything from Serial buffer
+                # read everything from serial buffer
                 incoming = self.conn.read_all()
 
                 # add to queue
