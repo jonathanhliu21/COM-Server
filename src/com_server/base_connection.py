@@ -92,6 +92,8 @@ class BaseConnection:
         self.pass_to_pyserial = kwargs
         self.queue_size = abs(int(queue_size))  # make sure positive
         self.send_interval = abs(float(send_interval))  # make sure positive
+        self.handle_disconnect = handle_disconnect
+        self.exit_on_disconnect = exit_on_disconnect
 
         # initialize Serial object
         self.conn = None
@@ -101,10 +103,6 @@ class BaseConnection:
 
         self.rcv_queue = []  # stores previous received strings and timestamps, tuple (timestamp, str)
         self.to_send = [] # queue data to send
-
-        if (handle_disconnect):
-            # start disconnect thread
-            disconnect.disconnect_handler(self, exit_on_fail=bool(exit_on_disconnect))
 
     def __repr__(self) -> str:
         """
@@ -141,6 +139,10 @@ class BaseConnection:
 
         # start receive thread
         threading.Thread(name="Serial-IO-thread", target=self._io_thread, daemon=True).start()
+
+        if (self.handle_disconnect):
+            # start disconnect thread
+            disconnect.disconnect_handler(self, exit_on_fail=bool(self.exit_on_disconnect))
 
     def disconnect(self) -> None:
         """Closes connection to the Serial port.
