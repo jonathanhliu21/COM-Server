@@ -48,6 +48,8 @@ class BaseConnection:
     - `read()`: reads data from the serial port
 
     It also contains the property `connected` to indicate if it is currently connected to the Serial port.
+
+    **Warning**: Before making this object go out of scope, make sure to call `disconnect()` in order to avoid thread leaks. If this does not happen, then the disconnect thread and IO thread will still be running for an object that has already been deleted.
     """
 
     def __init__(
