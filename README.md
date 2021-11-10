@@ -4,13 +4,21 @@ COM-Server is a Python library and a web server that hosts an API that interacts
 
 The serial communication uses [pyserial](https://pyserial.readthedocs.io/en/latest/pyserial.html) as its back-end and the server uses [flask-restful](https://flask-restful.readthedocs.io/en/latest/quickstart.html) and [Flask](https://flask.palletsprojects.com/en/2.0.x/). Reading their documentations may help with developing with COM-Server.
 
-**NOTE**: COM-Server has only been tested on:
+**NOTE**: COM-Server has only been tested on:  
+Operating systems:
+
 - Ubuntu 20.04 (Focal Fossa)
 - Raspberry Pi OS 10 (Buster)
 - Mac OS 10.15.x (Catalina)
 - Mac OS 11.6 (Big Sur)
 
+Serial ports:
+
+- Arduino UNO
+
 ## Installation
+
+**NOTE**: COM_Server only works on Python >= 3.6.
 
 Using [pip](https://pip.pypa.io/en/stable/getting-started/):
 ```
@@ -30,13 +38,13 @@ com_server.Builtins(handler)
 
 handler.run_dev(host="0.0.0.0", port=8080) 
 ```
-Replace "\<port> and \<baud>" with the serial port and baud rate.
+Replace "&lt;port&gt;" and "&lt;baud&gt;" with the serial port and baud rate.
 
 Alternatively, you can use the command line:
 ```
 > com_server -p <port> -b <baud> run
 ```
-Again, replace "\<port> and \<baud>" with the serial port and baud rate.
+Again, replace "&lt;port&gt;" and "&lt;baud&gt;" with the serial port and baud rate.
 
 ## Links:  
 - Source code: https://github.com/jonyboi396825/COM-Server
