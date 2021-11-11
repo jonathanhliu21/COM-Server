@@ -15,7 +15,7 @@ Endpoints include:
     - `/connected` (GET): Indicates if the serial port is currently connected or not
     - `/list_ports` (GET): Lists all available Serial ports
 
-The above endpoints will not be available if the class is used
+The above endpoints will not be available if the class is used.
 """
 
 import typing as t
@@ -39,7 +39,7 @@ class Builtins:
         - `/connected` (GET): Indicates if the serial port is currently connected or not
         - `/list_ports` (GET): Lists all available Serial ports
 
-    The above endpoints will not be available if the class is used
+    The above endpoints will not be available if the class is used.
     """
 
     def __init__(self, handler: RestApiHandler) -> None:
