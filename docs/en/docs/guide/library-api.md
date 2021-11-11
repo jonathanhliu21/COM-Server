@@ -583,6 +583,166 @@ Returns: A generator-like object (see link above)
 
 ---
 
+### com_server.RestApiHandler
+A handler for creating endpoints with the `Connection` and `Connection`-based objects.
+
+This class provides the framework for adding custom endpoints for doing
+custom things with the serial connection and running the local server
+that will host the API. It uses a `flask_restful` object as its back end. 
+
+Note that only one connection (one IP address) will be allowed to connect
+at a time because the serial port can only handle one process. 
+Additionally, endpoints cannot include `/register` or `/recall`, as that 
+will be used to ensure that there is only one connection at a time. Note that unexpected behavior may occur when different processes of the same IP reach the same endpoint as they only check IPs, not processes. Finally,
+resource classes have to extend the custom `ConnectionResource` class
+from this library, not the `Resource` from `flask_restful`.
+
+`500 Internal Server Error`s may occur with endpoints dealing with the connection
+if the serial port is disconnected. Disconnections while the server is running
+require restarts of the server and may change the port of the Arduino.
+
+More information on [Flask](https://flask.palletsprojects.com/en/2.0.x/) and 
+[flask-restful](https://flask-restful.readthedocs.io/en/latest/)
+
+Register and recall endpoints:
+
+- `/register` (GET): An endpoint to register an IP; other endpoints will result in `400` status code
+if they are accessed without accessing this first; if an IP is already registered then this will
+result in `400`; IPs must call this first before accessing serial port
+- `/recall` (GET): After registered, can call `/recall` to "free" IP from server, allowing other IPs to 
+call `/register` to use the serial port
+
+#### RestApiHandler.\_\_init\_\_()
+
+```py
+def __init__(conn, **kwargs)
+```
+
+Constructor for class
+
+Parameters:
+
+- `conn` (`Connection`): The `Connection` object the API is going to be associated with. 
+- `**kwargs`, will be passed to `flask_restful.Api()`. See [here](https://flask-restful.readthedocs.io/en/latest/api.html#id1) for more info.
+
+May raise:
+
+- `TypeError` if an additional argument is provided that is not in `flask_restful.Api()`
+
+#### RestApiHandler.add_endpoint()
+
+```py
+def add_endpoint(endpoint)
+```
+
+Decorator that adds an endpoint
+
+This decorator needs to go above a function which
+contains a nested class that extends `ConnectionResource`.
+The function needs a parameter indicating the serial connection.
+The function needs to return that nested class.
+The class should contain implementations of request
+methods such as `get()`, `post()`, etc. similar to the 
+`Resource` class from `flask_restful`.
+
+For more information, see the `flask_restful` [documentation](https://flask-restful.readthedocs.io).
+
+Note that duplicate endpoints will result in an exception.
+If there are two classes of the same name, even in different
+endpoints, the program will append underscores to the name
+until there are no more repeats. For example, if one function
+returned a class named "Hello" and another function returned a
+class also named "Hello", then the second class name will be 
+changed to "Hello_". This happens because `flask_restful` 
+interprets duplicate class names as duplicate endpoints.
+
+Parameters:
+
+- `endpoint`: The endpoint to the resource. Cannot repeat.
+`/register` and `/recall` cannot be used.
+
+May raise:
+
+- `com_server.EndpointExistsException`: If an endpoint already exists
+- `TypeError` if the function does not return a class that extends `com_server.ConnectionResource`
+
+#### RestApiHandler.add_resource()
+
+```py
+def add_resource(*args, **kwargs)
+```
+
+Calls `flask_restful.add_resource`. Allows adding endpoints
+without needing a connection.
+
+See [here](https://flask-restful.readthedocs.io/en/latest/api.html#flask_restful.Api.add_resource)
+for more info on `add_resource` and [here](https://flask-restful.readthedocs.io)
+for more info on `flask_restful` in general. 
+
+May raise:
+
+- See [here](https://flask-restful.readthedocs.io/en/latest/api.html#flask_restful.Api.add_resource)
+
+#### RestApiHandler.run_dev()
+
+```py
+def run_dev(**kwargs)
+```
+
+Launches the Flask app as a development server.
+
+All arguments in `**kwargs` will be passed to `Flask.run()`.
+For more information, see [here](https://flask.palletsprojects.com/en/2.0.x/api/#flask.Flask.run).
+For documentation on Flask in general, see [here](https://flask.palletsprojects.com/en/2.0.x/).
+
+Automatically disconnects the `Connection` object after
+the server is closed.
+
+Some arguments include: 
+
+- `host`: The host of the server. Ex: `localhost`, `0.0.0.0`, `127.0.0.1`, etc.
+- `port`: The port to host it on. Ex: `5000` (default), `8000`, `8080`, etc.
+- `debug`: If the app should be used in debug mode. 
+
+May raise:
+
+- See [here](https://flask-restful.readthedocs.io/en/latest/api.html#flask_restful.Api.add_resource)
+- See [here](https://flask.palletsprojects.com/en/2.0.x/api/#flask.Flask.run)
+
+#### RestApiHandler.run_prod()
+
+```py
+def run_prod(**kwargs)
+```
+
+Launches the Flask app as a Waitress production server.
+
+All arguments in `**kwargs` will be passed to `waitress.serve()`.
+For more information, see [here](https://docs.pylonsproject.org/projects/waitress/en/stable/arguments.html#arguments).
+For Waitress documentation, see [here](https://docs.pylonsproject.org/projects/waitress/en/stable/).
+
+If nothing is included, then runs on `http://0.0.0.0:8080`
+
+May raise:
+
+- See [here](https://flask-restful.readthedocs.io/en/latest/api.html#flask_restful.Api.add_resource)
+- See [here](https://docs.pylonsproject.org/projects/waitress/en/stable/arguments.html)
+
+#### RestApiHandler.flask_obj
+
+Getter:  
+Gets the `Flask` object that is the backend of the endpoints and the server.
+
+This can be used to modify and customize the `Flask` object in this class.
+
+#### RestApiHandler.api_obj
+
+Getter:  
+Gets the `flask_restful` API object that handles parsing the classes.
+
+This can be used to modify and customize the `Api` object in this class.
+
+---
 
 ## Exceptions
 
