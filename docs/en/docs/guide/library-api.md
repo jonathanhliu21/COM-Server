@@ -744,6 +744,60 @@ This can be used to modify and customize the `Api` object in this class.
 
 ---
 
+### com_server.ConnectionResource
+
+A custom resource object that is built to be used with `RestApiHandler`.
+
+This class is to be extended and used like the `Resource` class.
+Have `get()`, `post()`, and other methods for the types of responses you need.
+
+---
+
+### com_server.Builtins
+
+Contains implementations of endpoints that call methods of `Connection` object
+
+Endpoints include:
+
+- `/send` (POST): Send something through the serial port using `Connection.send()` with parameters in request; equivalent to `Connection.send(...)`
+- `/receive` (GET, POST): Respond with the most recent received string from the serial port; equivalent to `Connection.receive_str(...)`
+- `/receive/all` (GET, POST): Returns the entire receive queue; equivalent to `Connection.get_all_rcv_str(...)`
+- `/get` (GET, POST): Respond with the first string from serial port after request; equivalent to `Connection.get(str, ...)`
+- `/send/get_first` (POST): Responds with the first string response from the serial port after sending data, with data and parameters in request; equivalent to `Connection.get_first_response(is_bytes=False, ...)`
+- `/get/wait` (POST): Waits until connection receives string data given in request; different response for success and failure; equivalent to `Connection.wait_for_response(...)`
+- `/send/get` (POST): Continues sending something until connection receives data given in request; different response for success and failure; equivalent to `Connection.send_for_response(...)`
+- `/connected` (GET): Indicates if the serial port is currently connected or not
+- `/list_ports` (GET): Lists all available Serial ports
+
+The above endpoints will not be available if the class is used.
+
+#### Builtins.\_\_init\_\_()
+
+```py
+def __init__(handler)
+```
+
+Constructor for class that contains builtin endpoints
+
+Adds endpoints to given `RestApiHandler` class;
+uses `Connection` object within the class to handle
+serial data.
+
+Example usage:
+```py
+conn = com_server.Connection(...)
+handler = com_server.RestApiHandler(conn)
+builtins = com_server.Builtins(handler)
+
+handler.run() # runs the server
+```
+
+Parameters:
+
+- `api`: The `RestApiHandler` class that this class should wrap around
+
+---
+
 ## Exceptions
 
 ### com_server.ConnectException  
