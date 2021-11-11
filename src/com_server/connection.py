@@ -12,7 +12,7 @@ from . import base_connection, tools
 
 
 class Connection(base_connection.BaseConnection):
-    """A more user-friendly interface with the Serial port.
+    """A more user-friendly interface with the serial port.
 
     In addition to the four basic methods (see `BaseConnection`),
     it makes other methods that may also be useful to the user
@@ -23,7 +23,7 @@ class Connection(base_connection.BaseConnection):
     - `get_all_rcv()`: Returns the entire receive queue
     - `get_all_rcv_str()`: Returns the entire receive queue, converted to strings
     - `receive_str()`: Receives as a string rather than bytes object
-    - `get_first_response()`: Gets the first response from the Serial port after sending something (breaks when timeout reached)
+    - `get_first_response()`: Gets the first response from the serial port after sending something (breaks when timeout reached)
     - `send_for_response()`: Continues sending something until the connection receives a given response (breaks when timeout reached)
     - `wait_for_response()`: Waits until the connection receives a given response (breaks when timeout reached)
     - `reconnect()`: Attempts to reconnect given a new port
@@ -150,7 +150,7 @@ class Connection(base_connection.BaseConnection):
                 - 1 will return the 2nd most recent received data
                 - ...
 
-        Note that the data will be read as ALL the data available in the Serial port,
+        Note that the data will be read as ALL the data available in the serial port,
         or `Serial.read_all()`.
 
         This method will take in the input from `receive()` and put it in 
@@ -184,10 +184,10 @@ class Connection(base_connection.BaseConnection):
         return (rcv_tuple[0], str_data)
 
     def get_first_response(self, *args: "tuple[t.Any]", is_bytes: bool = True, check_type: bool = True, ending: str = "\r\n", concatenate: str = ' ', read_until: t.Union[str, None] = None, strip: bool = True) -> t.Union[bytes, str, None]:
-        """Gets the first response from the Serial port after sending something.
+        """Gets the first response from the serial port after sending something.
 
         This method works almost the same as `send()` (see `self.send()`). 
-        It also returns a string representing the first response from the Serial port after sending.
+        It also returns a string representing the first response from the serial port after sending.
         All `*args` and `check_type`, `ending`, and `concatenate`, will be sent to `send()`.
 
         If there is no response after reaching the timeout, then it breaks out of the method.
@@ -198,7 +198,7 @@ class Connection(base_connection.BaseConnection):
         with given options `read_until` and `strip`. See `conv_bytes_to_str()` for more details.
         If True, then returns raw `bytes` data. By default True.
         - `check_type` (bool) (optional): If types in *args should be checked. By default True.
-        - `ending` (str) (optional): The ending of the bytes object to be sent through the Serial port. By default a carraige return ("\\r\\n")
+        - `ending` (str) (optional): The ending of the bytes object to be sent through the serial port. By default a carraige return ("\\r\\n")
         - `concatenate` (str) (optional): What the strings in args should be concatenated by. By default a space `' '`.
         - `read_until` (str, None) (optional): Will return a string that terminates with `read_until`, excluding `read_until`. 
         For example, if the string was `"abcdefg123456\\n"`, and `read_until` was `\\n`, then it will return `"abcdefg123456"`.
@@ -207,7 +207,7 @@ class Connection(base_connection.BaseConnection):
         returns the result. If False, then returns the raw result. By default True.
 
         Returns:
-        - A string or bytes representing the first response from the Serial port.
+        - A string or bytes representing the first response from the serial port.
         - None if there was no connection (if self.exception == False), no data, timeout reached, or send interval not reached.
         """
 
@@ -302,7 +302,7 @@ class Connection(base_connection.BaseConnection):
         If given a bytes, then directly compares the bytes object to the response.
         - `*args`: Everything that is to be sent, each as a separate parameter. Must have at least one parameter.
         - `check_type` (bool) (optional): If types in *args should be checked. By default True.
-        - `ending` (str) (optional): The ending of the bytes object to be sent through the Serial port. By default a carraige return ("\\r\\n")
+        - `ending` (str) (optional): The ending of the bytes object to be sent through the serial port. By default a carraige return ("\\r\\n")
         - `concatenate` (str) (optional): What the strings in args should be concatenated by. By default a space `' '`
 
         These parameters only apply if `response` is a string:
@@ -376,7 +376,7 @@ class Connection(base_connection.BaseConnection):
         self.connect()
 
     def all_ports(self, **kwargs) -> t.Any:
-        """Lists all available Serial ports.
+        """Lists all available serial ports.
 
         Calls `tools.all_ports()`, which itself calls `serial.tools.list_ports.comports()`.
         For more information, see [here](https://pyserial.readthedocs.io/en/latest/tools.html#module-serial.tools.list_ports).
