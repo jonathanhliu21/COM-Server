@@ -356,7 +356,7 @@ class Connection(base_connection.BaseConnection):
         """Attempts to reconnect the serial port.
 
         This will change the `port` attribute then call `self.connect()`.
-        Will raise `ConnectionException` if already connected.
+        Will raise `ConnectException` if already connected.
 
         Note that `reconnect()` can be used instead of `connect()`, but
         it will connect to the `port` parameter, not the `port` attribute
