@@ -1,5 +1,20 @@
 # COM-Server Library API
 
+## Functions
+
+### com_server.all_ports()
+
+```py
+def all_ports(**kwargs)
+```
+
+Gets all ports from serial interface.
+
+Gets ports from Serial interface by calling `serial.tools.list_ports.comports()`.
+See [here](https://pyserial.readthedocs.io/en/latest/tools.html#module-serial.tools.list_ports) for more info.
+
+---
+
 ## Classes
 
 ### com_server.BaseConnection
@@ -552,6 +567,10 @@ May raise:
 - `serial.serialutil.SerialException` if the port given in `__init__` does not exist.
 
 #### Connection.all_ports()
+
+```py
+def all_ports(**kwargs)
+```
 
 Lists all available serial ports.
 
