@@ -24,6 +24,29 @@ It is likely that this library will not work for non-USB ports.
 - Source code: [https://github.com/jonyboi396825/COM-Server](https://github.com/jonyboi396825/COM-Server)
 - Issue tracker: [https://github.com/jonyboi396825/COM-Server/issues](https://github.com/jonyboi396825/COM-Server/issues)
 
+## Contents
+
+- [Home](/)
+    - [Links](/#links)
+    - [Installation](/#installation)
+    - [Quickstart](/#quickstart)
+    - [License](/#license)
+- [Getting Started](guide/getting-started)
+    - [Creating a Connection Class](guide/getting-started/#creating-a-connection-class)
+- [Library API](guide/library-api)
+    - [Functions](guide/library-api/#functions)
+        - [com_server.all_ports()](guide/library-api/#com_serverall_ports)
+    - [Classes](guide/library-api/#classes)
+        - [com_server.BaseConnection](guide/library-api/#com_serverbaseconnection)
+        - [com_server.Connection](guide/library-api/#com_serverconnection)
+        - [com_server.RestApiHandler](guide/library-api/#com_serverrestapihandler)
+        - [com_server.ConnectionResource](guide/library-api/#com_serverconnectionresource)
+        - [com_server.Builtins](guide/library-api/#com_serverbuiltins)
+    - [Exceptions](guide/library-api/#exceptions)
+        - [com_server.ConnectException](guide/library-api/#com_serverconnectexception)
+        - [com_server.EndpointExistsException](guide/library-api/#com_serverendpointexistsexception)
+- [Server API](server/server-api)
+
 ## Installation
 
 **NOTE**: COM_Server only works on Python >= 3.6.
@@ -62,4 +85,4 @@ Alternatively, you can use the command line:
 Again, replace "&lt;port&gt;" and "&lt;baud&gt;" with the serial port and baud rate.
 
 ## License
-This library is open source and licensed under the [MIT License](https://github.com/jonyboi396825/COM-Server/blob/add-docs/LICENSE).
+This library is open source and licensed under the [MIT License](https://github.com/jonyboi396825/COM-Server/blob/master/LICENSE).
