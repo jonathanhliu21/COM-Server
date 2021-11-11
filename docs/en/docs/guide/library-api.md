@@ -446,9 +446,13 @@ May raise:
 
 - `com_server.ConnectException` if a user calls this method when the object has not been connected and `exception` is True.
 
-#### Connection.wait_for_response(response, after_timestamp=-1.0, read_until=None, strip=True)
+#### Connection.wait_for_response()
 
-"""Waits until the connection receives a given response.
+```py
+def wait_for_response(response, after_timestamp=-1.0, read_until=None, strip=True)
+```
+
+Waits until the connection receives a given response.
 
 This method will call `receive()` repeatedly until it
 returns a string that matches `response` whose timestamp
