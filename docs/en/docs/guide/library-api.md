@@ -186,6 +186,8 @@ A property to determine if the connection object is currently connected to a ser
 This also can determine if the IO thread and the disconnect thread for this object
 are currently running or not.
 
+---
+
 ### com_server.Connection
 A more user-friendly interface with the serial port.
 
@@ -316,6 +318,199 @@ May raise:
 
 - `com_server.ConnectException` if a user calls this method when the object has not been connected and `exception` is True.
 - `TypeError` if not given literals `str` or `bytes` in `given_type`
+
+#### Connection.get_all_rcv()
+
+```py
+def get_all_rcv()
+```
+
+Returns the entire receive queue
+
+The queue will be a `queue_size`-sized list that contains
+tuples (timestamp received, received bytes).
+
+Returns:
+
+- A list of tuples indicating the timestamp received and the bytes object received
+
+#### Connection.get_all_rcv_str()
+
+```py
+def get_all_rcv_str(read_until=None, strip=True)
+```
+
+Returns entire receive queue as string.
+
+Each bytes object will be passed into `conv_bytes_to_str()`.
+This means that `read_until` and `strip` will apply to 
+EVERY element in the receive queue before returning.
+
+Parameters:
+
+- `read_until` (str, None) (optional): Will return a string that terminates with `read_until`, excluding `read_until`. 
+For example, if the string was `"abcdefg123456\\n"`, and `read_until` was `\\n`, then it will return `"abcdefg123456"`.
+If there are multiple occurrences of `read_until`, then it will return the string that terminates with the first one.
+If `read_until` is None or it doesn't exist, the it will return the entire string. By default None.
+- `strip` (bool) (optional): If True, then strips spaces and newlines from either side of the processed string before returning.
+If False, returns the processed string in its entirety. By default True.
+
+Returns:
+
+- A list of tuples indicating the timestamp received and the converted string from bytes 
+
+#### Connection.get_first_response()
+
+```py
+def get_first_response(*args, is_bytes=True, check_type=True, ending='\r\n', concatenate=' ', read_until=None, strip=True)
+```
+
+Gets the first response from the serial port after sending something.
+
+This method works almost the same as `send()` (see `self.send()`). 
+It also returns a string representing the first response from the serial port after sending.
+All `*args` and `check_type`, `ending`, and `concatenate`, will be sent to `send()`.
+
+If there is no response after reaching the timeout, then it breaks out of the method.
+
+Parameters:
+
+- `*args`: Everything that is to be sent, each as a separate parameter. Must have at least one parameter.
+- `is_bytes`: If False, then passes to `conv_bytes_to_str()` and returns a string
+with given options `read_until` and `strip`. See `conv_bytes_to_str()` for more details.
+If True, then returns raw `bytes` data. By default True.
+- `check_type` (bool) (optional): If types in *args should be checked. By default True.
+- `ending` (str) (optional): The ending of the bytes object to be sent through the serial port. By default a carraige return ("\\r\\n")
+- `concatenate` (str) (optional): What the strings in args should be concatenated by. By default a space `' '`.
+- `read_until` (str, None) (optional): Will return a string that terminates with `read_until`, excluding `read_until`. 
+For example, if the string was `"abcdefg123456\\n"`, and `read_until` was `\\n`, then it will return `"abcdefg123456"`.
+If `read_until` is None, the it will return the entire string. By default None.
+- `strip` (bool) (optional): If True, then strips the received and processed string of whitespace and newlines, then 
+returns the result. If False, then returns the raw result. By default True.
+
+Returns:
+
+- A string or bytes representing the first response from the serial port.
+- None if there was no connection (if self.exception == False), no data, timeout reached, or send interval not reached.
+
+May raise:
+
+- `com_server.ConnectException` if a user calls this method when the object has not been connected and `exception` is True.
+
+#### Connection.wait_for_response(response, after_timestamp=-1.0, read_until=None, strip=True)
+
+"""Waits until the connection receives a given response.
+
+This method will call `receive()` repeatedly until it
+returns a string that matches `response` whose timestamp
+is greater than given timestamp (`after_timestamp`).
+
+Parameters:
+
+- `response` (str, bytes): The receive data that the program is looking for.
+If given a string, then compares the string to the response after it is decoded in `utf-8`.
+If given a bytes, then directly compares the bytes object to the response.
+If given anything else, converts to string.
+- `after_timestamp` (float) (optional): Look for responses that came after given time as the UNIX timestamp.
+If negative, the converts to time that the method was called, or `time.time()`. By default -1.0
+
+These parameters only apply if `response` is a string:
+
+- `read_until` (str, None) (optional): Will return a string that terminates with `read_until`, excluding `read_until`. 
+For example, if the string was `"abcdefg123456\\n"`, and `read_until` was `\\n`, then it will return `"abcdefg123456"`.
+If `read_until` is None, the it will return the entire string. By default None.
+- `strip` (bool) (optional): If True, then strips the received and processed string of whitespace and newlines, then 
+returns the result. If False, then returns the raw result. By default True.
+
+Returns:
+
+- True on success
+- False on failure: timeout reached because response has not been received.
+
+May raise:
+
+- `com_server.ConnectException` if a user calls this method when the object has not been connected and `exception` is True.
+
+#### Connection.send_for_response()
+
+```py
+def send_for_response(response, *args, read_until=None, strip=True, check_type=True, ending='\r\n', concatenate=' ')
+```
+
+Continues sending something until the connection receives a given response.
+
+This method will call `send()` and `receive()` repeatedly (calls again if does not match given `response` parameter).
+See `send()` for more details on `*args` and `check_type`, `ending`, and `concatenate`, as these will be passed to the method.
+Will return `true` on success and `false` on failure (reached timeout)
+
+Parameters:
+
+- `response` (str, bytes): The receive data that the program looks for after sending.
+If given a string, then compares the string to the response after it is decoded in `utf-8`.
+If given a bytes, then directly compares the bytes object to the response.
+- `*args`: Everything that is to be sent, each as a separate parameter. Must have at least one parameter.
+- `check_type` (bool) (optional): If types in *args should be checked. By default True.
+- `ending` (str) (optional): The ending of the bytes object to be sent through the serial port. By default a carraige return ("\\r\\n")
+- `concatenate` (str) (optional): What the strings in args should be concatenated by. By default a space `' '`
+
+These parameters only apply if `response` is a string:
+
+- `read_until` (str, None) (optional): Will return a string that terminates with `read_until`, excluding `read_until`. 
+For example, if the string was `"abcdefg123456\\n"`, and `read_until` was `\\n`, then it will return `"abcdefg123456"`.
+If `read_until` is None, the it will return the entire string. By default None.
+- `strip` (bool) (optional): If True, then strips the received and processed string of whitespace and newlines, then 
+returns the result. If False, then returns the raw result. By default True.
+
+Returns:
+
+- `true` on success: The incoming received data matching `response`.
+- `false` on failure: Connection not established (if self.exception == False), incoming data did not match `response`, or `timeout` was reached, or send interval has not been reached.
+
+May raise:
+
+- `com_server.ConnectException` if a user calls this method when the object has not been connected and `exception` is True.
+
+#### Connection.reconnect()
+
+```py
+def reconnect(port=None)
+```
+
+Attempts to reconnect the serial port.
+
+This will change the `port` attribute then call `self.connect()`.
+Will raise `ConnectionException` if already connected.
+
+Note that `reconnect()` can be used instead of `connect()`, but
+it will connect to the `port` parameter, not the `port` attribute
+when the class was initialized.
+
+Also note that this will most likely not work if `handle_disconnect`
+was initialized to False.
+
+Parameters:
+
+- `port` (str, None) (optional): Program will reconnect to this port. 
+If None, then will reconnect to previous port. By default None.
+
+May raise:
+
+- `com_server.ConnectException` if the user calls this function while it is already connected and `exception` is True.
+- `serial.serialutil.SerialException` if the port given in `__init__` does not exist.
+
+#### Connection.all_ports()
+
+Lists all available serial ports.
+
+Calls `tools.all_ports()`, which itself calls `serial.tools.list_ports.comports()`.
+For more information, see [here](https://pyserial.readthedocs.io/en/latest/tools.html#module-serial.tools.list_ports).
+
+Parameters: See link above.
+
+Returns: A generator-like object (see link above)
+
+---
+
 
 ## Exceptions
 
