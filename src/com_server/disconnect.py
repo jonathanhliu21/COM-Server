@@ -36,7 +36,7 @@ def _disc_thread(obj: t.Any, exit_on_fail: bool) -> None:
             if (exit_on_fail):
                 os.kill(os.getpid(), signal.SIGTERM)
 
-        time.sleep(2)
+        time.sleep(0.5)
 
 
 def disconnect_handler(obj: t.Any, exit_on_fail: bool) -> None:
