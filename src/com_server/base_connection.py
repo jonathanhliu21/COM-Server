@@ -150,6 +150,10 @@ class BaseConnection:
         """Closes connection to the serial port.
 
         When called, calls `Serial.close()` then makes the connection `None`. If it is currently closed then just returns.
+        
+        **NOTE**: This method should be called if the object will not be used anymore
+        or before the object goes out of scope, as deleting the object without calling 
+        this will lead to stray threads.
 
         Parameters: None
 
