@@ -186,5 +186,89 @@ while conn.connected:
 conn.disconnect()
 ```
 
+## Creating a RestApiHandler class
 
+This is the class that handles setting up the server that hosts an API which interacts with the serial ports.
+
+This class uses `Flask` and `flask_restful`'s API class as its back end. More about them [here](https://flask.palletsprojects.com) and [here](https://flask-restful.readthedocs.io).
+
+The example below shows how to create a `RestApiHandler` object and run it as a Flask development server on `https://0.0.0.0:8080`:
+```py
+import flask
+import flask_restful
+from com_server import Connection, RestApiHandler
+
+conn = Connection(port="/dev/ttyUSB0", baud=115200)
+handler = RestApiHandler(conn)
+
+# automatically connects conn
+handler.run_dev(host="0.0.0.0", port=8080)
+
+conn.disconnect()
+```
+
+### Adding built-in endpoints
+
+By default, the `/register` and `/recall` endpoints are reserved and you cannot use them. However, adding the built-in endpoints adds a list of endpoints that you cannot use. These endpoints are:
+
+- `/send`
+- `/receive` 
+- `/receive/all` 
+- `/get` 
+- `/send/get_first` 
+- `/get/wait` 
+- `/send/get` 
+- `/connected`
+- `/list_ports`
+
+For more information on these endpoints and how to use them, see [here](/server/server-api).
+
+This is how to add those endpoints:
+```py
+import flask
+import flask_restful
+from com_server import Connection, RestApiHandler, Builtins
+
+conn = Connection(port="/dev/ttyUSB0", baud=115200)
+handler = RestApiHandler(conn)
+Builtins(handler)
+
+handler.run_dev(host="0.0.0.0", port=8080)
+
+conn.disconnect()
+```
+
+There is no need to assign a variable to `Builtins` as all it does is add the endpoints to the `RestApiHandler` object declared above. 
+
+`run_dev()` calls `Flask.run()`, which means that its arguments are also the arguments of `Flask.run()`. To run on a production server, use `run_prod()` rather than `run_dev()`, which calls `waitress.serve()`. See more info [here](http://localhost:8000/guide/library-api/#restapihandlerrun_dev).
+
+### Adding custom endpoints
+
+To add custom endpoints, use the `add_endpoints` decorator above a function with a nested class in it. The nested class should extend `ConnectionResource` and have functions similar to the classes of `flask_restful`. See [here](https://flask-restful.readthedocs.io/en/latest/quickstart.html#a-minimal-api) for more info. The function needs to have a `conn` parameter indicating the connection object and lastly needs to return the nested class.
+
+The example below adds an endpoint at `/hello_world` and returns `{"Hello": "world"}` when there is a GET request.
+
+```py
+import flask
+import flask_restful
+from com_server import Connection, RestApiHandler, Builtins, ConnectionResource
+
+conn = Connection(port="/dev/ttyUSB0", baud=115200)
+handler = RestApiHandler(conn)
+Builtins(handler)
+
+@handler.add_endpoints("/hello_world")
+def hello_world(conn):
+    class HelloWorldEndpoint(ConnectionResource):
+        def get(self):
+            return {"Hello", "world"}
+    
+    return HelloWorldEndpoint
+
+handler.run_dev(host="0.0.0.0", port=8080)
+
+conn.disconnect()
+```
+
+Again, note that the endpoints listed above cannot be used.
 
