@@ -31,7 +31,7 @@ It also contains the property `connected` to indicate if it is currently connect
 
 **Warning**: Before making this object go out of scope, make sure to call `disconnect()` in order to avoid thread leaks. If this does not happen, then the disconnect thread and IO thread will still be running for an object that has already been deleted.
 
-#### com_server.\_\_init\_\_()
+#### BaseConnection.\_\_init\_\_()
 
 ```py
 def __init__(baud, port, exception=True, timeout=1, queue_size=256, handle_disconnect=True, exit_on_disconnect=True, **kwargs)
@@ -58,7 +58,7 @@ exit if the interval has not reached `send_interval` seconds. NOT recommended to
 
 Returns: nothing
 
-#### com_server.connect()
+#### BaseConnection.connect()
 
 ```py
 def connect()
@@ -78,7 +78,7 @@ May raise:
 - `serial.serialutil.SerialException` if the port given in `__init__` does not exist.
 - `EnvironmentError` if `exit_on_disconnect` is True and the user is on Windows (_not tested_).
 
-#### com_server.disconnect()
+#### BaseConnection.disconnect()
 
 ```py
 def disconnect()
@@ -96,7 +96,7 @@ Parameters: None
 
 Returns: None
 
-#### com_server.send()
+#### BaseConnection.send()
 
 ```py
 def send(*args, check_type=True, ending='\r\n', concatenate=' ')
@@ -143,7 +143,7 @@ Returns:
 May raise:
 - `com_server.ConnectException` if the user tries to send while it is disconnected and `exception` is True.
 
-#### com_server.receive()
+#### BaseConnection.receive()
 
 ```py
 def receive(num_before=0)
@@ -179,12 +179,143 @@ May raise:
 - `com_server.ConnectException` if a user calls this method when the object has not been connected and `exception` is True.
 - `ValueError` if `num_before` is nonnegative and `exception` is True.
 
-#### com_server.connected
+#### BaseConnection.connected
 
 Getter:  
 A property to determine if the connection object is currently connected to a serial port or not.
 This also can determine if the IO thread and the disconnect thread for this object
 are currently running or not.
+
+### com_server.Connection
+A more user-friendly interface with the serial port.
+
+In addition to the four basic methods (see `BaseConnection`),
+it makes other methods that may also be useful to the user
+when communicating with the classes.
+
+Some of the methods include:
+
+- `get()`: Gets first response after the time that the method was called
+- `get_all_rcv()`: Returns the entire receive queue
+- `get_all_rcv_str()`: Returns the entire receive queue, converted to strings
+- `receive_str()`: Receives as a string rather than bytes object
+- `get_first_response()`: Gets the first response from the serial port after sending something (breaks when timeout reached)
+- `send_for_response()`: Continues sending something until the connection receives a given response (breaks when timeout reached)
+- `wait_for_response()`: Waits until the connection receives a given response (breaks when timeout reached)
+- `reconnect()`: Attempts to reconnect given a new port
+
+Other methods can generally help the user with interacting with the classes:
+
+- `all_ports()`: Lists all available COM ports.
+
+**Warning**: Before making this object go out of scope, make sure to call `disconnect()` in order to avoid thread leaks. If this does not happen, then the disconnect thread and IO thread will still be running for an object that has already been deleted.
+
+#### Connection.\_\_init\_\_()
+
+```py
+def __init__(baud, port, exception=True, timeout=1, queue_size=256, handle_disconnect=True, exit_on_disconnect=True, **kwargs)
+```
+
+See [BaseConnection.\_\_init\_\_()](#baseconnection__init__)
+
+#### Connection.connect()
+
+```py
+def connect()
+```
+
+See [BaseConnection.connect()](#baseconnectionconnect)
+
+#### Connection.disconnect()
+
+```py
+def disconnect()
+```
+
+See [BaseConnection.disconnect()](#baseconnectiondisconnect)
+
+#### Connection.send()
+
+```py
+def send(*args, check_type=True, ending='\r\n', concatenate=' ')
+```
+
+See [BaseConnection.send()](#baseconnectionsend)
+
+#### Connection.receive()
+
+```py
+def receive(num_before=0)
+```
+
+See [BaseConnection.receive()](#baseconnectionreceive)
+
+#### Connection.connected
+
+See [BaseConnection.connected](#baseconnectionconnected)
+
+#### Connection.conv_bytes_to_str()
+
+```py
+def conv_bytes_to_str(rcv, read_until=None, strip=True)
+```
+
+Convert bytes receive object to a string.
+
+Parameters:
+
+- `rcv` (bytes): A bytes object. If None, then the method will return None.
+- `read_until` (str, None) (optional): Will return a string that terminates with `read_until`, excluding `read_until`. 
+For example, if the string was `"abcdefg123456\\n"`, and `read_until` was `\\n`, then it will return `"abcdefg123456"`.
+If there are multiple occurrences of `read_until`, then it will return the string that terminates with the first one.
+If `read_until` is None or it doesn't exist, the it will return the entire string. By default None.
+- `strip` (bool) (optional): If True, then strips spaces and newlines from either side of the processed string before returning.
+If False, returns the processed string in its entirety. By default True.
+
+Returns:
+
+- A `str` representing the data
+- None if `rcv` is None
+
+May raise:
+
+- `UnicodeDecodeError` if there was trouble decoding the bytes object from `utf-8`.
+
+
+#### Connection.get()
+
+```py
+def get(given_type, read_until=None, strip=True)
+```
+
+Gets first response after this method is called.
+
+This method differs from `receive()` because `receive()` returns
+the last element of the receive buffer, which could contain objects
+that were received before this function was called. This function
+waits for something to be received after it is called until it either
+gets the object or until the timeout is reached.
+
+Parameters:
+
+- `given_type` (type): either `bytes` or `str`, indicating which one to return. 
+Will raise exception if type is invalid, REGARDLESS of `self.exception`. Example: `get(str)` or `get(bytes)`.
+- `read_until` (str, None) (optional): Will return a string that terminates with `read_until`, excluding `read_until`. 
+For example, if the string was `"abcdefg123456\n"`, and `read_until` was `\n`, then it will return `"abcdefg123456"`.
+If there are multiple occurrences of `read_until`, then it will return the string that terminates with the first one.
+If `read_until` is None or it doesn't exist, the it will return the entire string. By default None.
+- `strip` (bool) (optional): If True, then strips spaces and newlines from either side of the processed string before returning.
+If False, returns the processed string in its entirety. By default True.
+
+Returns:
+
+- None if no data received (timeout reached)
+- A `bytes` object indicating the data received if `type` is `bytes`
+
+May raise:
+
+- `com_server.ConnectException` if a user calls this method when the object has not been connected and `exception` is True.
+- `TypeError` if not given literals `str` or `bytes` in `given_type`
 
 ## Exceptions
 
