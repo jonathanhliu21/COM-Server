@@ -74,7 +74,7 @@ Returns: None
 
 May raise:
 
-- `com_server.ConnectException` if the user calls this function while it is already connected
+- `com_server.ConnectException` if the user calls this function while it is already connected and `exception` is True.
 - `serial.serialutil.SerialException` if the port given in `__init__` does not exist.
 - `EnvironmentError` if `exit_on_disconnect` is True and the user is on Windows (_not tested_).
 
@@ -140,6 +140,51 @@ Returns:
 - `true` on success (everything has been sent through)
 - `false` on failure (not open, not waited long enough before sending, did not fully send through, etc.)
 
+May raise:
+- `com_server.ConnectException` if the user tries to send while it is disconnected and `exception` is True.
+
+#### com_server.receive()
+
+```py
+def receive(num_before=0)
+```
+
+Returns the most recent receive object
+
+The receive thread will continuously detect receive data and put the `bytes` objects in the `rcv_queue`. 
+If there are no parameters, the method will return the most recent received data.
+If `num_before` is greater than 0, then will return `num_before`th previous data.
+
+- Note: Must be less than the current size of the queue and greater or equal to 0 
+    - If not, returns None (no data)
+- Example:
+    - 0 will return the most recent received data
+    - 1 will return the 2nd most recent received data
+    - ...
+
+Note that the data will be read as ALL the data available in the serial port,
+or `Serial.read_all()`.
+
+Parameters:
+
+- `num_before` (int) (optional): Which receive object to return. Must be nonnegative. By default None.
+
+Returns:
+
+- A `tuple` representing the `(timestamp received, data in bytes)`
+- `None` if no data was found or port not open
+
+May raise:
+
+- `com_server.ConnectException` if a user calls this method when the object has not been connected and `exception` is True.
+- `ValueError` if `num_before` is nonnegative and `exception` is True.
+
+#### com_server.connected
+
+Getter:  
+A property to determine if the connection object is currently connected to a serial port or not.
+This also can determine if the IO thread and the disconnect thread for this object
+are currently running or not.
 
 ## Exceptions
 
