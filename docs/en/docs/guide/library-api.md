@@ -72,7 +72,74 @@ Parameters: None
 
 Returns: None
 
-####
+May raise:
+
+- `com_server.ConnectException` if the user calls this function while it is already connected
+- `serial.serialutil.SerialException` if the port given in `__init__` does not exist.
+- `EnvironmentError` if `exit_on_disconnect` is True and the user is on Windows (_not tested_).
+
+#### com_server.disconnect()
+
+```py
+def disconnect()
+```
+
+Closes connection to the serial port.
+
+When called, calls `Serial.close()` then makes the connection `None`. If it is currently closed then just returns.
+
+**NOTE**: This method should be called if the object will not be used anymore
+or before the object goes out of scope, as deleting the object without calling 
+this will lead to stray threads.
+
+Parameters: None
+
+Returns: None
+
+#### com_server.send()
+
+```py
+def send(*args, check_type=True, ending='\r\n', concatenate=' ')
+```
+
+Sends data to the port
+
+If the connection is open and the interval between sending is large enough, 
+then concatenates args with a space (or what was given in `concatenate`) in between them, 
+encodes to an `utf-8` `bytes` object, adds a carriage return and a newline to the end (i.e. "\\r\\n") (or what was given as `ending`), then sends to the serial port.
+
+Note that the data does not send immediately and instead will be added to a queue. 
+The queue size limit is 65536 byte objects. Anything more that is trying to be sent will not be added to the queue.
+Sending data too rapidly (e.g. making `send_interval` too small, varies from computer to computer) is not recommended,
+as the queue will get too large and the send data will get backed up and will be delayed,
+since it takes a considerable amount of time for data to be sent through the serial port.
+Additionally, parts of the send queue will be all sent together until it reaches 0.5 seconds,
+which may end up with unexpected behavior in some programs.
+To prevent these problems, either make the value of `send_interval` larger,
+or add a delay within the main thread. 
+
+If the program has not waited long enough before sending, then the method will return `false`.
+
+If `check_type` is True, then it will process each argument, then concatenate, encode, and send.
+
+- If the argument is `bytes` then decodes to `str`
+- If argument is `list` or `dict` then passes through `json.dumps`
+- If argument is `set` or `tuple` then converts to list and passes through `json.dumps`
+- Otherwise, directly convert to `str` and strip
+Otherwise, converts each argument directly to `str` and then concatenates, encodes, and sends.
+
+Parameters:
+
+- `*args`: Everything that is to be sent, each as a separate parameter. Must have at least one parameter.
+- `check_type` (bool) (optional): If types in *args should be checked. By default True.
+- `ending` (str) (optional): The ending of the bytes object to be sent through the serial port. By default a carraige return + newline ("\\r\\n")
+- `concatenate` (str) (optional): What the strings in args should be concatenated by. By default a space `' '`
+
+Returns:
+
+- `true` on success (everything has been sent through)
+- `false` on failure (not open, not waited long enough before sending, did not fully send through, etc.)
+
 
 ## Exceptions
 
