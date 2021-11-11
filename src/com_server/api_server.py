@@ -239,7 +239,8 @@ class RestApiHandler:
         - `debug`: If the app should be used in debug mode. 
         """
 
-        self.conn.connect() # connect the Connection obj
+        if (not self.conn.connected):
+            self.conn.connect() # connect the Connection obj if not connected
 
         # register all endpoints to flask_restful
         for endpoint, resource in self.all_endpoints:
@@ -259,7 +260,8 @@ class RestApiHandler:
         If nothing is included, then runs on `http://0.0.0.0:8080`
         """
 
-        self.conn.connect() # connect the Connection obj
+        if (not self.conn.connected):
+            self.conn.connect() # connect the Connection obj if not connected
 
         # register all endpoints to flask_restful
         for endpoint, resource in self.all_endpoints:
