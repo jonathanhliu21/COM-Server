@@ -9,10 +9,12 @@ import json
 import threading
 import time
 import typing as t
+from types import TracebackType
 
 import serial
 
 from . import disconnect
+
 
 class ConnectException(Exception):
     """
@@ -128,7 +130,7 @@ class BaseConnection:
         
         return self
     
-    def __exit__(self) -> None:
+    def __exit__(self, exc_type: type, exc_value: BaseException, exc_tb: t.Union[None, TracebackType]) -> None:
         """Context manager
 
         When exiting from the `with` statement, it will automatically close itself.
@@ -331,29 +333,33 @@ class BaseConnection:
         """
 
         while (self.conn is not None):
-            # keep on trying to poll data as long as connection is still alive
-            if (self.conn.in_waiting):
-                # read everything from serial buffer
-                incoming = self.conn.read_all()
+            try:
+                # keep on trying to poll data as long as connection is still alive
+                if (self.conn.in_waiting):
+                    # read everything from serial buffer
+                    incoming = self.conn.read_all()
 
-                # add to queue
-                self.rcv_queue.append((time.time(), incoming)) # tuple (timestamp, str)
-                if (len(self.rcv_queue) > self.queue_size):
-                    # if greater than queue size, then pop first element
-                    self.rcv_queue.pop(0)
-            
-            # sending data (send one at a time in queue for 0.5 seconds)
-            st_t = time.time() # start time
-            while (time.time() - st_t < 0.5):
-                if (len(self.to_send) > 0):
-                    self.conn.write(self.to_send.pop(0))
-                    self.conn.flush()
-                else:
-                    # break out if all sent
-                    break
-                time.sleep(0.01)
+                    # add to queue
+                    self.rcv_queue.append((time.time(), incoming)) # tuple (timestamp, str)
+                    if (len(self.rcv_queue) > self.queue_size):
+                        # if greater than queue size, then pop first element
+                        self.rcv_queue.pop(0)
+                
+                # sending data (send one at a time in queue for 0.5 seconds)
+                st_t = time.time() # start time
+                while (time.time() - st_t < 0.5):
+                    if (len(self.to_send) > 0):
+                        self.conn.write(self.to_send.pop(0))
+                        self.conn.flush()
+                    else:
+                        # break out if all sent
+                        break
+                    time.sleep(0.01)
 
-            time.sleep(0.01)  # rest CPU
+                time.sleep(0.01)  # rest CPU
+            except (ConnectException, OSError, serial.SerialException):
+                # prevent errors from being shown in thread when disconnecting
+                break
 
     def _reset(self) -> None:
         """
