@@ -81,7 +81,7 @@ class Connection(base_connection.BaseConnection):
 
         Parameters:
         - `given_type` (type): either `bytes` or `str`, indicating which one to return. 
-        Will raise exception if type is invalid, REGARDLESS of `self.exception`.
+        Will raise exception if type is invalid, REGARDLESS of `self.exception`. Example: `get(str)` or `get(bytes)`.
         - `read_until` (str, None) (optional): Will return a string that terminates with `read_until`, excluding `read_until`. 
         For example, if the string was `"abcdefg123456\\n"`, and `read_until` was `\\n`, then it will return `"abcdefg123456"`.
         If there are multiple occurrences of `read_until`, then it will return the string that terminates with the first one.
@@ -97,7 +97,7 @@ class Connection(base_connection.BaseConnection):
         call_time = time.time()  # time that the function was called
 
         if (given_type != str and given_type != bytes):
-            raise TypeError("given_type must be str or bytes")
+            raise TypeError("given_type must be literal 'str' or 'bytes'")
 
         if (given_type == str):
             return self._get_str(call_time, read_until=read_until, strip=strip)
@@ -263,7 +263,7 @@ class Connection(base_connection.BaseConnection):
         If given a bytes, then directly compares the bytes object to the response.
         If given anything else, converts to string.
         - `after_timestamp` (float) (optional): Look for responses that came after given time as the UNIX timestamp.
-        By default the time that the method was called, or `time.time()`
+        If negative, the converts to time that the method was called, or `time.time()`. By default -1.0
 
         These parameters only apply if `response` is a string:
         - `read_until` (str, None) (optional): Will return a string that terminates with `read_until`, excluding `read_until`. 
@@ -381,7 +381,7 @@ class Connection(base_connection.BaseConnection):
         Calls `tools.all_ports()`, which itself calls `serial.tools.list_ports.comports()`.
         For more information, see [here](https://pyserial.readthedocs.io/en/latest/tools.html#module-serial.tools.list_ports).
 
-        Parameters: none
+        Parameters: See link above
 
         Returns: A generator-like object (see link above)
         """
