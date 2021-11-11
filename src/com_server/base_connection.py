@@ -115,6 +115,26 @@ class BaseConnection:
             f"{{port={self.port}, baud={self.baud}, timeout={self.timeout}, queue_size={self.queue_size}, send_interval={self.send_interval}, " \
             f"Serial={self.conn}, " \
             f"last_sent={self.last_sent}, rcv_queue={str(self.rcv_queue)}, send_queue={str(self.to_send)}}}"
+
+    def __enter__(self) -> "BaseConnection":
+        """Context manager
+
+        When in a context manager, it will automatically connect itself
+        to its serial port and return itself. 
+        """
+        
+        if (not self.connected):
+            self.connect()
+        
+        return self
+    
+    def __exit__(self) -> None:
+        """Context manager
+
+        When exiting from the `with` statement, it will automatically close itself.
+        """
+
+        self.disconnect()
     
     def connect(self) -> None:
         """Begins connection to the serial port.
