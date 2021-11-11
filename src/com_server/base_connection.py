@@ -173,28 +173,24 @@ class BaseConnection:
 
         If the connection is open and the interval between sending is large enough, 
         then concatenates args with a space (or what was given in `concatenate`) in between them, 
-        encodes to `utf-8` `bytes` object, adds carriage return + newline to the end ("\\r\\n") (or what was given as `ending`), then sends.
+        encodes to an `utf-8` `bytes` object, adds a carriage return and a newline to the end (i.e. "\\r\\n") (or what was given as `ending`), then sends to the serial port.
 
         Note that the data does not send immediately and instead will be added to a queue. 
         The queue size limit is 65536 byte objects. Anything more that is trying to be sent will not be added to the queue.
         Sending data too rapidly (e.g. making `send_interval` too small, varies from computer to computer) is not recommended,
         as the queue will get too large and the send data will get backed up and will be delayed,
         since it takes a considerable amount of time for data to be sent through the serial port.
-        Additionally, parts of the send queue will be all sent at once 
-        instead of waiting for a receive for each send,
+        Additionally, parts of the send queue will be all sent together until it reaches 0.5 seconds,
         which may end up with unexpected behavior in some programs.
         To prevent these problems, either make the value of `send_interval` larger,
         or add a delay within the main thread. 
         
-        After receiving, the IO thread will spend 0.5 seconds just sending everything in the queue
-        until it is empty or until it has reached the 0.5 seconds.
-
         If the program has not waited long enough before sending, then the method will return `false`.
 
         If `check_type` is True, then it will process each argument, then concatenate, encode, and send.
             - If the argument is `bytes` then decodes to `str`
             - If argument is `list` or `dict` then passes through `json.dumps`
-            - If argument is `set` or `tuple` then converts to list, passes through `json.dumps`
+            - If argument is `set` or `tuple` then converts to list and passes through `json.dumps`
             - Otherwise, directly convert to `str` and strip
         Otherwise, converts each argument directly to `str` and then concatenates, encodes, and sends.
 
