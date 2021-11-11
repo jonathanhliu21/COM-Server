@@ -482,7 +482,7 @@ class Builtins:
         Arguments:
             None
         
-        Returns:
+        Response:
         - `200 OK`:
             - `{"message": "OK", "connected": ...}`: where connected is the connected state: `true` if connected, `false` if not.
         """
@@ -507,7 +507,7 @@ class Builtins:
         Arguments:
             None
         
-        Returns:
+        Response:
         - `200 OK`:
             - `{"message": "OK", ports = [["...", "...", "..."], "..."]}` where "ports"
             is a list of lists of size 3, each one indicating the port, description, and
