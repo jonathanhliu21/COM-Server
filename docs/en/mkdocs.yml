@@ -1,0 +1,13 @@
+site_name: COM_Server
+
+repo_url: https://github.com/jonyboi396825/COM-Server
+edit_uri: ""
+
+nav:
+  - Home: "index.md"
+  - "User Guide":
+    - "Getting Started": "guide/getting-started.md"
+    - "Library API": "guide/library-api.md"
+  - "Using COM-Server":
+    - "CLI": "guide/cli.md"
+    - "Server API": "server/server-api.md"
