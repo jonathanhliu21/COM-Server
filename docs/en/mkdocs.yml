@@ -9,4 +9,5 @@ nav:
     - "Getting Started": "guide/getting-started.md"
     - "Library API": "guide/library-api.md"
   - "Using COM-Server":
+    - "CLI": "guide/cli.md"
     - "Server API": "server/server-api.md"
