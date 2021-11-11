@@ -303,6 +303,12 @@ class BaseConnection:
  
     @property
     def connected(self) -> bool:
+        """A property to determine if the connection object is currently connected to a serial port or not.
+
+        This also can determine if the IO thread and the disconnect thread for this object
+        are currently running or not.
+        """
+
         return self.conn is not None
 
     def _check_output(self, output: str) -> str:
