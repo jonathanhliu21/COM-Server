@@ -83,7 +83,7 @@ May raise:
 #### BaseConnection.\_\_exit\_\_()
 
 ```py
-def __exit__()
+def __exit__(exc_type, exc_value, exc_tb)
 ```
 
 A context manager for the `BaseConnection` object. 
@@ -252,6 +252,22 @@ def __init__(baud, port, exception=True, timeout=1, queue_size=256, handle_disco
 ```
 
 See [BaseConnection.\_\_init\_\_()](#baseconnection__init__)
+
+#### Connection.\_\_enter\_\_()
+
+```py
+def __enter__()
+```
+
+See [BaseConnection.\_\_enter\_\_()](#baseconnection__enter__)
+
+#### Connection.\_\_exit\_\_()
+
+```py
+def __exit__(exc_type, exc_value, exc_tb)
+```
+
+See [BaseConnection.\_\_exit\_\_()](#baseconnection__exit__)
 
 #### Connection.connect()
 
