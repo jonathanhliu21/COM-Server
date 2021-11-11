@@ -74,34 +74,34 @@ class Builtins:
         """Adds all endpoints to handler"""
         
         # /send 
-        self.handler.add_endpoint("/send")(self.send)
+        self.handler.add_endpoint("/send")(self._send)
         
         # /receive
-        self.handler.add_endpoint("/receive")(self.receive)
+        self.handler.add_endpoint("/receive")(self._receive)
 
         # /receive/all
-        self.handler.add_endpoint("/receive/all")(self.receive_all)
+        self.handler.add_endpoint("/receive/all")(self._receive_all)
 
         # /get
-        self.handler.add_endpoint("/get")(self.get)
+        self.handler.add_endpoint("/get")(self._get)
 
         # /send/get_first
-        self.handler.add_endpoint("/send/get_first")(self.get_first_response)
+        self.handler.add_endpoint("/send/get_first")(self._get_first_response)
 
         # /get/wait
-        self.handler.add_endpoint("/get/wait")(self.wait_for_response)
+        self.handler.add_endpoint("/get/wait")(self._wait_for_response)
 
         # /send/get
-        self.handler.add_endpoint("/send/get")(self.send_for_response)
+        self.handler.add_endpoint("/send/get")(self._send_for_response)
 
         # /connected
-        self.handler.add_endpoint("/connected")(self.connected)
+        self.handler.add_endpoint("/connected")(self._connected)
 
         # /list_ports
-        self.handler.add_endpoint("/list_ports")(self.list_all)
+        self.handler.add_endpoint("/list_ports")(self._list_all)
     
     # throwaway variable at beginning because it is part of class, "self" would be passed
-    def send(_, conn: Connection) -> t.Type[ConnectionResource]:
+    def _send(_, conn: Connection) -> t.Type[ConnectionResource]:
         """
         Endpoint to send data to the serial port.
         Calls `Connection.send()` with given arguments in request.
@@ -143,7 +143,7 @@ class Builtins:
 
         return _Sending
     
-    def receive(_, conn: Connection) -> t.Type[ConnectionResource]:
+    def _receive(_, conn: Connection) -> t.Type[ConnectionResource]:
         """
         Endpoint to get data that was recently received.
         If POST, calls `Connection.receive_str(...)` with arguments given in request.
@@ -203,7 +203,7 @@ class Builtins:
         
         return _Receiving
     
-    def receive_all(_, conn: Connection) -> t.Type[ConnectionResource]:
+    def _receive_all(_, conn: Connection) -> t.Type[ConnectionResource]:
         """
         Returns the entire receive queue. Calls `Connection.get_all_rcv_str(...)`.
         If POST then uses arguments in request.
@@ -258,7 +258,7 @@ class Builtins:
 
         return _ReceiveAll
     
-    def get(_, conn: Connection) -> t.Type[ConnectionResource]:
+    def _get(_, conn: Connection) -> t.Type[ConnectionResource]:
         """
         Waits for the first string from the serial port after request.
         If no string after timeout (specified on server side), then responds with 502.
@@ -320,7 +320,7 @@ class Builtins:
 
         return _Get
 
-    def get_first_response(_, conn: Connection) -> t.Type[ConnectionResource]:
+    def _get_first_response(_, conn: Connection) -> t.Type[ConnectionResource]:
         """
         Respond with the first string received from the 
         serial port after sending something given in request.
@@ -374,7 +374,7 @@ class Builtins:
 
         return _GetFirst
     
-    def wait_for_response(_, conn: Connection) -> t.Type[ConnectionResource]:
+    def _wait_for_response(_, conn: Connection) -> t.Type[ConnectionResource]:
         """
         Waits until connection receives string data given in request.
         Calls `Connection.wait_for_response(...)`.
@@ -420,7 +420,7 @@ class Builtins:
         
         return _WaitResponse
     
-    def send_for_response(_, conn: Connection) -> t.Type[ConnectionResource]:
+    def _send_for_response(_, conn: Connection) -> t.Type[ConnectionResource]:
         """
         Continues sending something until connection receives data given in request.
         Calls `Connection.send_for_response(...)`
@@ -472,7 +472,7 @@ class Builtins:
 
         return _SendResponse
     
-    def connected(self, conn: Connection) -> t.Type[Connection]:
+    def _connected(self, conn: Connection) -> t.Type[Connection]:
         """
         Indicates if the serial port is currently connected or not.
         Returns the `Connection.connected` property. 
@@ -497,7 +497,7 @@ class Builtins:
         return _GetConnectedState
     
     # both throwaway as connection not needed
-    def list_all(_, __) -> t.Type[ConnectionResource]:
+    def _list_all(_, __) -> t.Type[ConnectionResource]:
         """
         Lists all available Serial ports. Calls `com_server.tools.all_ports()`
         and returns list of lists of size 3: [`port`, `description`, `technical description`]
