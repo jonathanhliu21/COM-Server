@@ -58,6 +58,39 @@ exit if the interval has not reached `send_interval` seconds. NOT recommended to
 
 Returns: nothing
 
+May raise:
+
+- `ValueError` if the values given could not be converted to the types they should be.
+
+#### BaseConnection.\_\_enter\_\_()
+
+```py
+def __enter__()
+```
+
+A context manager for the `BaseConnection` object. 
+
+When in a context manager, it will automatically connect itself
+to its serial port and returns itself. 
+
+May raise:
+
+- `ValueError` if the values given could not be converted to the types they should be.
+- `com_server.ConnectException` if the user calls this function while it is already connected and `exception` is True.
+- `serial.serialutil.SerialException` if the port given in `__init__` does not exist.
+- `EnvironmentError` if `exit_on_disconnect` is True and the user is on Windows (_not tested_).
+
+#### BaseConnection.\_\_exit\_\_()
+
+```py
+def __exit__()
+```
+
+A context manager for the `BaseConnection` object. 
+
+When exiting from the context manager, it automatically closes itself and exits from the threads it had created.
+
+
 #### BaseConnection.connect()
 
 ```py
