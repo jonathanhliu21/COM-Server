@@ -58,10 +58,14 @@ Make sure you have an Arduino and the Arduino IDE installed before contributing.
 
 Use pytest:
 ```sh
-> pytest
+> pytest -vv
 ```
 
 Make sure that all tests pass.
+
+Some tests need the `com_server` command to be run or the Arduino to be plugged in. Make sure the listed command is run and and Arduino is plugged in to make sure that every test passes and none of them are skipped.
+
+When writing tests, use the `pytest` library, and make them as specific as possible, testing a specific part of what you are making.
 
 ### Building documentation
 
