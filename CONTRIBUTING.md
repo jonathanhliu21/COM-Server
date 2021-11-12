@@ -38,7 +38,7 @@ Make sure you have an Arduino and the Arduino IDE installed before contributing.
 ```sh
 > pip install -r requirements.txt && pip install -e .
 ```
-8. Upload the script provided in the `examples` directory onto the Arduino.
+8. Upload the script named `send_back` provided in the `examples` directory onto the Arduino.
 
 ### Developing:
 
