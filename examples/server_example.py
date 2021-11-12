@@ -63,3 +63,6 @@ handler.run_dev(host="0.0.0.0", port=8080)
 
 # start the waitress production server on http://0.0.0.0:8080
 # handler.run_prod(host="0.0.0.0", port=8080)
+
+# call disconnect(), as variable will not be used anymore
+conn.disconnect()

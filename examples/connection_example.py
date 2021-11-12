@@ -40,3 +40,6 @@ while (conn.connected):
     # wait for it to be able to send again
     # by default, the send interval is 1
     time.sleep(1) 
+
+# call disconnect(), as variable will not be used anymore
+conn.disconnect()

@@ -36,14 +36,18 @@ class RestApiHandler:
 
     Note that only one connection (one IP address) will be allowed to connect
     at a time because the serial port can only handle one process. 
-    Additionally, endpoints cannot include `/register` or `recall`, as that 
-    will be used to ensure that there is only one connection at a time. Finally,
-    resource classes have to extend the custom `ConnectionResource` class
+    Additionally, endpoints cannot include `/register` or `/recall`, as that 
+    will be used to ensure that there is only one connection at a time. 
+    Note that unexpected behavior may occur when different processes of the same IP 
+    reach the same endpoint as these endpoints only check IPs, not processes.
+    Finally, resource classes have to extend the custom `ConnectionResource` class
     from this library, not the `Resource` from `flask_restful`.
 
     `500 Internal Server Error`s may occur with endpoints dealing with the connection
     if the serial port is disconnected. Disconnections while the server is running
     require restarts of the server and may change the port of the Arduino.
+
+    More information on [Flask](https://flask.palletsprojects.com/en/2.0.x/) and [flask-restful](https://flask-restful.readthedocs.io/en/latest/).
 
     Register and recall endpoints:
     - `/register` (GET): An endpoint to register an IP; other endpoints will result in `400` status code
@@ -57,10 +61,8 @@ class RestApiHandler:
         """Constructor for class
 
         Parameters:
-        - `conn` (`Connection`): The `Connection` object the API is going to be associated with. 
-        
-        Note that `/register` and `/recall` is reserved and cannot be used ever in subclasses.
-        - `**kwargs`, will be passed to `flask_restful.Api()`
+        - `conn` (`Connection`): The `Connection` object the API is going to be associated with.  
+        - `**kwargs`, will be passed to `flask_restful.Api()`. See [here](https://flask-restful.readthedocs.io/en/latest/api.html#id1) for more info.
         """
 
         # from above
@@ -226,7 +228,10 @@ class RestApiHandler:
 
         All arguments in `**kwargs` will be passed to `Flask.run()`.
         For more information, see [here](https://flask.palletsprojects.com/en/2.0.x/api/#flask.Flask.run).
-        For documentation on Flask in general, see [here](https://flask.palletsprojects.com/en/2.0.x/)
+        For documentation on Flask in general, see [here](https://flask.palletsprojects.com/en/2.0.x/).
+
+        Automatically disconnects the `Connection` object after
+        the server is closed.
 
         Some arguments include: 
         - `host`: The host of the server. Ex: `localhost`, `0.0.0.0`, `127.0.0.1`, etc.
@@ -234,7 +239,8 @@ class RestApiHandler:
         - `debug`: If the app should be used in debug mode. 
         """
 
-        self.conn.connect() # connect the Connection obj
+        if (not self.conn.connected):
+            self.conn.connect() # connect the Connection obj if not connected
 
         # register all endpoints to flask_restful
         for endpoint, resource in self.all_endpoints:
@@ -254,7 +260,8 @@ class RestApiHandler:
         If nothing is included, then runs on `http://0.0.0.0:8080`
         """
 
-        self.conn.connect() # connect the Connection obj
+        if (not self.conn.connected):
+            self.conn.connect() # connect the Connection obj if not connected
 
         # register all endpoints to flask_restful
         for endpoint, resource in self.all_endpoints:
@@ -263,6 +270,26 @@ class RestApiHandler:
         waitress.serve(self.app, **kwargs)
 
         self.conn.disconnect() # disconnect if stop running
+    
+    @property
+    def flask_obj(self) -> flask.Flask:
+        """
+        Gets the `Flask` object that is the backend of the endpoints and the server.
+
+        This can be used to modify and customize the `Flask` object in this class.
+        """
+
+        return self.app
+    
+    @property
+    def api_obj(self) -> flask_restful.Api:
+        """
+        Gets the `flask_restful` API object that handles parsing the classes.
+
+        This can be used to modify and customize the `Api` object in this class.
+        """
+
+        return self.api
 
     def _register(self) -> t.Type[ConnectionResource]:
         """
