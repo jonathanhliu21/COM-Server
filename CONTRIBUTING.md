@@ -28,7 +28,7 @@ Make sure you have an Arduino and the Arduino IDE installed before contributing.
 ```
 5. Add the fork as a remote named `fork`
 ```sh
-> git remote add fork https://github.com/jonyboi396825/COM-Server 
+> git remote add fork https://github.com/{name}/COM-Server 
 ```
 6. Create a virtualenv named `.env`
 ```sh
@@ -49,7 +49,7 @@ Make sure you have an Arduino and the Arduino IDE installed before contributing.
 ```
 2. Make changes and commit for each change
 3. Add tests that apply to your change
-4. Push your commits and create a pull request
+4. Push your commits and create a pull request to merge into the `develop` branch of the base repository.
 ```sh
 > git push -u fork branch-name
 ```
