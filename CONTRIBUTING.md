@@ -10,6 +10,8 @@ Otherwise, follow the issue template.
 
 ## Submitting a Pull Request
 
+Make sure you have an Arduino and the Arduino IDE installed before contributing.
+
 ### First time setup:
 
 1. [Download and install Git](https://git-scm.com/downloads)
@@ -36,6 +38,7 @@ Otherwise, follow the issue template.
 ```sh
 > pip install -r requirements.txt && pip install -e .
 ```
+8. Upload the script provided in the `examples` directory onto the Arduino.
 
 ### Developing:
 
@@ -56,5 +59,20 @@ Otherwise, follow the issue template.
 Use pytest:
 ```sh
 > pytest
+```
+
+Make sure that all tests pass.
+
+### Building documentation
+
+COM-Server uses `mkdocs` for its documentation. To build the documentation:
+
+1. Change directory to the language
+```sh
+> cd docs/{lang}
+```
+2. Run `mktest build`
+```sh
+> mktest build
 ```
 
