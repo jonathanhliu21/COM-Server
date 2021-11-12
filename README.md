@@ -49,3 +49,4 @@ Again, replace "&lt;port&gt;" and "&lt;baud&gt;" with the serial port and baud r
 ## Links:  
 - Source code: https://github.com/jonyboi396825/COM-Server
 - Issue tracker: https://github.com/jonyboi396825/COM-Server/issues
+- Contributing: [https://github.com/jonyboi396825/COM-Server/blob/master/CONTRIBUTING.md](https://github.com/jonyboi396825/COM-Server/blob/master/CONTRIBUTING.md)

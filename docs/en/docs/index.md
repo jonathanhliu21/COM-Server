@@ -23,6 +23,7 @@ It is likely that this library will not work for non-USB ports.
 ## Links
 - Source code: [https://github.com/jonyboi396825/COM-Server](https://github.com/jonyboi396825/COM-Server)
 - Issue tracker: [https://github.com/jonyboi396825/COM-Server/issues](https://github.com/jonyboi396825/COM-Server/issues)
+- Contributing: [https://github.com/jonyboi396825/COM-Server/blob/master/CONTRIBUTING.md](https://github.com/jonyboi396825/COM-Server/blob/master/CONTRIBUTING.md)
 
 ## Contents
 
