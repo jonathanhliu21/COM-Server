@@ -47,6 +47,7 @@ Alternatively, you can use the command line:
 Again, replace "&lt;port&gt;" and "&lt;baud&gt;" with the serial port and baud rate.
 
 ## Links:  
+- Documentation: [https://com-server.readthedocs.io/en/latest/](https://com-server.readthedocs.io/en/latest/)
 - Source code: https://github.com/jonyboi396825/COM-Server
 - Issue tracker: https://github.com/jonyboi396825/COM-Server/issues
 - Contributing: [https://github.com/jonyboi396825/COM-Server/blob/master/CONTRIBUTING.md](https://github.com/jonyboi396825/COM-Server/blob/master/CONTRIBUTING.md)
