@@ -46,6 +46,7 @@ It is likely that this library will not work for non-USB ports.
     - [Exceptions](guide/library-api/#exceptions)
         - [com_server.ConnectException](guide/library-api/#com_serverconnectexception)
         - [com_server.EndpointExistsException](guide/library-api/#com_serverendpointexistsexception)
+- [Command line interface](guide/cli/)
 - [Server API](server/server-api)
 
 ## Installation
