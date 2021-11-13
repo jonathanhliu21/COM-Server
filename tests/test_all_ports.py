@@ -9,7 +9,6 @@ import glob
 import sys
 import re
 
-from com_server.disconnect import _get_all_ports
 from com_server.tools import all_ports
 
 import pytest
@@ -35,15 +34,3 @@ def test_ports():
     ports = [a for a, _, _ in all_ports() if re.match(MATCH, a)]
 
     assert(len(ports) > 0)
-
-@pytest.mark.skipif(len(_usb+_acm) <= 0, reason="port not connected")
-def test_get_all():
-    """
-    Tests if `_get_all_ports()` disconnect is listing properly.
-    """
-
-    ports = _get_all_ports()
-
-    ports_all = [a for a in ports if re.match(MATCH, a)]
-
-    assert(len(ports_all) > 0)
