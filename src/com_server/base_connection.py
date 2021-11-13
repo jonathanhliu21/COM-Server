@@ -320,11 +320,12 @@ class BaseConnection:
         """A property to determine the timeout of this object.
 
         Getter:
-        - Gets the timeout of this object
+        - Gets the timeout of this object.
 
         Setter:
-        - Sets the timeout of this object after checking if convertible. 
+        - Sets the timeout of this object after checking if convertible to nonnegative float. 
         Then, sets the timeout to the same value on the `pyserial` object of this class.
+        If the value is `float('inf')`, then sets the value of the `pyserial` object to None.
         """
 
         return self._timeout
@@ -339,10 +340,10 @@ class BaseConnection:
         """A property to determine the send interval of this object.
         
         Getter:
-        - Gets the send interval of this object
+        - Gets the send interval of this object.
 
         Setter:
-        - Sets the send interval of this object after checking if convertible
+        - Sets the send interval of this object after checking if convertible to nonnegative float.
         """
 
         return self._send_interval

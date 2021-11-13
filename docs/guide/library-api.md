@@ -238,6 +238,32 @@ A property to determine if the connection object is currently connected to a ser
 This also can determine if the IO thread for this object
 is currently running or not.
 
+#### BaseConnection.timeout
+
+A property to determine the timeout of this object.
+
+Getter:
+
+- Gets the timeout of this object.
+
+Setter:
+
+- Sets the timeout of this object after checking if convertible to nonnegative float. 
+Then, sets the timeout to the same value on the `pyserial` object of this class.
+If the value is `float('inf')`, then sets the value of the `pyserial` object to None.
+
+#### BaseConnection.send_interval
+
+A property to determine the send interval of this object.
+
+Getter:
+
+- Gets the send interval of this object.
+
+Setter:
+
+- Sets the send interval of this object after checking if convertible to nonnegative float.
+
 ---
 
 ### com_server.Connection
@@ -324,6 +350,12 @@ See [BaseConnection.receive()](#baseconnectionreceive)
 #### Connection.connected
 
 See [BaseConnection.connected](#baseconnectionconnected)
+
+#### Connection.timeout
+See [BaseConnection.timeout](#baseconnectiontimeout)
+
+#### Connection.send_interval
+See [BaseConnection.send_interval](#baseconnectionsend_interval)
 
 #### Connection.conv_bytes_to_str()
 
