@@ -40,6 +40,16 @@ class BaseConnection:
     and the thread will process the queue and will continuously send the contents in the queue
     until it is empty, or it has reached 0.5 seconds. This thread is referred as the "IO thread".
 
+    IO thread order:
+
+    1. Checks if there is any data to be received
+    2. If there is, reads all the data and puts the `bytes` received into the receive queue
+    3. Tries to send everything in the send queue; breaks when 0.5 seconds is reached (will continue if send queue is empty)
+    4. Rest for 0.01 seconds to lessen processing power
+
+    If any of the steps above raises an exception (`OSError` or `SerialException`), 
+    then the program will assume that the serial port has disconnected.
+
     All data will be encoded and decoded using `utf-8`.
 
     If used in a `while(true)` loop, it is highly recommended to put a `time.sleep()` within the loop,
