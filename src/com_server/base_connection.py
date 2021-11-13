@@ -50,7 +50,8 @@ class BaseConnection:
 
     It also contains the property `connected` to indicate if it is currently connected to the serial port.
 
-    **Warning**: Before making this object go out of scope, make sure to call `disconnect()` in order to avoid thread leaks. If this does not happen, then the disconnect thread and IO thread will still be running for an object that has already been deleted.
+    **Warning**: Before making this object go out of scope, make sure to call `disconnect()` in order to avoid thread leaks. 
+    If this does not happen, then the IO thread will still be running for an object that has already been deleted.
     """
 
     def __init__(
@@ -62,7 +63,6 @@ class BaseConnection:
         timeout: float = 1, 
         send_interval: int = 1, 
         queue_size: int = 256, 
-        handle_disconnect: bool = True,
         exit_on_disconnect: bool = False, 
         **kwargs
         ) -> None:
@@ -80,7 +80,6 @@ class BaseConnection:
             Note that this does NOT mean that it will be able to send every `send_interval` seconds. It means that the `send()` method will 
             exit if the interval has not reached `send_interval` seconds. NOT recommended to set to small values. By default 1.
             - `queue_size` (int) (optional): The number of previous data that was received that the program should keep. Must be nonnegative. By default 256.
-            - `handle_disconnect` (bool) (optional): Whether the program should spawn a thread to detect if the serial port has disconnected or not. By default True.
             - `exit_on_disconnect` (bool) (optional): If the program should exit if serial port disconnected. Does NOT work on Windows. By default False.
             - `kwargs`: Will be passed to pyserial.
 
@@ -95,7 +94,6 @@ class BaseConnection:
         self.pass_to_pyserial = kwargs
         self.queue_size = abs(int(queue_size))  # make sure positive
         self.send_interval = abs(float(send_interval))  # make sure positive
-        self.handle_disconnect = handle_disconnect
         self.exit_on_disconnect = exit_on_disconnect
 
         if (os.name == "nt" and self.exit_on_disconnect):
@@ -364,13 +362,12 @@ class BaseConnection:
             except (ConnectException, OSError, serial.SerialException):
                 # disconnected
 
-                if (self.handle_disconnect):
-                    # reset connection and IO variables
-                    self.conn = None
-                    self._reset()
+                # reset connection and IO variables
+                self.conn = None
+                self._reset()
 
-                    if (self.exit_on_disconnect):
-                        os.kill(os.getpid(), signal.SIGTERM)
+                if (self.exit_on_disconnect):
+                    os.kill(os.getpid(), signal.SIGTERM)
 
     def _reset(self) -> None:
         """
