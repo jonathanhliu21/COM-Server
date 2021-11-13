@@ -6,7 +6,8 @@ Contains implementation of Connection object.
 """
 
 import json
-import sys
+import os
+import signal
 import threading
 import time
 import typing as t
@@ -96,6 +97,9 @@ class BaseConnection:
         self.send_interval = abs(float(send_interval))  # make sure positive
         self.handle_disconnect = handle_disconnect
         self.exit_on_disconnect = exit_on_disconnect
+
+        if (os.name == "nt" and self.exit_on_disconnect):
+            raise EnvironmentError("exit_on_fail is not supported on Windows")
 
         # initialize Serial object
         self.conn = None
@@ -366,7 +370,7 @@ class BaseConnection:
                     self._reset()
 
                     if (self.exit_on_disconnect):
-                        sys.exit(1)
+                        os.kill(os.getpid(), signal.SIGTERM)
 
     def _reset(self) -> None:
         """
