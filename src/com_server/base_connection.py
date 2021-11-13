@@ -15,6 +15,8 @@ from types import TracebackType
 
 import serial
 
+from . import constants
+
 
 class ConnectException(Exception):
     """
@@ -37,6 +39,16 @@ class BaseConnection:
     When the user wants to send something, it will pass the send data to a queue,
     and the thread will process the queue and will continuously send the contents in the queue
     until it is empty, or it has reached 0.5 seconds. This thread is referred as the "IO thread".
+
+    IO thread order:
+
+    1. Checks if there is any data to be received
+    2. If there is, reads all the data and puts the `bytes` received into the receive queue
+    3. Tries to send everything in the send queue; breaks when 0.5 seconds is reached (will continue if send queue is empty)
+    4. Rest for 0.01 seconds to lessen processing power
+
+    If any of the steps above raises an exception (`OSError` or `SerialException`), 
+    then the program will assume that the serial port has disconnected.
 
     All data will be encoded and decoded using `utf-8`.
 
@@ -68,7 +80,7 @@ class BaseConnection:
         exception: bool = True, 
         timeout: float = 1, 
         send_interval: int = 1, 
-        queue_size: int = 256, 
+        queue_size: int = constants.RCV_QUEUE_SIZE_NORMAL, 
         exit_on_disconnect: bool = False, 
         **kwargs
         ) -> None:
@@ -163,7 +175,7 @@ class BaseConnection:
             return
 
         # timeout should be None in pyserial
-        pyser_timeout = None if self._timeout == float("inf") else self._timeout
+        pyser_timeout = None if self._timeout == constants.NO_TIMEOUT else self._timeout
         self._conn = serial.Serial(
             port=self._port, baudrate=self._baud, timeout=pyser_timeout, **self._pass_to_pyserial)
 
@@ -329,12 +341,7 @@ class BaseConnection:
         """
 
         return self._timeout
-    
-    @timeout.setter
-    def timeout(self, value: float) -> None:
-        self._timeout = abs(float(value))
-        self._conn.timeout = self._timeout if self._timeout != float("inf") else None
-    
+
     @property
     def send_interval(self) -> float:
         """A property to determine the send interval of this object.
@@ -347,6 +354,21 @@ class BaseConnection:
         """
 
         return self._send_interval
+    
+    @property
+    def conn_obj(self) -> serial.Serial:
+        """A property to get the Serial object that handles sending and receiving.
+
+        Getter:
+        - Gets the Serial object.  
+        """
+
+        return self._conn
+    
+    @timeout.setter
+    def timeout(self, value: float) -> None:
+        self._timeout = abs(float(value))
+        self._conn.timeout = self._timeout if self._timeout != constants.NO_TIMEOUT else None    
     
     @send_interval.setter
     def send_interval(self, value: float) -> None:

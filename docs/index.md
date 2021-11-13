@@ -16,6 +16,11 @@ Operating systems:
 - Mac OS 10.15.x (Catalina)
 - Mac OS 11.6 (Big Sur)
 
+Python versions:
+
+- Python 3.7.3
+- Python 3.8.10
+
 Serial ports:
 
 - Arduino UNO

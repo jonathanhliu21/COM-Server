@@ -30,6 +30,16 @@ When the user wants to send something, it will pass the send data to a queue,
 and the thread will process the queue and will continuously send the contents in the queue
 until it is empty, or it has reached 0.5 seconds. This thread is referred as the "IO thread".
 
+IO thread order:
+
+1. Checks if there is any data to be received
+2. If there is, reads all the data and puts the `bytes` received into the receive queue
+3. Tries to send everything in the send queue; breaks when 0.5 seconds is reached (will continue if send queue is empty)
+4. Rest for 0.01 seconds to lessen processing power
+
+If any of the steps above raises an exception (`OSError` or `SerialException`), 
+then the program will assume that the serial port has disconnected.
+
 All data will be encoded and decoded using `utf-8`.
 
 If used in a `while(true)` loop, it is highly recommended to put a `time.sleep()` within the loop,
@@ -264,6 +274,14 @@ Setter:
 
 - Sets the send interval of this object after checking if convertible to nonnegative float.
 
+#### BaseConnection.conn_obj
+
+A property to get the Serial object that handles sending and receiving.
+
+Getter:
+
+- Gets the Serial object.  
+
 ---
 
 ### com_server.Connection
@@ -356,6 +374,9 @@ See [BaseConnection.timeout](#baseconnectiontimeout)
 
 #### Connection.send_interval
 See [BaseConnection.send_interval](#baseconnectionsend_interval)
+
+#### Connection.conn_obj
+See [BaseConnection.conn_obj](#baseconnectionconn_obj)
 
 #### Connection.conv_bytes_to_str()
 
@@ -642,7 +663,7 @@ from this library, not the `Resource` from `flask_restful`.
 
 `500 Internal Server Error`s may occur with endpoints dealing with the connection
 if the serial port is disconnected. Disconnections while the server is running
-require restarts of the server and may change the port of the Arduino.
+require restarts of the server and may change the port of the device that was previously connected.
 
 More information on [Flask](https://flask.palletsprojects.com/en/2.0.x/) and 
 [flask-restful](https://flask-restful.readthedocs.io/en/latest/)
@@ -838,6 +859,40 @@ handler.run() # runs the server
 Parameters:
 
 - `api`: The `RestApiHandler` class that this class should wrap around
+
+---
+
+## Constants
+
+```py
+NO_TIMEOUT = float("inf")
+```
+
+Use this if you do not want a timeout. Not recommended.
+
+```py
+NO_SEND_INTERVAL = 0
+```
+
+Use this if you do not want a send interval. Not recommended.
+
+```py
+NO_RCV_QUEUE = 1 
+RCV_QUEUE_SIZE_XSMALL = 32
+RCV_QUEUE_SIZE_SMALL = 128
+RCV_QUEUE_SIZE_NORMAL = 256
+RCV_QUEUE_SIZE_LARGE = 512
+RCV_QUEUE_SIZE_XLARGE = 1024
+```
+
+Different receive queue sizes for `queue_size`. Default is `RCV_QUEUE_SIZE_NORMAL`.
+
+```py
+DEFAULT_HOST="0.0.0.0"
+DEFAULT_PORT=8080
+```
+
+Default host and port for the server.
 
 ---
 
