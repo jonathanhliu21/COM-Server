@@ -32,7 +32,7 @@ class BaseConnection:
 
     How this works is that it creates a pyserial object given the parameters, which opens the connection. 
     The user can manually open and close the connection. It is closed by default when the initializer is called.
-    It spawns a thread that continuously looks for serial data and puts it in a buffer. 
+    It spawns a daemon thread that continuously looks for serial data and puts it in a buffer. 
     When the user wants to send something, it will pass the send data to a queue,
     and the thread will process the queue and will continuously send the contents in the queue
     until it is empty, or it has reached 0.5 seconds. This thread is referred as the "IO thread".
