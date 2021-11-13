@@ -642,7 +642,7 @@ from this library, not the `Resource` from `flask_restful`.
 
 `500 Internal Server Error`s may occur with endpoints dealing with the connection
 if the serial port is disconnected. Disconnections while the server is running
-require restarts of the server and may change the port of the Arduino.
+require restarts of the server and may change the port of the device connected.
 
 More information on [Flask](https://flask.palletsprojects.com/en/2.0.x/) and 
 [flask-restful](https://flask-restful.readthedocs.io/en/latest/)
@@ -838,6 +838,32 @@ handler.run() # runs the server
 Parameters:
 
 - `api`: The `RestApiHandler` class that this class should wrap around
+
+---
+
+## Constants
+
+```py
+NO_TIMEOUT: float("inf")
+```
+
+```py
+NO_SEND_INTERVAL = 0
+```
+
+```py
+NO_RCV_QUEUE = 1 
+RCV_QUEUE_SIZE_XSMALL = 32
+RCV_QUEUE_SIZE_SMALL = 128
+RCV_QUEUE_SIZE_NORMAL = 256
+RCV_QUEUE_SIZE_LARGE = 512
+RCV_QUEUE_SIZE_XLARGE = 1024
+```
+
+```py
+DEFAULT_HOST="0.0.0.0"
+DEFAULT_PORT=8080
+```
 
 ---
 
