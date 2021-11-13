@@ -274,6 +274,14 @@ Setter:
 
 - Sets the send interval of this object after checking if convertible to nonnegative float.
 
+#### BaseConnection.conn_obj
+
+A property to get the Serial object that handles sending and receiving.
+
+Getter:
+
+- Gets the Serial object.  
+
 ---
 
 ### com_server.Connection
@@ -366,6 +374,9 @@ See [BaseConnection.timeout](#baseconnectiontimeout)
 
 #### Connection.send_interval
 See [BaseConnection.send_interval](#baseconnectionsend_interval)
+
+#### Connection.conn_obj
+See [BaseConnection.conn_obj](#baseconnectionconn_obj)
 
 #### Connection.conv_bytes_to_str()
 
@@ -854,7 +865,7 @@ Parameters:
 ## Constants
 
 ```py
-NO_TIMEOUT: float("inf")
+NO_TIMEOUT = float("inf")
 ```
 
 Use this if you do not want a timeout. Not recommended.
