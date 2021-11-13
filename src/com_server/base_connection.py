@@ -15,6 +15,8 @@ from types import TracebackType
 
 import serial
 
+from . import constants
+
 
 class ConnectException(Exception):
     """
@@ -68,7 +70,7 @@ class BaseConnection:
         exception: bool = True, 
         timeout: float = 1, 
         send_interval: int = 1, 
-        queue_size: int = 256, 
+        queue_size: int = constants.RCV_QUEUE_SIZE_NORMAL, 
         exit_on_disconnect: bool = False, 
         **kwargs
         ) -> None:
@@ -163,7 +165,7 @@ class BaseConnection:
             return
 
         # timeout should be None in pyserial
-        pyser_timeout = None if self._timeout == float("inf") else self._timeout
+        pyser_timeout = None if self._timeout == constants.NO_TIMEOUT else self._timeout
         self._conn = serial.Serial(
             port=self._port, baudrate=self._baud, timeout=pyser_timeout, **self._pass_to_pyserial)
 
@@ -333,7 +335,7 @@ class BaseConnection:
     @timeout.setter
     def timeout(self, value: float) -> None:
         self._timeout = abs(float(value))
-        self._conn.timeout = self._timeout if self._timeout != float("inf") else None
+        self._conn.timeout = self._timeout if self._timeout != constants.NO_TIMEOUT else None
     
     @property
     def send_interval(self) -> float:
