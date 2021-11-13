@@ -44,7 +44,12 @@ This class contains the four basic methods needed to talk with the serial port:
 
 It also contains the property `connected` to indicate if it is currently connected to the serial port.
 
-**Warning**: Before making this object go out of scope, make sure to call `disconnect()` in order to avoid thread leaks. If this does not happen, then the disconnect thread and IO thread will still be running for an object that has already been deleted.
+If the USB port is disconnected while the program is running, then it will automatically detect the exception
+thrown by `pyserial`, and then it will reset the IO variables and then label itself as disconnected. Then,
+it will send a `SIGTERM` signal to the main thread if the port was disconnected.
+
+**Warning**: Before making this object go out of scope, make sure to call `disconnect()` in order to avoid thread leaks. 
+If this does not happen, then the IO thread will still be running for an object that has already been deleted.
 
 #### BaseConnection.\_\_init\_\_()
 
@@ -67,8 +72,7 @@ Parameters:
 Note that this does NOT mean that it will be able to send every `send_interval` seconds. It means that the `send()` method will 
 exit if the interval has not reached `send_interval` seconds. NOT recommended to set to small values. By default 1.
 - `queue_size` (int) (optional): The number of previous data that was received that the program should keep. Must be nonnegative. By default 256.
-- `handle_disconnect` (bool) (optional): Whether the program should spawn a thread to detect if the serial port has disconnected or not. By default True.
-- `exit_on_disconnect` (bool) (optional): If the program should exit if serial port disconnected. Does NOT work on Windows. By default False.
+- `exit_on_disconnect` (bool) (optional): If True, sends `SIGTERM` signal to the main thread if the serial port is disconnected. Does NOT work on Windows. By default False.
 - `kwargs`: Will be passed to pyserial.
 
 Returns: nothing
@@ -114,7 +118,7 @@ def connect()
 
 Begins connection to the serial port.
 
-When called, initializes a serial instance if not initialized already. Also starts the receive thread.
+When called, initializes a serial instance if not initialized already. Also starts the IO thread.
 
 Parameters: None
 
@@ -199,7 +203,7 @@ def receive(num_before=0)
 
 Returns the most recent receive object
 
-The receive thread will continuously detect receive data and put the `bytes` objects in the `rcv_queue`. 
+The IO thread will continuously detect receive data and put the `bytes` objects in the `rcv_queue`. 
 If there are no parameters, the method will return the most recent received data.
 If `num_before` is greater than 0, then will return `num_before`th previous data.
 
@@ -231,8 +235,8 @@ May raise:
 
 Getter:  
 A property to determine if the connection object is currently connected to a serial port or not.
-This also can determine if the IO thread and the disconnect thread for this object
-are currently running or not.
+This also can determine if the IO thread for this object
+is currently running or not.
 
 ---
 
@@ -258,7 +262,8 @@ Other methods can generally help the user with interacting with the classes:
 
 - `all_ports()`: Lists all available COM ports.
 
-**Warning**: Before making this object go out of scope, make sure to call `disconnect()` in order to avoid thread leaks. If this does not happen, then the disconnect thread and IO thread will still be running for an object that has already been deleted.
+**Warning**: Before making this object go out of scope, make sure to call `disconnect()` in order to avoid thread leaks. 
+If this does not happen, then the IO thread will still be running for an object that has already been deleted.
 
 #### Connection.\_\_init\_\_()
 

@@ -6,15 +6,14 @@ Contains implementation of Connection object.
 """
 
 import json
+import os
+import signal
 import threading
 import time
 import typing as t
 from types import TracebackType
 
 import serial
-
-from . import disconnect
-
 
 class ConnectException(Exception):
     """
@@ -33,7 +32,7 @@ class BaseConnection:
 
     How this works is that it creates a pyserial object given the parameters, which opens the connection. 
     The user can manually open and close the connection. It is closed by default when the initializer is called.
-    It spawns a thread that continuously looks for serial data and puts it in a buffer. 
+    It spawns a daemon thread that continuously looks for serial data and puts it in a buffer. 
     When the user wants to send something, it will pass the send data to a queue,
     and the thread will process the queue and will continuously send the contents in the queue
     until it is empty, or it has reached 0.5 seconds. This thread is referred as the "IO thread".
@@ -51,7 +50,13 @@ class BaseConnection:
 
     It also contains the property `connected` to indicate if it is currently connected to the serial port.
 
-    **Warning**: Before making this object go out of scope, make sure to call `disconnect()` in order to avoid thread leaks. If this does not happen, then the disconnect thread and IO thread will still be running for an object that has already been deleted.
+    If the USB port is disconnected while the program is running, then it will automatically detect the exception
+    thrown by `pyserial`, and then it will reset the IO variables and then label itself as disconnected. It will
+    then stop the IO thread. If `exit_on_disconnect` is True, it will send a `SIGTERM` signal to the main thread 
+    if the port was disconnected.
+
+    **Warning**: Before making this object go out of scope, make sure to call `disconnect()` in order to avoid thread leaks. 
+    If this does not happen, then the IO thread will still be running for an object that has already been deleted.
     """
 
     def __init__(
@@ -63,7 +68,6 @@ class BaseConnection:
         timeout: float = 1, 
         send_interval: int = 1, 
         queue_size: int = 256, 
-        handle_disconnect: bool = True,
         exit_on_disconnect: bool = False, 
         **kwargs
         ) -> None:
@@ -81,8 +85,7 @@ class BaseConnection:
             Note that this does NOT mean that it will be able to send every `send_interval` seconds. It means that the `send()` method will 
             exit if the interval has not reached `send_interval` seconds. NOT recommended to set to small values. By default 1.
             - `queue_size` (int) (optional): The number of previous data that was received that the program should keep. Must be nonnegative. By default 256.
-            - `handle_disconnect` (bool) (optional): Whether the program should spawn a thread to detect if the serial port has disconnected or not. By default True.
-            - `exit_on_disconnect` (bool) (optional): If the program should exit if serial port disconnected. Does NOT work on Windows. By default False.
+            - `exit_on_disconnect` (bool) (optional): If True, sends `SIGTERM` signal to the main thread if the serial port is disconnected. Does NOT work on Windows. By default False.
             - `kwargs`: Will be passed to pyserial.
 
         Returns: nothing
@@ -96,8 +99,10 @@ class BaseConnection:
         self.pass_to_pyserial = kwargs
         self.queue_size = abs(int(queue_size))  # make sure positive
         self.send_interval = abs(float(send_interval))  # make sure positive
-        self.handle_disconnect = handle_disconnect
         self.exit_on_disconnect = exit_on_disconnect
+
+        if (os.name == "nt" and self.exit_on_disconnect):
+            raise EnvironmentError("exit_on_fail is not supported on Windows")
 
         # initialize Serial object
         self.conn = None
@@ -141,7 +146,7 @@ class BaseConnection:
     def connect(self) -> None:
         """Begins connection to the serial port.
 
-        When called, initializes a serial instance if not initialized already. Also starts the receive thread.
+        When called, initializes a serial instance if not initialized already. Also starts the IO thread.
 
         Parameters: None
 
@@ -163,10 +168,6 @@ class BaseConnection:
 
         # start receive thread
         threading.Thread(name="Serial-IO-thread", target=self._io_thread, daemon=True).start()
-
-        if (self.handle_disconnect):
-            # start disconnect thread
-            disconnect.disconnect_handler(self, exit_on_fail=bool(self.exit_on_disconnect))
 
     def disconnect(self) -> None:
         """Closes connection to the serial port.
@@ -259,7 +260,7 @@ class BaseConnection:
     def receive(self, num_before: int = 0) -> "t.Union[tuple[float, bytes], None]":
         """Returns the most recent receive object
 
-        The receive thread will continuously detect receive data and put the `bytes` objects in the `rcv_queue`. 
+        The IO thread will continuously detect receive data and put the `bytes` objects in the `rcv_queue`. 
         If there are no parameters, the method will return the most recent received data.
         If `num_before` is greater than 0, then will return `num_before`th previous data.
             - Note: Must be less than the current size of the queue and greater or equal to 0 
@@ -305,8 +306,8 @@ class BaseConnection:
     def connected(self) -> bool:
         """A property to determine if the connection object is currently connected to a serial port or not.
 
-        This also can determine if the IO thread and the disconnect thread for this object
-        are currently running or not.
+        This also can determine if the IO thread for this object
+        is currently running or not.
         """
 
         return self.conn is not None
@@ -364,8 +365,18 @@ class BaseConnection:
 
                 time.sleep(0.01)  # rest CPU
             except (ConnectException, OSError, serial.SerialException):
-                # prevent errors from being shown in thread when disconnecting
-                break
+                # Disconnected, as all of the self.conn, or pyserial, operations will raise
+                # an exception if the port is not connected.
+
+                # reset connection and IO variables
+                self.conn = None
+                self._reset()
+
+                if (self.exit_on_disconnect):
+                    os.kill(os.getpid(), signal.SIGTERM)
+                
+                # exit thread
+                return
 
     def _reset(self) -> None:
         """

@@ -67,6 +67,8 @@ Some tests need the `com_server` command to be run or the Arduino to be plugged 
 
 When writing tests, use the `pytest` library, and make them as specific as possible, testing a specific part of what you are making.
 
+I am also open to those who write new tests to already existing code, especially ones that can test if the methods of the `BaseConnection` and `Connection` classes are working.
+
 ### Building documentation
 
 COM-Server uses `mkdocs` for its documentation. To build the documentation:

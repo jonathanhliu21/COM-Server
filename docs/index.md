@@ -78,6 +78,8 @@ handler = com_server.RestApiHandler(conn)
 com_server.Builtins(handler) 
 
 handler.run_dev(host="0.0.0.0", port=8080) 
+
+conn.disconnect()
 ```
 Replace "&lt;port&gt;" and "&lt;baud&gt;" with the serial port and baud rate.
 

@@ -31,7 +31,8 @@ class Connection(base_connection.BaseConnection):
     Other methods can generally help the user with interacting with the classes:
     - `all_ports()`: Lists all available COM ports.
 
-    **Warning**: Before making this object go out of scope, make sure to call `disconnect()` in order to avoid thread leaks. If this does not happen, then the disconnect thread and IO thread will still be running for an object that has already been deleted.
+    **Warning**: Before making this object go out of scope, make sure to call `disconnect()` in order to avoid thread leaks. 
+    If this does not happen, then the IO thread will still be running for an object that has already been deleted.
     """
 
     def conv_bytes_to_str(self, rcv: bytes, read_until: t.Union[str, None] = None, strip: bool = True) -> t.Union[str, None]:
