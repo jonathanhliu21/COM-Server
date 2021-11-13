@@ -54,6 +54,8 @@ Make sure you have an Arduino and the [Arduino IDE](https://www.arduino.cc/en/so
 > git push -u fork branch-name
 ```
 
+I will change the merge branch if needed.
+
 ### Testing:
 
 Use pytest:
