@@ -10,7 +10,7 @@ Otherwise, follow the issue template.
 
 ## Submitting a Pull Request
 
-Make sure you have an Arduino and the Arduino IDE installed before contributing.
+Make sure you have an Arduino and the [Arduino IDE](https://www.arduino.cc/en/software) installed before contributing.
 
 ### First time setup:
 
@@ -67,18 +67,18 @@ Some tests need the `com_server` command to be run or the Arduino to be plugged 
 
 When writing tests, use the `pytest` library, and make them as specific as possible, testing a specific part of what you are making.
 
-I am also open to those who write new tests to already existing code, especially ones that can test if the methods of the `BaseConnection` and `Connection` classes are working.
+I am also open to those who write new tests to already existing code, especially ones that can test if the methods of the `BaseConnection` and `Connection` classes are behaving properly.
 
 ### Building documentation
 
 COM-Server uses `mkdocs` for its documentation. To build the documentation:
 
-1. Change directory to the language
 ```sh
-> cd docs/{lang}
+> mkdocs build
 ```
-2. Run `mktest build`
+
+To serve the documentation on `localhost:8000`
 ```sh
-> mktest build
+> mkdocs serve
 ```
 
