@@ -6,14 +6,14 @@ Contains implementation of Connection object.
 """
 
 import json
+import os
+import signal
 import threading
 import time
 import typing as t
 from types import TracebackType
 
 import serial
-
-from . import disconnect
 
 
 class ConnectException(Exception):
@@ -33,7 +33,7 @@ class BaseConnection:
 
     How this works is that it creates a pyserial object given the parameters, which opens the connection. 
     The user can manually open and close the connection. It is closed by default when the initializer is called.
-    It spawns a thread that continuously looks for serial data and puts it in a buffer. 
+    It spawns a daemon thread that continuously looks for serial data and puts it in a buffer. 
     When the user wants to send something, it will pass the send data to a queue,
     and the thread will process the queue and will continuously send the contents in the queue
     until it is empty, or it has reached 0.5 seconds. This thread is referred as the "IO thread".
@@ -51,7 +51,13 @@ class BaseConnection:
 
     It also contains the property `connected` to indicate if it is currently connected to the serial port.
 
-    **Warning**: Before making this object go out of scope, make sure to call `disconnect()` in order to avoid thread leaks. If this does not happen, then the disconnect thread and IO thread will still be running for an object that has already been deleted.
+    If the USB port is disconnected while the program is running, then it will automatically detect the exception
+    thrown by `pyserial`, and then it will reset the IO variables and then label itself as disconnected. It will
+    then stop the IO thread. If `exit_on_disconnect` is True, it will send a `SIGTERM` signal to the main thread 
+    if the port was disconnected.
+
+    **Warning**: Before making this object go out of scope, make sure to call `disconnect()` in order to avoid thread leaks. 
+    If this does not happen, then the IO thread will still be running for an object that has already been deleted.
     """
 
     def __init__(
@@ -63,7 +69,6 @@ class BaseConnection:
         timeout: float = 1, 
         send_interval: int = 1, 
         queue_size: int = 256, 
-        handle_disconnect: bool = True,
         exit_on_disconnect: bool = False, 
         **kwargs
         ) -> None:
@@ -81,32 +86,33 @@ class BaseConnection:
             Note that this does NOT mean that it will be able to send every `send_interval` seconds. It means that the `send()` method will 
             exit if the interval has not reached `send_interval` seconds. NOT recommended to set to small values. By default 1.
             - `queue_size` (int) (optional): The number of previous data that was received that the program should keep. Must be nonnegative. By default 256.
-            - `handle_disconnect` (bool) (optional): Whether the program should spawn a thread to detect if the serial port has disconnected or not. By default True.
-            - `exit_on_disconnect` (bool) (optional): If the program should exit if serial port disconnected. Does NOT work on Windows. By default False.
+            - `exit_on_disconnect` (bool) (optional): If True, sends `SIGTERM` signal to the main thread if the serial port is disconnected. Does NOT work on Windows. By default False.
             - `kwargs`: Will be passed to pyserial.
 
         Returns: nothing
         """
 
         # from above
-        self.baud = int(baud)
-        self.port = str(port)
-        self.exception = bool(exception)
-        self.timeout = abs(float(timeout))  # make sure positive
-        self.pass_to_pyserial = kwargs
-        self.queue_size = abs(int(queue_size))  # make sure positive
-        self.send_interval = abs(float(send_interval))  # make sure positive
-        self.handle_disconnect = handle_disconnect
-        self.exit_on_disconnect = exit_on_disconnect
+        self._baud = int(baud)
+        self._port = str(port)
+        self._exception = bool(exception)
+        self._timeout = abs(float(timeout))  # make sure positive
+        self._pass_to_pyserial = kwargs
+        self._queue_size = abs(int(queue_size))  # make sure positive
+        self._send_interval = abs(float(send_interval))  # make sure positive
+        self._exit_on_disconnect = exit_on_disconnect
+
+        if (os.name == "nt" and self.exit_on_disconnect):
+            raise EnvironmentError("exit_on_fail is not supported on Windows")
 
         # initialize Serial object
-        self.conn = None
+        self._conn = None
 
         # other
-        self.last_sent = time.time()  # prevents from sending too rapidly
+        self._last_sent = time.time()  # prevents from sending too rapidly
 
-        self.rcv_queue = []  # stores previous received strings and timestamps, tuple (timestamp, str)
-        self.to_send = [] # queue data to send
+        self._rcv_queue = []  # stores previous received strings and timestamps, tuple (timestamp, str)
+        self._to_send = [] # queue data to send
 
     def __repr__(self) -> str:
         """
@@ -114,9 +120,9 @@ class BaseConnection:
         """
 
         return f"Connection<id=0x{hex(id(self))}>" \
-            f"{{port={self.port}, baud={self.baud}, timeout={self.timeout}, queue_size={self.queue_size}, send_interval={self.send_interval}, " \
-            f"Serial={self.conn}, " \
-            f"last_sent={self.last_sent}, rcv_queue={str(self.rcv_queue)}, send_queue={str(self.to_send)}}}"
+            f"{{port={self._port}, baud={self._baud}, timeout={self._timeout}, queue_size={self._queue_size}, send_interval={self._send_interval}, " \
+            f"Serial={self._conn}, " \
+            f"last_sent={self._last_sent}, rcv_queue={str(self._rcv_queue)}, send_queue={str(self._to_send)}}}"
 
     def __enter__(self) -> "BaseConnection":
         """Context manager
@@ -141,32 +147,30 @@ class BaseConnection:
     def connect(self) -> None:
         """Begins connection to the serial port.
 
-        When called, initializes a serial instance if not initialized already. Also starts the receive thread.
+        When called, initializes a serial instance if not initialized already. Also starts the IO thread.
 
         Parameters: None
 
         Returns: None
         """
 
-        if (self.conn is not None):
-            if (self.exception):
+        if (self._conn is not None):
+            if (self._exception):
                 # raise exception if true
                 raise ConnectException("Connection already established")
 
             # return if initialized already
             return
 
-        self.conn = serial.Serial(
-            port=self.port, baudrate=self.baud, timeout=self.timeout, **self.pass_to_pyserial)
+        # timeout should be None in pyserial
+        pyser_timeout = None if self._timeout == float("inf") else self._timeout
+        self._conn = serial.Serial(
+            port=self._port, baudrate=self._baud, timeout=pyser_timeout, **self._pass_to_pyserial)
 
         time.sleep(2)  # wait for other end to start up properly
 
         # start receive thread
         threading.Thread(name="Serial-IO-thread", target=self._io_thread, daemon=True).start()
-
-        if (self.handle_disconnect):
-            # start disconnect thread
-            disconnect.disconnect_handler(self, exit_on_fail=bool(self.exit_on_disconnect))
 
     def disconnect(self) -> None:
         """Closes connection to the serial port.
@@ -182,13 +186,13 @@ class BaseConnection:
         Returns: None
         """
 
-        if (self.conn is None):
+        if (self._conn is None):
             # return if not open, as threads are already closed
             return
 
-        self.conn.close()
+        self._conn.close()
         self._reset()
-        self.conn = None
+        self._conn = None
 
     def send(self, *args: "tuple[t.Any]", check_type: bool = True, ending: str = "\r\n", concatenate: str = ' ') -> bool:
         """Sends data to the port
@@ -228,17 +232,17 @@ class BaseConnection:
         """
 
         # check if connection open
-        if (self.conn is None):
-            if (self.exception):
+        if (self._conn is None):
+            if (self._exception):
                 # raise exception if true
                 raise ConnectException("No connection established")
 
             return False
 
         # check if it should send by using send_interval.
-        if (time.time() - self.last_sent <= self.send_interval):
+        if (time.time() - self._last_sent <= self._send_interval):
             return False
-        self.last_sent = time.time()
+        self._last_sent = time.time()
 
         # check `check_type`, then converts each element
         send_data = []
@@ -250,16 +254,16 @@ class BaseConnection:
         # add ending to string
         send_data = (send_data + ending).encode("utf-8")
 
-        if (len(self.to_send) < 65536):
+        if (len(self._to_send) < 65536):
             # only append if limit has not been reached
-            self.to_send.append(send_data)
+            self._to_send.append(send_data)
         
         return True
 
     def receive(self, num_before: int = 0) -> "t.Union[tuple[float, bytes], None]":
         """Returns the most recent receive object
 
-        The receive thread will continuously detect receive data and put the `bytes` objects in the `rcv_queue`. 
+        The IO thread will continuously detect receive data and put the `bytes` objects in the `rcv_queue`. 
         If there are no parameters, the method will return the most recent received data.
         If `num_before` is greater than 0, then will return `num_before`th previous data.
             - Note: Must be less than the current size of the queue and greater or equal to 0 
@@ -280,8 +284,8 @@ class BaseConnection:
         - `None` if no data was found or port not open
         """
 
-        if (self.conn is None):
-            if (self.exception):
+        if (self._conn is None):
+            if (self._exception):
                 # raise exception if true
                 raise ConnectException("No connection established")
 
@@ -290,14 +294,14 @@ class BaseConnection:
         if (num_before < 0):
             # num before has to be nonnegative
 
-            if (self.exception):
+            if (self._exception):
                 # raise exception if true
                 raise ValueError("num_before has to be nonnegative")
 
             return None
         
         try:
-            return self.rcv_queue[-1-num_before]
+            return self._rcv_queue[-1-num_before]
         except IndexError as e:
             return None
  
@@ -305,11 +309,48 @@ class BaseConnection:
     def connected(self) -> bool:
         """A property to determine if the connection object is currently connected to a serial port or not.
 
-        This also can determine if the IO thread and the disconnect thread for this object
-        are currently running or not.
+        This also can determine if the IO thread for this object
+        is currently running or not.
         """
 
-        return self.conn is not None
+        return self._conn is not None
+    
+    @property
+    def timeout(self) -> float:
+        """A property to determine the timeout of this object.
+
+        Getter:
+        - Gets the timeout of this object.
+
+        Setter:
+        - Sets the timeout of this object after checking if convertible to nonnegative float. 
+        Then, sets the timeout to the same value on the `pyserial` object of this class.
+        If the value is `float('inf')`, then sets the value of the `pyserial` object to None.
+        """
+
+        return self._timeout
+    
+    @timeout.setter
+    def timeout(self, value: float) -> None:
+        self._timeout = abs(float(value))
+        self._conn.timeout = self._timeout if self._timeout != float("inf") else None
+    
+    @property
+    def send_interval(self) -> float:
+        """A property to determine the send interval of this object.
+        
+        Getter:
+        - Gets the send interval of this object.
+
+        Setter:
+        - Sets the send interval of this object after checking if convertible to nonnegative float.
+        """
+
+        return self._send_interval
+    
+    @send_interval.setter
+    def send_interval(self, value: float) -> None:
+        self._send_interval = abs(float(value))
 
     def _check_output(self, output: str) -> str:
         """Argument processing
@@ -338,25 +379,25 @@ class BaseConnection:
         Will also take send queue (`to_send`) and send contents one at a time.
         """
 
-        while (self.conn is not None):
+        while (self._conn is not None):
             try:
                 # keep on trying to poll data as long as connection is still alive
-                if (self.conn.in_waiting):
+                if (self._conn.in_waiting):
                     # read everything from serial buffer
-                    incoming = self.conn.read_all()
+                    incoming = self._conn.read_all()
 
                     # add to queue
-                    self.rcv_queue.append((time.time(), incoming)) # tuple (timestamp, str)
-                    if (len(self.rcv_queue) > self.queue_size):
+                    self._rcv_queue.append((time.time(), incoming)) # tuple (timestamp, str)
+                    if (len(self._rcv_queue) > self._queue_size):
                         # if greater than queue size, then pop first element
-                        self.rcv_queue.pop(0)
+                        self._rcv_queue.pop(0)
                 
                 # sending data (send one at a time in queue for 0.5 seconds)
                 st_t = time.time() # start time
                 while (time.time() - st_t < 0.5):
-                    if (len(self.to_send) > 0):
-                        self.conn.write(self.to_send.pop(0))
-                        self.conn.flush()
+                    if (len(self._to_send) > 0):
+                        self._conn.write(self._to_send.pop(0))
+                        self._conn.flush()
                     else:
                         # break out if all sent
                         break
@@ -364,15 +405,25 @@ class BaseConnection:
 
                 time.sleep(0.01)  # rest CPU
             except (ConnectException, OSError, serial.SerialException):
-                # prevent errors from being shown in thread when disconnecting
-                break
+                # Disconnected, as all of the self.conn (pyserial) operations will raise
+                # an exception if the port is not connected.
+
+                # reset connection and IO variables
+                self._conn = None
+                self._reset()
+
+                if (self._exit_on_disconnect):
+                    os.kill(os.getpid(), signal.SIGTERM)
+                
+                # exit thread
+                return
 
     def _reset(self) -> None:
         """
         Resets all IO variables
         """
 
-        self.last_sent = time.time()  # prevents from sending too rapidly
+        self._last_sent = time.time()  # prevents from sending too rapidly
 
-        self.rcv_queue = []  # stores previous received strings
-        self.to_send = [] # queue data to send
+        self._rcv_queue = []  # stores previous received strings
+        self._to_send = [] # queue data to send

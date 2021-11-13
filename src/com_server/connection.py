@@ -8,6 +8,8 @@ Contains implementation of connection object.
 import time
 import typing as t
 
+from serial.serialutil import SerialException
+
 from . import base_connection, tools
 
 
@@ -31,8 +33,19 @@ class Connection(base_connection.BaseConnection):
     Other methods can generally help the user with interacting with the classes:
     - `all_ports()`: Lists all available COM ports.
 
-    **Warning**: Before making this object go out of scope, make sure to call `disconnect()` in order to avoid thread leaks. If this does not happen, then the disconnect thread and IO thread will still be running for an object that has already been deleted.
+    **Warning**: Before making this object go out of scope, make sure to call `disconnect()` in order to avoid thread leaks. 
+    If this does not happen, then the IO thread will still be running for an object that has already been deleted.
     """
+
+    def __enter__(self) -> "Connection":
+        """
+        Same as `BaseConnection.__enter__()` but returns `Connection` object rather than a `BaseConnection` object.
+        """
+
+        if (not self.connected):
+            self.connect()
+        
+        return self
 
     def conv_bytes_to_str(self, rcv: bytes, read_until: t.Union[str, None] = None, strip: bool = True) -> t.Union[str, None]:
         """Convert bytes receive object to a string.
@@ -114,7 +127,7 @@ class Connection(base_connection.BaseConnection):
         - A list of tuples indicating the timestamp received and the bytes object received
         """
 
-        return self.rcv_queue
+        return self._rcv_queue
 
     def get_all_rcv_str(self, read_until: t.Union[str, None] = None, strip: bool = True) -> "list[tuple[float, str]]":
         """Returns entire receive queue as string.
@@ -135,7 +148,7 @@ class Connection(base_connection.BaseConnection):
         - A list of tuples indicating the timestamp received and the converted string from bytes 
         """
 
-        return [(ts, self.conv_bytes_to_str(rcv, read_until=read_until, strip=strip)) for ts, rcv in self.rcv_queue]
+        return [(ts, self.conv_bytes_to_str(rcv, read_until=read_until, strip=strip)) for ts, rcv in self._rcv_queue]
 
     def receive_str(self, num_before: int = 0, read_until: t.Union[str, None] = None, strip: bool = True) -> "t.Union[None, tuple[float, str]]":
         """Returns the most recent receive object as a string.
@@ -235,7 +248,7 @@ class Connection(base_connection.BaseConnection):
 
         # compares send time to receive time; return the first receive object where the send time < receive time
         while (r is None or r[0] < send_time):
-            if (time.time() - st > self.timeout):
+            if (time.time() - st > self._timeout):
                 # reached timeout
 
                 return None
@@ -327,21 +340,21 @@ class Connection(base_connection.BaseConnection):
             self.last_sent_outer = 0.0
 
         # check interval
-        if (time.time() - self.last_sent_outer < self.send_interval):
+        if (time.time() - self.last_sent_outer < self._send_interval):
             return False
         self.last_sent_outer = time.time()
 
         st_t = time.time()  # for timeout
 
         while (True):
-            if (time.time() - st_t > self.timeout):
+            if (time.time() - st_t > self._timeout):
                 # timeout reached
                 return False
 
             self.send(*args, check_type=check_type,
                       ending=ending, concatenate=concatenate)
 
-            if (time.time() - st_t > self.timeout):
+            if (time.time() - st_t > self._timeout):
                 # timeout reached
                 return False
 
@@ -352,28 +365,55 @@ class Connection(base_connection.BaseConnection):
 
             time.sleep(0.01)
     
-    def reconnect(self, port: t.Union[str, None] = None) -> None:
+    def reconnect(self, port: t.Union[str, None] = None, timeout: t.Union[float, None] = None) -> bool:
         """Attempts to reconnect the serial port.
 
         This will change the `port` attribute then call `self.connect()`.
-        Will raise `ConnectException` if already connected.
+        Will raise `ConnectException` if already connected, regardless
+        of if `exception` if True or not.
 
         Note that `reconnect()` can be used instead of `connect()`, but
         it will connect to the `port` parameter, not the `port` attribute
         when the class was initialized.
 
-        Also note that this will most likely not work if `handle_disconnect`
-        was initialized to False.
+        This method will continuously try to connect to the port provided
+        (unless `port` is None, in which case it will connect to the previous port)
+        until it reaches given `timeout` seconds. If `timeout` is None, then it will
+        continuously try to reconnect indefinitely.
 
         Parameters:
         - `port` (str, None) (optional): Program will reconnect to this port. 
         If None, then will reconnect to previous port. By default None.
+        - `timeout` (float, None) (optional): Will try to reconnect for
+        `timeout` seconds before returning. If None, then will try to reconnect
+        indefinitely. By default None.
+
+        Returns:
+        - True if able to reconnect
+        - False if not able to reconnect within given timeout
         """
 
-        if (port is not None):
-            self.port = port
+        if (self.connected):
+            raise base_connection.ConnectException("Connection already established")
 
-        self.connect()
+        if (port is not None):
+            # set port to new port
+            self.port = port
+        
+        st_t = time.time()
+
+        while (True):
+            if (timeout is not None and time.time() - st_t > timeout):
+                return False
+            
+            try:
+                self.connect()
+
+                # able to connect
+                return True
+            except SerialException as e:
+                # port not found
+                time.sleep(0.01) # rest CPU
 
     def all_ports(self, **kwargs) -> t.Any:
         """Lists all available serial ports.
@@ -394,8 +434,8 @@ class Connection(base_connection.BaseConnection):
         Raises exception or returns false if not.
         """
 
-        if (self.conn is None):
-            if (self.exception):
+        if (self._conn is None):
+            if (self._exception):
                 raise base_connection.ConnectException(
                     "No connection established")
 
@@ -415,7 +455,7 @@ class Connection(base_connection.BaseConnection):
 
         # wait for r to not be None or for received time to be greater than call time
         while (r is None or r[0] < _call_time):
-            if (time.time() - st_t > self.timeout):
+            if (time.time() - st_t > self._timeout):
                 # timeout reached
                 return None
 
@@ -436,7 +476,7 @@ class Connection(base_connection.BaseConnection):
 
         # wait for r to not be None or for received time to be greater than call time
         while (r is None or r[0] < _call_time):
-            if (time.time() - st_t > self.timeout):
+            if (time.time() - st_t > self._timeout):
                 # timeout reached
                 return None
 
@@ -457,7 +497,7 @@ class Connection(base_connection.BaseConnection):
 
         while (r is None or r[0] < timestamp or r[1] != response):
             # timestamp needs to be greater than start of method and response needs to match
-            if (time.time() - call_time > self.timeout):
+            if (time.time() - call_time > self._timeout):
                 # timeout reached
                 return False
 
@@ -478,7 +518,7 @@ class Connection(base_connection.BaseConnection):
 
         while (r is None or r[0] < timestamp or r[1] != response):
             # timestamp needs to be greater than start of method and response needs to match
-            if (time.time() - call_time > self.timeout):
+            if (time.time() - call_time > self._timeout):
                 # timeout reached
                 return False
 
