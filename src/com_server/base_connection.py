@@ -51,8 +51,9 @@ class BaseConnection:
     It also contains the property `connected` to indicate if it is currently connected to the serial port.
 
     If the USB port is disconnected while the program is running, then it will automatically detect the exception
-    thrown by `pyserial`, and then it will reset the IO variables and then label itself as disconnected. Then,
-    it will send a `SIGTERM` signal to the main thread if the port was disconnected.
+    thrown by `pyserial`, and then it will reset the IO variables and then label itself as disconnected. It will
+    then stop the IO thread. If `exit_on_disconnect` is True, it will send a `SIGTERM` signal to the main thread 
+    if the port was disconnected.
 
     **Warning**: Before making this object go out of scope, make sure to call `disconnect()` in order to avoid thread leaks. 
     If this does not happen, then the IO thread will still be running for an object that has already been deleted.
@@ -364,7 +365,8 @@ class BaseConnection:
 
                 time.sleep(0.01)  # rest CPU
             except (ConnectException, OSError, serial.SerialException):
-                # disconnected
+                # Disconnected, as all of the self.conn, or pyserial, operations will raise
+                # an exception if the port is not connected.
 
                 # reset connection and IO variables
                 self.conn = None
@@ -372,6 +374,9 @@ class BaseConnection:
 
                 if (self.exit_on_disconnect):
                     os.kill(os.getpid(), signal.SIGTERM)
+                
+                # exit thread
+                return
 
     def _reset(self) -> None:
         """
