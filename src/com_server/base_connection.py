@@ -93,26 +93,26 @@ class BaseConnection:
         """
 
         # from above
-        self.baud = int(baud)
-        self.port = str(port)
-        self.exception = bool(exception)
-        self.timeout = abs(float(timeout))  # make sure positive
-        self.pass_to_pyserial = kwargs
-        self.queue_size = abs(int(queue_size))  # make sure positive
-        self.send_interval = abs(float(send_interval))  # make sure positive
-        self.exit_on_disconnect = exit_on_disconnect
+        self._baud = int(baud)
+        self._port = str(port)
+        self._exception = bool(exception)
+        self._timeout = abs(float(timeout))  # make sure positive
+        self._pass_to_pyserial = kwargs
+        self._queue_size = abs(int(queue_size))  # make sure positive
+        self._send_interval = abs(float(send_interval))  # make sure positive
+        self._exit_on_disconnect = exit_on_disconnect
 
         if (os.name == "nt" and self.exit_on_disconnect):
             raise EnvironmentError("exit_on_fail is not supported on Windows")
 
         # initialize Serial object
-        self.conn = None
+        self._conn = None
 
         # other
-        self.last_sent = time.time()  # prevents from sending too rapidly
+        self._last_sent = time.time()  # prevents from sending too rapidly
 
-        self.rcv_queue = []  # stores previous received strings and timestamps, tuple (timestamp, str)
-        self.to_send = [] # queue data to send
+        self._rcv_queue = []  # stores previous received strings and timestamps, tuple (timestamp, str)
+        self._to_send = [] # queue data to send
 
     def __repr__(self) -> str:
         """
@@ -120,9 +120,9 @@ class BaseConnection:
         """
 
         return f"Connection<id=0x{hex(id(self))}>" \
-            f"{{port={self.port}, baud={self.baud}, timeout={self.timeout}, queue_size={self.queue_size}, send_interval={self.send_interval}, " \
-            f"Serial={self.conn}, " \
-            f"last_sent={self.last_sent}, rcv_queue={str(self.rcv_queue)}, send_queue={str(self.to_send)}}}"
+            f"{{port={self._port}, baud={self._baud}, timeout={self._timeout}, queue_size={self._queue_size}, send_interval={self._send_interval}, " \
+            f"Serial={self._conn}, " \
+            f"last_sent={self._last_sent}, rcv_queue={str(self._rcv_queue)}, send_queue={str(self._to_send)}}}"
 
     def __enter__(self) -> "BaseConnection":
         """Context manager
@@ -154,16 +154,18 @@ class BaseConnection:
         Returns: None
         """
 
-        if (self.conn is not None):
-            if (self.exception):
+        if (self._conn is not None):
+            if (self._exception):
                 # raise exception if true
                 raise ConnectException("Connection already established")
 
             # return if initialized already
             return
 
-        self.conn = serial.Serial(
-            port=self.port, baudrate=self.baud, timeout=self.timeout, **self.pass_to_pyserial)
+        # timeout should be None in pyserial
+        pyser_timeout = None if self._timeout == float("inf") else self._timeout
+        self._conn = serial.Serial(
+            port=self._port, baudrate=self._baud, timeout=pyser_timeout, **self._pass_to_pyserial)
 
         time.sleep(2)  # wait for other end to start up properly
 
@@ -184,13 +186,13 @@ class BaseConnection:
         Returns: None
         """
 
-        if (self.conn is None):
+        if (self._conn is None):
             # return if not open, as threads are already closed
             return
 
-        self.conn.close()
+        self._conn.close()
         self._reset()
-        self.conn = None
+        self._conn = None
 
     def send(self, *args: "tuple[t.Any]", check_type: bool = True, ending: str = "\r\n", concatenate: str = ' ') -> bool:
         """Sends data to the port
@@ -230,17 +232,17 @@ class BaseConnection:
         """
 
         # check if connection open
-        if (self.conn is None):
-            if (self.exception):
+        if (self._conn is None):
+            if (self._exception):
                 # raise exception if true
                 raise ConnectException("No connection established")
 
             return False
 
         # check if it should send by using send_interval.
-        if (time.time() - self.last_sent <= self.send_interval):
+        if (time.time() - self._last_sent <= self._send_interval):
             return False
-        self.last_sent = time.time()
+        self._last_sent = time.time()
 
         # check `check_type`, then converts each element
         send_data = []
@@ -252,9 +254,9 @@ class BaseConnection:
         # add ending to string
         send_data = (send_data + ending).encode("utf-8")
 
-        if (len(self.to_send) < 65536):
+        if (len(self._to_send) < 65536):
             # only append if limit has not been reached
-            self.to_send.append(send_data)
+            self._to_send.append(send_data)
         
         return True
 
@@ -282,8 +284,8 @@ class BaseConnection:
         - `None` if no data was found or port not open
         """
 
-        if (self.conn is None):
-            if (self.exception):
+        if (self._conn is None):
+            if (self._exception):
                 # raise exception if true
                 raise ConnectException("No connection established")
 
@@ -292,14 +294,14 @@ class BaseConnection:
         if (num_before < 0):
             # num before has to be nonnegative
 
-            if (self.exception):
+            if (self._exception):
                 # raise exception if true
                 raise ValueError("num_before has to be nonnegative")
 
             return None
         
         try:
-            return self.rcv_queue[-1-num_before]
+            return self._rcv_queue[-1-num_before]
         except IndexError as e:
             return None
  
@@ -311,7 +313,43 @@ class BaseConnection:
         is currently running or not.
         """
 
-        return self.conn is not None
+        return self._conn is not None
+    
+    @property
+    def timeout(self) -> float:
+        """A property to determine the timeout of this object.
+
+        Getter:
+        - Gets the timeout of this object
+
+        Setter:
+        - Sets the timeout of this object after checking if convertible. 
+        Then, sets the timeout to the same value on the `pyserial` object of this class.
+        """
+
+        return self._timeout
+    
+    @timeout.setter
+    def timeout(self, value: float) -> None:
+        self._timeout = abs(float(value))
+        self._conn.timeout = self._timeout if self._timeout != float("inf") else None
+    
+    @property
+    def send_interval(self) -> float:
+        """A property to determine the send interval of this object.
+        
+        Getter:
+        - Gets the send interval of this object
+
+        Setter:
+        - Sets the send interval of this object after checking if convertible
+        """
+
+        return self._send_interval
+    
+    @send_interval.setter
+    def send_interval(self, value: float) -> None:
+        self._send_interval = abs(float(value))
 
     def _check_output(self, output: str) -> str:
         """Argument processing
@@ -340,25 +378,25 @@ class BaseConnection:
         Will also take send queue (`to_send`) and send contents one at a time.
         """
 
-        while (self.conn is not None):
+        while (self._conn is not None):
             try:
                 # keep on trying to poll data as long as connection is still alive
-                if (self.conn.in_waiting):
+                if (self._conn.in_waiting):
                     # read everything from serial buffer
-                    incoming = self.conn.read_all()
+                    incoming = self._conn.read_all()
 
                     # add to queue
-                    self.rcv_queue.append((time.time(), incoming)) # tuple (timestamp, str)
-                    if (len(self.rcv_queue) > self.queue_size):
+                    self._rcv_queue.append((time.time(), incoming)) # tuple (timestamp, str)
+                    if (len(self._rcv_queue) > self._queue_size):
                         # if greater than queue size, then pop first element
-                        self.rcv_queue.pop(0)
+                        self._rcv_queue.pop(0)
                 
                 # sending data (send one at a time in queue for 0.5 seconds)
                 st_t = time.time() # start time
                 while (time.time() - st_t < 0.5):
-                    if (len(self.to_send) > 0):
-                        self.conn.write(self.to_send.pop(0))
-                        self.conn.flush()
+                    if (len(self._to_send) > 0):
+                        self._conn.write(self._to_send.pop(0))
+                        self._conn.flush()
                     else:
                         # break out if all sent
                         break
@@ -370,10 +408,10 @@ class BaseConnection:
                 # an exception if the port is not connected.
 
                 # reset connection and IO variables
-                self.conn = None
+                self._conn = None
                 self._reset()
 
-                if (self.exit_on_disconnect):
+                if (self._exit_on_disconnect):
                     os.kill(os.getpid(), signal.SIGTERM)
                 
                 # exit thread
@@ -384,7 +422,7 @@ class BaseConnection:
         Resets all IO variables
         """
 
-        self.last_sent = time.time()  # prevents from sending too rapidly
+        self._last_sent = time.time()  # prevents from sending too rapidly
 
-        self.rcv_queue = []  # stores previous received strings
-        self.to_send = [] # queue data to send
+        self._rcv_queue = []  # stores previous received strings
+        self._to_send = [] # queue data to send
