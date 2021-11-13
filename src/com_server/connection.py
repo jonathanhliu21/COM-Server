@@ -8,6 +8,8 @@ Contains implementation of connection object.
 import time
 import typing as t
 
+from serial.serialutil import SerialException
+
 from . import base_connection, tools
 
 
@@ -353,28 +355,55 @@ class Connection(base_connection.BaseConnection):
 
             time.sleep(0.01)
     
-    def reconnect(self, port: t.Union[str, None] = None) -> None:
+    def reconnect(self, port: t.Union[str, None] = None, timeout: t.Union[float, None] = None) -> bool:
         """Attempts to reconnect the serial port.
 
         This will change the `port` attribute then call `self.connect()`.
-        Will raise `ConnectException` if already connected.
+        Will raise `ConnectException` if already connected, regardless
+        of if `exception` if True or not.
 
         Note that `reconnect()` can be used instead of `connect()`, but
         it will connect to the `port` parameter, not the `port` attribute
         when the class was initialized.
 
-        Also note that this will most likely not work if `handle_disconnect`
-        was initialized to False.
+        This method will continuously try to connect to the port provided
+        (unless `port` is None, in which case it will connect to the previous port)
+        until it reaches given `timeout` seconds. If `timeout` is None, then it will
+        continuously try to reconnect indefinitely.
 
         Parameters:
         - `port` (str, None) (optional): Program will reconnect to this port. 
         If None, then will reconnect to previous port. By default None.
+        - `timeout` (float, None) (optional): Will try to reconnect for
+        `timeout` seconds before returning. If None, then will try to reconnect
+        indefinitely. By default None.
+
+        Returns:
+        - True if able to reconnect
+        - False if not able to reconnect within given timeout
         """
 
-        if (port is not None):
-            self.port = port
+        if (self.connected):
+            raise base_connection.ConnectException("Connection already established")
 
-        self.connect()
+        if (port is not None):
+            # set port to new port
+            self.port = port
+        
+        st_t = time.time()
+
+        while (True):
+            if (timeout is not None and time.time() - st_t > timeout):
+                return False
+            
+            try:
+                self.connect()
+
+                # able to connect
+                return True
+            except SerialException as e:
+                # port not found
+                time.sleep(0.01)
 
     def all_ports(self, **kwargs) -> t.Any:
         """Lists all available serial ports.
