@@ -15,6 +15,7 @@ from types import TracebackType
 
 import serial
 
+
 class ConnectException(Exception):
     """
     Connecting/disconnecting errors
