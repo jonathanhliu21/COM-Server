@@ -642,7 +642,7 @@ from this library, not the `Resource` from `flask_restful`.
 
 `500 Internal Server Error`s may occur with endpoints dealing with the connection
 if the serial port is disconnected. Disconnections while the server is running
-require restarts of the server and may change the port of the device connected.
+require restarts of the server and may change the port of the device that was previously connected.
 
 More information on [Flask](https://flask.palletsprojects.com/en/2.0.x/) and 
 [flask-restful](https://flask-restful.readthedocs.io/en/latest/)
