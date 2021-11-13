@@ -84,3 +84,4 @@ To serve the documentation on `localhost:8000`
 > mkdocs serve
 ```
 
+Make sure to update the documentation to reflect your changes if there were any in the library.
