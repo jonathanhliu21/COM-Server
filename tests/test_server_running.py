@@ -142,7 +142,7 @@ def _test_get_first():
 
 @pytest.mark.skip(reason="No way of testing without delaying; test manually")
 def _test_wait():
-    """NOTE: This only works with a certain program on the Arduino."""
+    """NOTE: This only works with a certain program on the Arduino. Program in examples directory."""
     # tests get first; pytest should not run
 
     data = {
@@ -164,7 +164,7 @@ def _test_wait():
 
 @pytest.mark.skip(reason="No way of testing without delaying; test manually")
 def _test_send_response():
-    """NOTE: This only works with a certain program on the Arduino."""
+    """NOTE: This only works with a certain program on the Arduino. Program in examples directory."""
     # tests get first; pytest should not run
 
     t = time.time()
