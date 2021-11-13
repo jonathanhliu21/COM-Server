@@ -54,7 +54,7 @@ If this does not happen, then the IO thread will still be running for an object 
 #### BaseConnection.\_\_init\_\_()
 
 ```py
-def __init__(baud, port, exception=True, timeout=1, queue_size=256, handle_disconnect=True, exit_on_disconnect=True, **kwargs)
+def __init__(baud, port, exception=True, timeout=1, queue_size=256, exit_on_disconnect=True, **kwargs)
 ```
 
 Initializes the Base Connection class. 
@@ -268,7 +268,7 @@ If this does not happen, then the IO thread will still be running for an object 
 #### Connection.\_\_init\_\_()
 
 ```py
-def __init__(baud, port, exception=True, timeout=1, queue_size=256, handle_disconnect=True, exit_on_disconnect=True, **kwargs)
+def __init__(baud, port, exception=True, timeout=1, queue_size=256, exit_on_disconnect=True, **kwargs)
 ```
 
 See [BaseConnection.\_\_init\_\_()](#baseconnection__init__)
@@ -552,24 +552,30 @@ def reconnect(port=None)
 Attempts to reconnect the serial port.
 
 This will change the `port` attribute then call `self.connect()`.
-Will raise `ConnectException` if already connected.
+Will raise `ConnectException` if already connected, regardless
+of if `exception` if True or not.
 
 Note that `reconnect()` can be used instead of `connect()`, but
 it will connect to the `port` parameter, not the `port` attribute
 when the class was initialized.
 
-Also note that this will most likely not work if `handle_disconnect`
-was initialized to False.
+This method will continuously try to connect to the port provided
+(unless `port` is None, in which case it will connect to the previous port)
+until it reaches given `timeout` seconds. If `timeout` is None, then it will
+continuously try to reconnect indefinitely.
 
 Parameters:
 
 - `port` (str, None) (optional): Program will reconnect to this port. 
 If None, then will reconnect to previous port. By default None.
+- `timeout` (float, None) (optional): Will try to reconnect for
+`timeout` seconds before returning. If None, then will try to reconnect
+indefinitely. By default None.
 
-May raise:
+Returns:
 
-- `com_server.ConnectException` if the user calls this function while it is already connected and `exception` is True.
-- `serial.serialutil.SerialException` if the port given in `__init__` does not exist.
+- True if able to reconnect
+- False if not able to reconnect within given timeout
 
 #### Connection.all_ports()
 
