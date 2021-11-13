@@ -857,9 +857,13 @@ Parameters:
 NO_TIMEOUT: float("inf")
 ```
 
+Use this if you do not want a timeout. Not recommended.
+
 ```py
 NO_SEND_INTERVAL = 0
 ```
+
+Use this if you do not want a send interval. Not recommended.
 
 ```py
 NO_RCV_QUEUE = 1 
@@ -870,10 +874,14 @@ RCV_QUEUE_SIZE_LARGE = 512
 RCV_QUEUE_SIZE_XLARGE = 1024
 ```
 
+Different receive queue sizes for `queue_size`. Default is `RCV_QUEUE_SIZE_NORMAL`.
+
 ```py
 DEFAULT_HOST="0.0.0.0"
 DEFAULT_PORT=8080
 ```
+
+Default host and port for the server.
 
 ---
 
