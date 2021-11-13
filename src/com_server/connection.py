@@ -37,6 +37,16 @@ class Connection(base_connection.BaseConnection):
     If this does not happen, then the IO thread will still be running for an object that has already been deleted.
     """
 
+    def __enter__(self) -> "Connection":
+        """
+        Same as `BaseConnection.__enter__()` but returns `Connection` object rather than a `BaseConnection` object.
+        """
+
+        if (not self.connected):
+            self.connect()
+        
+        return self
+
     def conv_bytes_to_str(self, rcv: bytes, read_until: t.Union[str, None] = None, strip: bool = True) -> t.Union[str, None]:
         """Convert bytes receive object to a string.
 
@@ -403,7 +413,7 @@ class Connection(base_connection.BaseConnection):
                 return True
             except SerialException as e:
                 # port not found
-                time.sleep(0.01)
+                time.sleep(0.01) # rest CPU
 
     def all_ports(self, **kwargs) -> t.Any:
         """Lists all available serial ports.
