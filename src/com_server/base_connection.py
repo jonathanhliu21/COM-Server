@@ -341,12 +341,7 @@ class BaseConnection:
         """
 
         return self._timeout
-    
-    @timeout.setter
-    def timeout(self, value: float) -> None:
-        self._timeout = abs(float(value))
-        self._conn.timeout = self._timeout if self._timeout != constants.NO_TIMEOUT else None
-    
+
     @property
     def send_interval(self) -> float:
         """A property to determine the send interval of this object.
@@ -359,6 +354,21 @@ class BaseConnection:
         """
 
         return self._send_interval
+    
+    @property
+    def conn_obj(self) -> serial.Serial:
+        """A property to get the Serial object that handles sending and receiving.
+
+        Getter:
+        - Gets the Serial object.  
+        """
+
+        return self._conn
+    
+    @timeout.setter
+    def timeout(self, value: float) -> None:
+        self._timeout = abs(float(value))
+        self._conn.timeout = self._timeout if self._timeout != constants.NO_TIMEOUT else None    
     
     @send_interval.setter
     def send_interval(self, value: float) -> None:
