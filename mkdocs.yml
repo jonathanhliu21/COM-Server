@@ -11,3 +11,8 @@ nav:
   - "Using COM-Server":
     - "CLI": "guide/cli.md"
     - "Server API": "server/server-api.md"
+  
+theme:
+  name: readthedocs
+  highlightjs: true
+  locale: en

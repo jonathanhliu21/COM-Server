@@ -20,10 +20,11 @@ The above endpoints will not be available if the class is used.
 
 import typing as t
 
-from flask_restful import reqparse
 import flask_restful
+from flask_restful import reqparse
 
-from . import RestApiHandler, ConnectionResource, Connection, all_ports
+from . import Connection, ConnectionResource, RestApiHandler, all_ports
+
 
 class Builtins:
     """Contains implementations of endpoints that call methods of `Connection` object

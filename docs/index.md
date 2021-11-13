@@ -2,6 +2,8 @@
 
 Welcome to the COM-Server documentation.
 
+**Note**: This is still in beta. If you want to help contribute/test, please read the [contributing page](https://github.com/jonyboi396825/COM-Server/blob/master/CONTRIBUTING.md).
+
 COM-Server is a Python library and a web server that hosts an API and interacts with serial or COM ports. The Python library provides a different way of sending and receiving data from the serial port using a thread, and it also gives a set of tools that simplifies the task of manipulating data to and from the port. Additionally, the server makes it easier for other processes to communicate with the serial port.
 
 The serial communication uses [pyserial](https://pyserial.readthedocs.io/en/latest/pyserial.html) as its back-end and the server uses [flask-restful](https://flask-restful.readthedocs.io/en/latest/quickstart.html) and [Flask](https://flask.palletsprojects.com/en/2.0.x/). Reading their documentations may help with developing with COM-Server.
@@ -21,6 +23,7 @@ Serial ports:
 It is likely that this library will not work for non-USB ports. 
  
 ## Links
+- Documentation: [https://com-server.readthedocs.io/en/latest/](https://com-server.readthedocs.io/en/latest/)
 - Source code: [https://github.com/jonyboi396825/COM-Server](https://github.com/jonyboi396825/COM-Server)
 - Issue tracker: [https://github.com/jonyboi396825/COM-Server/issues](https://github.com/jonyboi396825/COM-Server/issues)
 - Contributing: [https://github.com/jonyboi396825/COM-Server/blob/master/CONTRIBUTING.md](https://github.com/jonyboi396825/COM-Server/blob/master/CONTRIBUTING.md)
@@ -46,6 +49,7 @@ It is likely that this library will not work for non-USB ports.
     - [Exceptions](guide/library-api/#exceptions)
         - [com_server.ConnectException](guide/library-api/#com_serverconnectexception)
         - [com_server.EndpointExistsException](guide/library-api/#com_serverendpointexistsexception)
+- [Command line interface](guide/cli/)
 - [Server API](server/server-api)
 
 ## Installation
@@ -76,6 +80,8 @@ handler = com_server.RestApiHandler(conn)
 com_server.Builtins(handler) 
 
 handler.run_dev(host="0.0.0.0", port=8080) 
+
+conn.disconnect()
 ```
 Replace "&lt;port&gt;" and "&lt;baud&gt;" with the serial port and baud rate.
 

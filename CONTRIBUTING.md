@@ -10,7 +10,7 @@ Otherwise, follow the issue template.
 
 ## Submitting a Pull Request
 
-Make sure you have an Arduino and the Arduino IDE installed before contributing.
+Make sure you have an Arduino and the [Arduino IDE](https://www.arduino.cc/en/software) installed before contributing.
 
 ### First time setup:
 
@@ -28,7 +28,7 @@ Make sure you have an Arduino and the Arduino IDE installed before contributing.
 ```
 5. Add the fork as a remote named `fork`
 ```sh
-> git remote add fork https://github.com/jonyboi396825/COM-Server 
+> git remote add fork https://github.com/{name}/COM-Server 
 ```
 6. Create a virtualenv named `.env`
 ```sh
@@ -38,7 +38,7 @@ Make sure you have an Arduino and the Arduino IDE installed before contributing.
 ```sh
 > pip install -r requirements.txt && pip install -e .
 ```
-8. Upload the script provided in the `examples` directory onto the Arduino.
+8. Upload the script named `send_back` provided in the `examples` directory onto the Arduino.
 
 ### Developing:
 
@@ -49,7 +49,7 @@ Make sure you have an Arduino and the Arduino IDE installed before contributing.
 ```
 2. Make changes and commit for each change
 3. Add tests that apply to your change
-4. Push your commits and create a pull request
+4. Push your commits and create a pull request to merge into the `develop` branch of the base repository.
 ```sh
 > git push -u fork branch-name
 ```
@@ -58,21 +58,27 @@ Make sure you have an Arduino and the Arduino IDE installed before contributing.
 
 Use pytest:
 ```sh
-> pytest
+> pytest -vv
 ```
 
 Make sure that all tests pass.
+
+Some tests need the `com_server` command to be run or the Arduino to be plugged in. Make sure the listed command is run and and Arduino is plugged in to make sure that every test passes and none of them are skipped.
+
+When writing tests, use the `pytest` library, and make them as specific as possible, testing a specific part of what you are making.
+
+I am also open to those who write new tests to already existing code, especially ones that can test if the methods of the `BaseConnection` and `Connection` classes are behaving properly.
 
 ### Building documentation
 
 COM-Server uses `mkdocs` for its documentation. To build the documentation:
 
-1. Change directory to the language
 ```sh
-> cd docs/{lang}
+> mkdocs build
 ```
-2. Run `mktest build`
+
+To serve the documentation on `localhost:8000`
 ```sh
-> mktest build
+> mkdocs serve
 ```
 

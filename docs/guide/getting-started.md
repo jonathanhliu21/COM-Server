@@ -63,9 +63,9 @@ conn = com_server.Connection(port="/dev/ttyUSB0", baud=115200, timeout=2)
 
 ### Connecting and disconnecting
 
-This is when the object actually connects to the serial port. When this happens, it spawns two threads: one called the "IO thread" which handles sending and receiving data to and from the serial port, and one called the "disconnect thread," which handles disconnect detection.
+This is when the object actually connects to the serial port. When this happens, it spawns a thread called the IO thread which handles sending and receiving data to and from the serial port.
 
-When disconnecting the object, it will delete these two threads and reset its IO variables, including the send queue and the list of received data.
+When disconnecting the object, it will delete the IO thread and reset its IO variables, including the send queue and the list of received data.
 
 There are two ways of doing this:
 
