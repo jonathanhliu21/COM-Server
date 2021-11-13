@@ -127,7 +127,7 @@ class Connection(base_connection.BaseConnection):
         - A list of tuples indicating the timestamp received and the bytes object received
         """
 
-        return self.rcv_queue
+        return self._rcv_queue
 
     def get_all_rcv_str(self, read_until: t.Union[str, None] = None, strip: bool = True) -> "list[tuple[float, str]]":
         """Returns entire receive queue as string.
@@ -148,7 +148,7 @@ class Connection(base_connection.BaseConnection):
         - A list of tuples indicating the timestamp received and the converted string from bytes 
         """
 
-        return [(ts, self.conv_bytes_to_str(rcv, read_until=read_until, strip=strip)) for ts, rcv in self.rcv_queue]
+        return [(ts, self.conv_bytes_to_str(rcv, read_until=read_until, strip=strip)) for ts, rcv in self._rcv_queue]
 
     def receive_str(self, num_before: int = 0, read_until: t.Union[str, None] = None, strip: bool = True) -> "t.Union[None, tuple[float, str]]":
         """Returns the most recent receive object as a string.
@@ -248,7 +248,7 @@ class Connection(base_connection.BaseConnection):
 
         # compares send time to receive time; return the first receive object where the send time < receive time
         while (r is None or r[0] < send_time):
-            if (time.time() - st > self.timeout):
+            if (time.time() - st > self._timeout):
                 # reached timeout
 
                 return None
@@ -340,21 +340,21 @@ class Connection(base_connection.BaseConnection):
             self.last_sent_outer = 0.0
 
         # check interval
-        if (time.time() - self.last_sent_outer < self.send_interval):
+        if (time.time() - self.last_sent_outer < self._send_interval):
             return False
         self.last_sent_outer = time.time()
 
         st_t = time.time()  # for timeout
 
         while (True):
-            if (time.time() - st_t > self.timeout):
+            if (time.time() - st_t > self._timeout):
                 # timeout reached
                 return False
 
             self.send(*args, check_type=check_type,
                       ending=ending, concatenate=concatenate)
 
-            if (time.time() - st_t > self.timeout):
+            if (time.time() - st_t > self._timeout):
                 # timeout reached
                 return False
 
@@ -434,8 +434,8 @@ class Connection(base_connection.BaseConnection):
         Raises exception or returns false if not.
         """
 
-        if (self.conn is None):
-            if (self.exception):
+        if (self._conn is None):
+            if (self._exception):
                 raise base_connection.ConnectException(
                     "No connection established")
 
@@ -455,7 +455,7 @@ class Connection(base_connection.BaseConnection):
 
         # wait for r to not be None or for received time to be greater than call time
         while (r is None or r[0] < _call_time):
-            if (time.time() - st_t > self.timeout):
+            if (time.time() - st_t > self._timeout):
                 # timeout reached
                 return None
 
@@ -476,7 +476,7 @@ class Connection(base_connection.BaseConnection):
 
         # wait for r to not be None or for received time to be greater than call time
         while (r is None or r[0] < _call_time):
-            if (time.time() - st_t > self.timeout):
+            if (time.time() - st_t > self._timeout):
                 # timeout reached
                 return None
 
@@ -497,7 +497,7 @@ class Connection(base_connection.BaseConnection):
 
         while (r is None or r[0] < timestamp or r[1] != response):
             # timestamp needs to be greater than start of method and response needs to match
-            if (time.time() - call_time > self.timeout):
+            if (time.time() - call_time > self._timeout):
                 # timeout reached
                 return False
 
@@ -518,7 +518,7 @@ class Connection(base_connection.BaseConnection):
 
         while (r is None or r[0] < timestamp or r[1] != response):
             # timestamp needs to be greater than start of method and response needs to match
-            if (time.time() - call_time > self.timeout):
+            if (time.time() - call_time > self._timeout):
                 # timeout reached
                 return False
 
