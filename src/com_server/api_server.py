@@ -12,7 +12,7 @@ import flask
 import flask_restful
 import waitress
 
-from . import base_connection, connection # for typing
+from . import base_connection, connection  # for typing
 
 
 class EndpointExistsException(Exception):

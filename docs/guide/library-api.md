@@ -54,7 +54,7 @@ If this does not happen, then the IO thread will still be running for an object 
 #### BaseConnection.\_\_init\_\_()
 
 ```py
-def __init__(baud, port, exception=True, timeout=1, queue_size=256, handle_disconnect=True, exit_on_disconnect=True, **kwargs)
+def __init__(baud, port, exception=True, timeout=1, queue_size=256, exit_on_disconnect=True, **kwargs)
 ```
 
 Initializes the Base Connection class. 
@@ -238,6 +238,32 @@ A property to determine if the connection object is currently connected to a ser
 This also can determine if the IO thread for this object
 is currently running or not.
 
+#### BaseConnection.timeout
+
+A property to determine the timeout of this object.
+
+Getter:
+
+- Gets the timeout of this object.
+
+Setter:
+
+- Sets the timeout of this object after checking if convertible to nonnegative float. 
+Then, sets the timeout to the same value on the `pyserial` object of this class.
+If the value is `float('inf')`, then sets the value of the `pyserial` object to None.
+
+#### BaseConnection.send_interval
+
+A property to determine the send interval of this object.
+
+Getter:
+
+- Gets the send interval of this object.
+
+Setter:
+
+- Sets the send interval of this object after checking if convertible to nonnegative float.
+
 ---
 
 ### com_server.Connection
@@ -268,7 +294,7 @@ If this does not happen, then the IO thread will still be running for an object 
 #### Connection.\_\_init\_\_()
 
 ```py
-def __init__(baud, port, exception=True, timeout=1, queue_size=256, handle_disconnect=True, exit_on_disconnect=True, **kwargs)
+def __init__(baud, port, exception=True, timeout=1, queue_size=256, exit_on_disconnect=True, **kwargs)
 ```
 
 See [BaseConnection.\_\_init\_\_()](#baseconnection__init__)
@@ -279,7 +305,7 @@ See [BaseConnection.\_\_init\_\_()](#baseconnection__init__)
 def __enter__()
 ```
 
-See [BaseConnection.\_\_enter\_\_()](#baseconnection__enter__)
+Same as [BaseConnection.\_\_enter\_\_()](#baseconnection__enter__) but returns a `Connection` object rather than a `BaseConnection` object.
 
 #### Connection.\_\_exit\_\_()
 
@@ -324,6 +350,12 @@ See [BaseConnection.receive()](#baseconnectionreceive)
 #### Connection.connected
 
 See [BaseConnection.connected](#baseconnectionconnected)
+
+#### Connection.timeout
+See [BaseConnection.timeout](#baseconnectiontimeout)
+
+#### Connection.send_interval
+See [BaseConnection.send_interval](#baseconnectionsend_interval)
 
 #### Connection.conv_bytes_to_str()
 
@@ -552,24 +584,30 @@ def reconnect(port=None)
 Attempts to reconnect the serial port.
 
 This will change the `port` attribute then call `self.connect()`.
-Will raise `ConnectException` if already connected.
+Will raise `ConnectException` if already connected, regardless
+of if `exception` if True or not.
 
 Note that `reconnect()` can be used instead of `connect()`, but
 it will connect to the `port` parameter, not the `port` attribute
 when the class was initialized.
 
-Also note that this will most likely not work if `handle_disconnect`
-was initialized to False.
+This method will continuously try to connect to the port provided
+(unless `port` is None, in which case it will connect to the previous port)
+until it reaches given `timeout` seconds. If `timeout` is None, then it will
+continuously try to reconnect indefinitely.
 
 Parameters:
 
 - `port` (str, None) (optional): Program will reconnect to this port. 
 If None, then will reconnect to previous port. By default None.
+- `timeout` (float, None) (optional): Will try to reconnect for
+`timeout` seconds before returning. If None, then will try to reconnect
+indefinitely. By default None.
 
-May raise:
+Returns:
 
-- `com_server.ConnectException` if the user calls this function while it is already connected and `exception` is True.
-- `serial.serialutil.SerialException` if the port given in `__init__` does not exist.
+- True if able to reconnect
+- False if not able to reconnect within given timeout
 
 #### Connection.all_ports()
 
