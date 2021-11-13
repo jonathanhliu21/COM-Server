@@ -279,7 +279,7 @@ See [BaseConnection.\_\_init\_\_()](#baseconnection__init__)
 def __enter__()
 ```
 
-See [BaseConnection.\_\_enter\_\_()](#baseconnection__enter__)
+Same as [BaseConnection.\_\_enter\_\_()](#baseconnection__enter__) but returns a `Connection` object rather than a `BaseConnection` object.
 
 #### Connection.\_\_exit\_\_()
 
