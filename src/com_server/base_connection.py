@@ -476,10 +476,14 @@ class BaseConnection:
         When comparing, rounds to 4 digits.
         """
 
+        if (len(self._rcv_queue) <= 0):
+            # not found if no size
+            return -1
+
         low = 0
         high = len(self._rcv_queue)
 
-        while (low < high):
+        while (low <= high):
             mid = (low+high)//2 # integer division
 
             # comparing rounding to two digits
