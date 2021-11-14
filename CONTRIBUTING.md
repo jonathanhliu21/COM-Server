@@ -54,6 +54,8 @@ Make sure you have an Arduino and the [Arduino IDE](https://www.arduino.cc/en/so
 > git push -u fork branch-name
 ```
 
+I will change the merge branch if needed.
+
 ### Testing:
 
 Use pytest:
@@ -82,3 +84,4 @@ To serve the documentation on `localhost:8000`
 > mkdocs serve
 ```
 
+Make sure to update the documentation to reflect your changes if there were any in the library.

@@ -14,13 +14,20 @@ Operating systems:
 - Mac OS 10.15.x (Catalina)
 - Mac OS 11.6 (Big Sur)
 
+Python versions:
+
+- Python 3.7.2
+- Python 3.7.3
+- Python 3.8.10
+
 Serial ports:
 
 - Arduino UNO
+- Arduino Nano
 
 ## Installation
 
-**NOTE**: COM_Server only works on Python >= 3.6.
+**NOTE**: COM-Server only works on Python >= 3.6.
 
 Using [pip](https://pip.pypa.io/en/stable/getting-started/):
 ```
