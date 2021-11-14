@@ -214,7 +214,8 @@ class BaseConnection:
 
         If the connection is open and the interval between sending is large enough, 
         then concatenates args with a space (or what was given in `concatenate`) in between them, 
-        encodes to an `utf-8` `bytes` object, adds a carriage return and a newline to the end (i.e. "\\r\\n") (or what was given as `ending`), then sends to the serial port.
+        encodes to an `utf-8` `bytes` object, adds a carriage return and a newline to the end 
+        (i.e. "\\r\\n") (or what was given as `ending`), then sends to the serial port.
 
         Note that the data does not send immediately and instead will be added to a queue. 
         The queue size limit is 65536 byte objects. Anything more that is trying to be sent will not be added to the queue.
@@ -375,8 +376,15 @@ class BaseConnection:
 
         Getter:
 
-        - Gets the number of additional data received since the user called the `receive()` method.
+        - Gets the number of additional data received since the user last called the `receive()` method.
         """
+
+        if (not self.connected):
+            # check if connected
+            if (self._exception):
+                raise ConnectException("No connection established")
+            
+            return 0
 
         last_rcv_ind = self._binary_search_rcv(self._last_rcv[0]) 
 
