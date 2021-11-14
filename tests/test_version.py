@@ -1,9 +1,11 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-import configparser
+"""
+Version testing
+"""
+
 import pytest
-import requests
 from com_server import __version__
 from pkg_resources import get_distribution
 
@@ -56,17 +58,6 @@ def test_version_cmp_working() -> None:
     assert Version("0.0.0") == Version("0.0.0")
     assert Version("1.0a0") == Version("1.0a0")
 
-def test_version_greater() -> None:
-    """Tests if current version is greater than version on master branch on github"""
-
-    req = requests.get("https://raw.githubusercontent.com/jonyboi396825/COM-Server/master/setup.cfg")
-    cfg = configparser.ConfigParser()
-    cfg.read_string(req.text)
-
-    master_vers = Version(cfg["metadata"]["version"])
-    cur_vers = Version(__version__)
-
-    assert cur_vers > master_vers
 
 if (__name__ == "__main__"):
     v = Version("0.0bbb0")
