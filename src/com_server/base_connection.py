@@ -124,6 +124,7 @@ class BaseConnection:
 
         # other
         self._last_sent = time.time()  # prevents from sending too rapidly
+        self._last_rcv = (0.0, None) # stores the data that the user previously received
 
         self._rcv_queue = []  # stores previous received strings and timestamps, tuple (timestamp, str)
         self._to_send = [] # queue data to send
@@ -315,6 +316,7 @@ class BaseConnection:
             return None
         
         try:
+            self._last_rcv = self._rcv_queue[-1-num_before] # last received data
             return self._rcv_queue[-1-num_before]
         except IndexError as e:
             return None
@@ -366,6 +368,19 @@ class BaseConnection:
         """
 
         return self._conn
+    
+    @property
+    def available(self) -> int:
+        """A property indicating how much new data there is in the receive queue.
+
+        Getter:
+
+        - Gets the number of additional data received since the user called the `receive()` method.
+        """
+
+        last_rcv_ind = self._binary_search_rcv(self._last_rcv[0]) 
+
+        return len(self._rcv_queue) - last_rcv_ind - 1 
     
     @timeout.setter
     def timeout(self, value: float) -> None:
@@ -451,3 +466,32 @@ class BaseConnection:
 
         self._rcv_queue = []  # stores previous received strings
         self._to_send = [] # queue data to send
+    
+    def _binary_search_rcv(self, target: float) -> int:
+        """
+        Binary searches a timestamp in the receive queue and returns the index of that timestamp.
+
+        Works because the timestamps in the receive queue are sorted by default.
+
+        When comparing, rounds to 4 digits.
+        """
+
+        low = 0
+        high = len(self._rcv_queue)
+
+        while (low < high):
+            mid = (low+high)//2 # integer division
+
+            # comparing rounding to two digits
+            cmp1 = round(self._rcv_queue[mid][0], 4)
+            cmp2 = round(target, 4)
+
+            if (cmp1 == cmp2):
+                return mid
+            elif (cmp1 < cmp2):
+                low = mid+1
+            else:
+                high = mid-1
+        
+        # return -1 if not found
+        return -1
