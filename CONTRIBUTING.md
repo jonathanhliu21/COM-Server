@@ -53,8 +53,10 @@ Make sure you have an Arduino and the [Arduino IDE](https://www.arduino.cc/en/so
 ```sh
 > git push -u fork branch-name
 ```
-
 I will change the merge branch if needed.
+
+**NOTE:** In the pull request, please specify the operating system and serial device you tested COM-Server on.
+
 
 ### Testing:
 
