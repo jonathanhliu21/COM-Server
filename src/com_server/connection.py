@@ -334,15 +334,15 @@ class Connection(base_connection.BaseConnection):
             return False
 
         try:
-            self.last_sent_outer  # this is for the interval for calling send_for_response
+            self._last_sent_outer  # this is for the interval for calling send_for_response
         except AttributeError:
             # declare variable if not declared yet
-            self.last_sent_outer = 0.0
+            self._last_sent_outer = 0.0
 
         # check interval
-        if (time.time() - self.last_sent_outer < self._send_interval):
+        if (time.time() - self._last_sent_outer < self._send_interval):
             return False
-        self.last_sent_outer = time.time()
+        self._last_sent_outer = time.time()
 
         st_t = time.time()  # for timeout
 
