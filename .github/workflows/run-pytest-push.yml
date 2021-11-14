@@ -1,6 +1,8 @@
 # This is a basic workflow to help you get started with Actions
 
-name: Run Pytest (Push)
+name: Run Pytest (Push to master)
+
+description: Runs pytest but ignores tests/test_version.py if there is anything pushed to master.
 
 # Controls when the workflow will run
 on:
@@ -34,4 +36,4 @@ jobs:
       
       - name: Run pytest
         run: |
-          pytest -vv
+          pytest -vv --ignore=tests/test_version_greater.py
