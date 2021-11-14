@@ -9,3 +9,6 @@ graft src
 graft examples
 graft docs
 graft tests
+
+global-exclude *.py[cod]
+prune src/com_server.egg-info
