@@ -67,5 +67,5 @@ def main() -> None:
 
         print("Exited")
 
-if __name__ == "__main__":
+if (__name__ == "__main__"):
     main()
