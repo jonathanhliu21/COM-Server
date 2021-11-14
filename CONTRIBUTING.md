@@ -60,7 +60,7 @@ I will change the merge branch if needed.
 
 Use pytest:
 ```sh
-> pytest -vv
+> pytest -vv --ignore=tests/test_version_greater.py
 ```
 
 Make sure that all tests pass.
