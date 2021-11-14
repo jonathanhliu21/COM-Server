@@ -61,6 +61,8 @@ it will send a `SIGTERM` signal to the main thread if the port was disconnected.
 **Warning**: Before making this object go out of scope, make sure to call `disconnect()` in order to avoid thread leaks. 
 If this does not happen, then the IO thread will still be running for an object that has already been deleted.
 
+**Warning**: There will be NO errors thrown if this object is declared twice with the same port, which may lead to unexpected behavior.
+
 #### BaseConnection.\_\_init\_\_()
 
 ```py
