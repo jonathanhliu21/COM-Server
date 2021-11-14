@@ -284,6 +284,18 @@ Getter:
 
 - Gets the Serial object.  
 
+#### BaseConnection.available
+
+A property indicating how much new data there is in the receive queue.
+
+Getter:
+
+- Gets the number of additional data received since the user last called the `receive()` method.
+
+May raise:
+
+- `ConnectException` if serial port is not connected and `exception` is True.
+
 ---
 
 ### com_server.Connection
@@ -379,6 +391,9 @@ See [BaseConnection.send_interval](#baseconnectionsend_interval)
 
 #### Connection.conn_obj
 See [BaseConnection.conn_obj](#baseconnectionconn_obj)
+
+#### Connection.available
+See [BaseConnection.available](#baseconnectionavailable)
 
 #### Connection.conv_bytes_to_str()
 
