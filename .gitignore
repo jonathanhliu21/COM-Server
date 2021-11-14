@@ -1,9 +1,8 @@
-.env/
+.*env/
 private/
 .vscode/
 __pycache__/
 other/
-src/test.py
 *.egg-info
 .DS_Store
 *.pyc

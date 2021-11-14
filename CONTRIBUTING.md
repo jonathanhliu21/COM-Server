@@ -42,25 +42,33 @@ Make sure you have an Arduino and the [Arduino IDE](https://www.arduino.cc/en/so
 
 ### Developing:
 
-1. Create a new branch off the `master` branch
-```sh
-> git fetch
-> git checkout -b branch-name origin/master
-```
+1. Create a new branch  
+    * Off the `master` branch if bug fix/docs fix
+    ```sh
+    > git fetch
+    > git checkout -b branch-name origin/master
+    ```
+    * Off the `develop` branch if adding feature
+    ```sh
+    > git fetch
+    > git checkout -b branch-name origin/develop
+    ```
 2. Make changes and commit for each change
 3. Add tests that apply to your change
 4. Push your commits and create a pull request to merge into the `develop` branch of the base repository.
 ```sh
 > git push -u fork branch-name
 ```
-
 I will change the merge branch if needed.
+
+**NOTE:** In the pull request, please specify the operating system and serial device (e.g. Arduino UNO, Arduino Mega, etc.) you tested COM-Server on.
+
 
 ### Testing:
 
 Use pytest:
 ```sh
-> pytest -vv --ignore=tests/test_version_greater.py
+> pytest -vv 
 ```
 
 Make sure that all tests pass.

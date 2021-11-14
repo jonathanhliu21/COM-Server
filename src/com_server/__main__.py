@@ -66,3 +66,6 @@ def main() -> None:
         runner.run(baud, serport, env, host, port, timeout, send_interval)
 
         print("Exited")
+
+if (__name__ == "__main__"):
+    main()

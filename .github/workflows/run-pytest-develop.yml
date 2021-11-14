@@ -1,12 +1,12 @@
-# Runs pytest but ignores tests/test_version.py if there is anything pushed to master.
+# Runs pytest when something is pushed to develop or if there is a pull request to master.
 
-name: Run Pytest (Push to master)
+name: Run Pytest on develop 
 
 # Controls when the workflow will run
 on:
-  # triggers when push to master
+  # trigger when push to develop
   push:
-    branches: [ master ]
+    branches: [ develop ]
 
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
@@ -32,6 +32,7 @@ jobs:
         run: |
           pip3 install -r requirements.txt && pip3 install -e .
       
-      - name: Run pytest
+      - name: Run pytest and then test the version greater test
         run: |
-          pytest -vv 
+          pytest -vv
+          pytest tests/_test_version_greater.py -vv
