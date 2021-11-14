@@ -53,14 +53,16 @@ Make sure you have an Arduino and the [Arduino IDE](https://www.arduino.cc/en/so
 ```sh
 > git push -u fork branch-name
 ```
-
 I will change the merge branch if needed.
+
+**NOTE:** In the pull request, please specify the operating system and serial device (e.g. Arduino UNO, Arduino Mega, etc.) you tested COM-Server on.
+
 
 ### Testing:
 
 Use pytest:
 ```sh
-> pytest -vv --ignore=tests/test_version_greater.py
+> pytest -vv 
 ```
 
 Make sure that all tests pass.

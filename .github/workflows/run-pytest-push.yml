@@ -34,4 +34,4 @@ jobs:
       
       - name: Run pytest
         run: |
-          pytest -vv --ignore=tests/test_version_greater.py
+          pytest -vv 

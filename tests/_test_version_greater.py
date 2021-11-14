@@ -3,6 +3,9 @@
 
 """
 Version testing
+
+Don't want to run when running `pytest`, only run when something
+is pushed to develop branch or PR to master.
 """
 
 import configparser
