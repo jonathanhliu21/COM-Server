@@ -1,12 +1,10 @@
-# This is a basic workflow to help you get started with Actions
+# Runs pytest but ignores tests/test_version.py if there is anything pushed to master.
 
 name: Run Pytest (Push to master)
 
-description: Runs pytest but ignores tests/test_version.py if there is anything pushed to master.
-
 # Controls when the workflow will run
 on:
-  # Triggers the workflow on push or pull request events but only for the master branch
+  # triggers when push to master
   push:
     branches: [ master ]
 

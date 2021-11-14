@@ -1,12 +1,10 @@
-# This is a basic workflow to help you get started with Actions
+# Runs pytest when something is pushed to develop or if there is a pull request to master.
 
 name: Run Pytest on develop 
 
-description: Runs pytest when something is pushed to develop or if there is a pull request to master.
-
 # Controls when the workflow will run
 on:
-  # Triggers the workflow on push or pull request events but only for the master branch
+  # trigger when PR to master or push to develop
   pull_request:
     branches: [ master ]
   push:
