@@ -1,7 +1,9 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
+import configparser
 import pytest
+import requests
 from com_server import __version__
 from pkg_resources import get_distribution
 
@@ -15,8 +17,8 @@ def test_version():
 
     assert pkg.version == __version__
 
-def test_version_class_working() -> None:
-    """Tests if Version class is working"""
+def test_version_class_parse_working() -> None:
+    """Tests if Version class is working with parsing"""
 
     # test X.Y evaluates to X.Y.0
     assert repr(Version("5.5")) == "5.5.0"
@@ -32,6 +34,9 @@ def test_version_class_working() -> None:
         Version(".0.0")
     with pytest.raises(ValueError):
         Version("a0.0")
+
+def test_version_cmp_working() -> None:
+    """Tests if comparing is working"""
 
     # test major version compare
     assert Version("1.0.0") < Version("5.0a0")
@@ -50,6 +55,18 @@ def test_version_class_working() -> None:
     # test eq compare
     assert Version("0.0.0") == Version("0.0.0")
     assert Version("1.0a0") == Version("1.0a0")
+
+def test_version_greater() -> None:
+    """Tests if current version is greater than version on master branch on github"""
+
+    req = requests.get("https://raw.githubusercontent.com/jonyboi396825/COM-Server/master/setup.cfg")
+    cfg = configparser.ConfigParser()
+    cfg.read_string(req.text)
+
+    master_vers = Version(cfg["metadata"]["version"])
+    cur_vers = Version(__version__)
+
+    assert cur_vers > master_vers
 
 if (__name__ == "__main__"):
     v = Version("0.0bbb0")
