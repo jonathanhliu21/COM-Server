@@ -1,0 +1,11 @@
+include README.md
+include LICENSE
+include setup.cfg
+include setup.py
+include MANIFEST.in
+include CONTRIBUTING.md
+
+graft src
+graft examples
+graft docs
+graft tests
