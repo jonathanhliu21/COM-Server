@@ -16,12 +16,14 @@ Operating systems:
 
 Python versions:
 
+- Python 3.7.2
 - Python 3.7.3
 - Python 3.8.10
 
 Serial ports:
 
 - Arduino UNO
+- Arduino Nano
 
 ## Installation
 
