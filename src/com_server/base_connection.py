@@ -75,17 +75,17 @@ class BaseConnection:
     """
 
     def __init__(
-        self, 
-        baud: int, 
-        port: str, 
-        *args, 
-        exception: bool = True, 
-        timeout: float = 1, 
-        send_interval: int = 1, 
-        queue_size: int = constants.RCV_QUEUE_SIZE_NORMAL, 
-        exit_on_disconnect: bool = False, 
+        self,
+        baud: int,
+        port: str,
+        *args,
+        exception: bool = True,
+        timeout: float = 1,
+        send_interval: int = 1,
+        queue_size: int = constants.RCV_QUEUE_SIZE_NORMAL,
+        exit_on_disconnect: bool = False,
         **kwargs
-        ) -> None:
+    ) -> None:
         """Initializes the Base Connection class. 
 
         `baud`, `port`, `timeout`, and `kwargs` will be passed to pyserial.  
@@ -318,7 +318,7 @@ class BaseConnection:
         try:
             self._last_rcv = self._rcv_queue[-1-num_before] # last received data
             return self._rcv_queue[-1-num_before]
-        except IndexError as e:
+        except IndexError:
             return None
  
     @property
@@ -430,7 +430,7 @@ class BaseConnection:
                     if (len(self._rcv_queue) > self._queue_size):
                         # if greater than queue size, then pop first element
                         self._rcv_queue.pop(0)
-                
+
                 # sending data (send one at a time in queue for 0.5 seconds)
                 st_t = time.time() # start time
                 while (time.time() - st_t < 0.5):
@@ -453,7 +453,7 @@ class BaseConnection:
 
                 if (self._exit_on_disconnect):
                     os.kill(os.getpid(), signal.SIGTERM)
-                
+
                 # exit thread
                 return
 
