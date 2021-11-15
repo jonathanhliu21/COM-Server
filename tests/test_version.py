@@ -55,7 +55,7 @@ def test_version_cmp_working() -> None:
     assert Version("0.0a1") > Version("0.0a0")
 
     # test eq compare
-    assert Version("0.0.0") == Version("0.0.0")
+    assert Version("0.0.0") == Version("0.0")
     assert Version("1.0a0") == Version("1.0a0")
 
 
