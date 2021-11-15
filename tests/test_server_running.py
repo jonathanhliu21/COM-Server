@@ -15,7 +15,7 @@ import time
 import pytest
 import requests
 
-SERVER = "http://0.0.0.0:8080"
+SERVER = "http://127.0.0.1:8080" # others either don't work or are very slow on Windows
 
 # don't start unless running
 try:
@@ -181,17 +181,23 @@ def _test_send_response():
 
 
 if (sys.platform.startswith("linux")):
+    # usb and acm for linux only
     _usb = glob.glob("/dev/ttyUSB[0-9]*")
     _acm = glob.glob("/dev/ttyACM[0-9]*")
     MATCH = "/dev/ttyUSB[0-9]*|/dev/ttyACM[0-9]*"
 elif (sys.platform.startswith("darwin")):
+    # mac; use cu.*, not tty.*
     _usb = glob.glob("/dev/cu.usbserial*")
     _acm = []
     MATCH = "/dev/cu.usbserial.*"
+elif (sys.platform.startswith("win")):
+    # windows
+    _usb = [f"COM{i+1}" for i in range(256)]
+    _acm = []
+    MATCH= "COM[0-9]+"
 else:
     # platform not supported for the test
-    _usb = []
-    _acm = []
+    _usb, _acm = [], []
 
 @pytest.mark.skipif(len(_usb+_acm) <= 0, reason="port not connected")
 def test_ports_server() -> None:

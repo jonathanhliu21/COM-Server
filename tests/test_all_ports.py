@@ -14,16 +14,23 @@ from com_server.tools import all_ports
 import pytest
 
 if (sys.platform.startswith("linux")):
+    # usb and acm for linux only
     _usb = glob.glob("/dev/ttyUSB[0-9]*")
     _acm = glob.glob("/dev/ttyACM[0-9]*")
     MATCH = "/dev/ttyUSB[0-9]*|/dev/ttyACM[0-9]*"
 elif (sys.platform.startswith("darwin")):
+    # mac; use cu.*, not tty.*
     _usb = glob.glob("/dev/cu.usbserial*")
     _acm = []
     MATCH = "/dev/cu.usbserial.*"
+elif (sys.platform.startswith("win")):
+    # windows
+    _usb = [f"COM{i+1}" for i in range(256)]
+    _acm = []
+    MATCH= "COM[0-9]+"
 else:
     # platform not supported for the test
-    pytestmark = pytest.mark.skip(reason="Test not supported on this platform.")
+    _usb, _acm = [], []
 
 @pytest.mark.skipif(len(_usb+_acm) <= 0, reason="port not connected")
 def test_ports():
