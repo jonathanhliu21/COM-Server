@@ -28,5 +28,10 @@ If applicable, add screenshots to help explain your problem.
  - Browser [e.g. chrome, safari]
  - Version [e.g. 0.0]
 
+**Python Version**  
+Python &lt; 3.6 is not supported
+
+**COM-Server Version**  
+
 **Additional context**
 Add any other context about the problem here.
