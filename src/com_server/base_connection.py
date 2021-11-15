@@ -116,7 +116,7 @@ class BaseConnection:
         self._send_interval = abs(float(send_interval))  # make sure positive
         self._exit_on_disconnect = exit_on_disconnect
 
-        if (os.name == "nt" and self.exit_on_disconnect):
+        if (os.name == "nt" and self._exit_on_disconnect):
             raise EnvironmentError("exit_on_fail is not supported on Windows")
 
         # initialize Serial object
