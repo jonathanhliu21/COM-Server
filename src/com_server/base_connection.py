@@ -132,8 +132,7 @@ class BaseConnection:
         self._to_send = [] # queue data to send
 
         # this lock makes sure data from the receive queue
-        # and send queue are written to safely and read
-        # safely
+        # and send queue are written to and read safely
         self.lock = threading.Lock()
 
     def __repr__(self) -> str:
@@ -281,14 +280,10 @@ class BaseConnection:
 
         # make sure nothing is reading/writing to the receive queue
         # while reading/assigning the variable
-        # print("before lock from send")
         with self.lock:
-            # print("in lock from send")
             if (len(self._to_send) < 65536):
                 # only append if limit has not been reached
                 self._to_send.append(send_data)
-        
-        # print("releasing lock from send")
         
         return True
 
@@ -335,11 +330,8 @@ class BaseConnection:
         try:
             # make sure nothing is reading/writing to the receive queue
             # while reading/assigning the variable
-            # print("before aquiring receive lock")
             with self.lock:
-                # print("during aquiring receive lock")
                 self._last_rcv = self._rcv_queue[-1-num_before] # last received data
-            # print("after aquiring receive lock")
 
             return self._last_rcv
         except IndexError:
@@ -451,16 +443,11 @@ class BaseConnection:
 
         while (self._conn is not None):
             try:
-                # print("before lock 1")
-                # acquire the locks, making sure other threads cannot read/write variables
-
+                # make sure other threads cannot read/write variables
                 # copy the variables to temporary ones so the locks don't block for so long
                 with self.lock:
-                    _rcv_queue = copy.deepcopy(self._rcv_queue)
-                    _send_queue = copy.deepcopy(self._to_send)
-
-                # allow other threads to read/write variables
-                # print("after lock 1")
+                    _rcv_queue = self._rcv_queue.copy()
+                    _send_queue = self._to_send.copy()
 
                 # keep on trying to poll data as long as connection is still alive
                 if (self._conn.in_waiting):
@@ -484,16 +471,11 @@ class BaseConnection:
                         break
                     time.sleep(0.01)
                 
-                # acquire the locks, making sure other threads cannot read/write variables
-                # print("before lock 2")
+                # make sure other threads cannot read/write variables
                 with self.lock:
-                    # print("in lock 2")
                     # copy the variables back
-                    self._rcv_queue = copy.deepcopy(_rcv_queue)
-                    self._to_send = copy.deepcopy(_send_queue)
-
-                # allow other threads to read/write variables
-                # print("after lock 2")
+                    self._rcv_queue = _rcv_queue.copy()
+                    self._to_send = _send_queue.copy()
 
                 time.sleep(0.01)  # rest CPU
             except (ConnectException, OSError, serial.SerialException):
