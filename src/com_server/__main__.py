@@ -10,6 +10,8 @@ Contains commands to run the COM server.
 import sys
 
 from docopt import docopt
+from flask import __version__ as f_v
+from serial import __version__ as s_v
 
 from . import __version__, runner
 
@@ -38,7 +40,14 @@ Options:
 """
 
 def _display_version() -> None:
-    print(f"COM_Server version: {__version__}")
+    _pyth_v = sys.version_info
+
+    p_o = f"COM_Server version: {__version__}\n" \
+        f"Flask version: {f_v}\n" \
+        f"Pyserial version: {s_v}\n" \
+        f"Python version: {_pyth_v.major}.{_pyth_v.minor}.{_pyth_v.micro}"
+
+    print(p_o)
     sys.exit()
 
 def main() -> None:
