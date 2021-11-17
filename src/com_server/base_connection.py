@@ -5,7 +5,6 @@
 Contains implementation of Connection object.
 """
 
-import copy
 import json
 import os
 import signal
