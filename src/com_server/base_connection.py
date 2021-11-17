@@ -5,6 +5,7 @@
 Contains implementation of Connection object.
 """
 
+import copy
 import json
 import os
 import signal
@@ -126,8 +127,14 @@ class BaseConnection:
         self._last_sent = time.time()  # prevents from sending too rapidly
         self._last_rcv = (0.0, None) # stores the data that the user previously received
 
+        # IO variables
         self._rcv_queue = []  # stores previous received strings and timestamps, tuple (timestamp, str)
         self._to_send = [] # queue data to send
+
+        # this lock makes sure data from the receive queue
+        # and send queue are written to safely and read
+        # safely
+        self.lock = threading.Lock()
 
     def __repr__(self) -> str:
         """
@@ -190,7 +197,9 @@ class BaseConnection:
     def disconnect(self) -> None:
         """Closes connection to the serial port.
 
-        When called, calls `Serial.close()` then makes the connection `None`. If it is currently closed then just returns.
+        When called, calls `Serial.close()` then makes the connection `None`. 
+        If it is currently closed then just returns.
+        Forces the IO thread to close.
         
         **NOTE**: This method should be called if the object will not be used anymore
         or before the object goes out of scope, as deleting the object without calling 
@@ -270,9 +279,16 @@ class BaseConnection:
         # add ending to string
         send_data = (send_data + ending).encode("utf-8")
 
-        if (len(self._to_send) < 65536):
-            # only append if limit has not been reached
-            self._to_send.append(send_data)
+        # make sure nothing is reading/writing to the receive queue
+        # while reading/assigning the variable
+        # print("before lock from send")
+        with self.lock:
+            # print("in lock from send")
+            if (len(self._to_send) < 65536):
+                # only append if limit has not been reached
+                self._to_send.append(send_data)
+        
+        # print("releasing lock from send")
         
         return True
 
@@ -317,8 +333,15 @@ class BaseConnection:
             return None
         
         try:
-            self._last_rcv = self._rcv_queue[-1-num_before] # last received data
-            return self._rcv_queue[-1-num_before]
+            # make sure nothing is reading/writing to the receive queue
+            # while reading/assigning the variable
+            # print("before aquiring receive lock")
+            with self.lock:
+                # print("during aquiring receive lock")
+                self._last_rcv = self._rcv_queue[-1-num_before] # last received data
+            # print("after aquiring receive lock")
+
+            return self._last_rcv
         except IndexError:
             return None
  
@@ -428,27 +451,49 @@ class BaseConnection:
 
         while (self._conn is not None):
             try:
+                # print("before lock 1")
+                # acquire the locks, making sure other threads cannot read/write variables
+
+                # copy the variables to temporary ones so the locks don't block for so long
+                with self.lock:
+                    _rcv_queue = copy.deepcopy(self._rcv_queue)
+                    _send_queue = copy.deepcopy(self._to_send)
+
+                # allow other threads to read/write variables
+                # print("after lock 1")
+
                 # keep on trying to poll data as long as connection is still alive
                 if (self._conn.in_waiting):
                     # read everything from serial buffer
                     incoming = self._conn.read_all()
 
                     # add to queue
-                    self._rcv_queue.append((time.time(), incoming)) # tuple (timestamp, str)
-                    if (len(self._rcv_queue) > self._queue_size):
+                    _rcv_queue.append((time.time(), incoming)) # tuple (timestamp, str)
+                    if (len(_rcv_queue) > self._queue_size):
                         # if greater than queue size, then pop first element
-                        self._rcv_queue.pop(0)
+                        _rcv_queue.pop(0)
 
                 # sending data (send one at a time in queue for 0.5 seconds)
                 st_t = time.time() # start time
                 while (time.time() - st_t < 0.5):
-                    if (len(self._to_send) > 0):
-                        self._conn.write(self._to_send.pop(0))
+                    if (len(_send_queue) > 0):
+                        self._conn.write(_send_queue.pop(0))
                         self._conn.flush()
                     else:
                         # break out if all sent
                         break
                     time.sleep(0.01)
+                
+                # acquire the locks, making sure other threads cannot read/write variables
+                # print("before lock 2")
+                with self.lock:
+                    # print("in lock 2")
+                    # copy the variables back
+                    self._rcv_queue = copy.deepcopy(_rcv_queue)
+                    self._to_send = copy.deepcopy(_send_queue)
+
+                # allow other threads to read/write variables
+                # print("after lock 2")
 
                 time.sleep(0.01)  # rest CPU
             except (ConnectException, OSError, serial.SerialException):
