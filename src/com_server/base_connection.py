@@ -133,7 +133,7 @@ class BaseConnection:
 
         # this lock makes sure data from the receive queue
         # and send queue are written to and read safely
-        self.lock = threading.Lock()
+        self._lock = threading.Lock()
 
     def __repr__(self) -> str:
         """
@@ -280,7 +280,7 @@ class BaseConnection:
 
         # make sure nothing is reading/writing to the receive queue
         # while reading/assigning the variable
-        with self.lock:
+        with self._lock:
             if (len(self._to_send) < 65536):
                 # only append if limit has not been reached
                 self._to_send.append(send_data)
@@ -330,7 +330,7 @@ class BaseConnection:
         try:
             # make sure nothing is reading/writing to the receive queue
             # while reading/assigning the variable
-            with self.lock:
+            with self._lock:
                 self._last_rcv = self._rcv_queue[-1-num_before] # last received data
 
             return self._last_rcv
@@ -445,7 +445,7 @@ class BaseConnection:
             try:
                 # make sure other threads cannot read/write variables
                 # copy the variables to temporary ones so the locks don't block for so long
-                with self.lock:
+                with self._lock:
                     _rcv_queue = self._rcv_queue.copy()
                     _send_queue = self._to_send.copy()
 
@@ -472,7 +472,7 @@ class BaseConnection:
                     time.sleep(0.01)
                 
                 # make sure other threads cannot read/write variables
-                with self.lock:
+                with self._lock:
                     # copy the variables back
                     self._rcv_queue = _rcv_queue.copy()
                     self._to_send = _send_queue.copy()
