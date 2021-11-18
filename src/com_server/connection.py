@@ -600,6 +600,10 @@ class Connection(base_connection.BaseConnection):
                     _send_queue = self._to_send.copy()
 
                 self.cyc_func(self._conn, _rcv_queue, _send_queue)
+
+                if (len(_rcv_queue) > self._queue_size):
+                    # if greater than queue size, then pop first element
+                    _rcv_queue.pop(0)
                 
                 # make sure other threads cannot read/write variables
                 with self._lock:
