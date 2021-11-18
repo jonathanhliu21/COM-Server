@@ -5,8 +5,11 @@
 Contains implementation of connection object.
 """
 
+import os
 import time
 import typing as t
+import serial
+import signal
 
 from serial.serialutil import SerialException
 
@@ -527,3 +530,96 @@ class Connection(base_connection.BaseConnection):
 
         # correct response has been received
         return True
+    
+    def _default_cycle(self, conn: serial.Serial, rcv_queue: "list[tuple[float, bytes]]", send_queue: "list[tuple[float, bytes]]") -> "tuple[list[tuple[float, bytes]]]":
+        """
+        What the IO thread executes every 0.01 seconds will be referred to as a "cycle".
+
+        This is the default "cycle" of the IO thread, described here:
+
+        1. Checks if there is any data to be received
+        2. If there is, reads all the data and puts the `bytes` received into the receive queue
+        3. Tries to send everything in the send queue; breaks when 0.5 seconds is reached (will continue if send queue is empty)
+        4. Rest for 0.01 seconds to lessen processing power
+        """
+
+        # keep on trying to poll data as long as connection is still alive
+        if (conn.in_waiting):
+            # read everything from serial buffer
+            incoming = conn.read_all()
+
+            # add to queue
+            rcv_queue.append((time.time(), incoming)) # tuple (timestamp, str)
+            if (len(rcv_queue) > self._queue_size):
+                # if greater than queue size, then pop first element
+                rcv_queue.pop(0)
+
+        # sending data (send one at a time in queue for 0.5 seconds)
+        st_t = time.time() # start time
+        while (time.time() - st_t < 0.5):
+            if (len(send_queue) > 0):
+                conn.write(send_queue.pop(0))
+                conn.flush()
+            else:
+                # break out if all sent
+                break
+            time.sleep(0.01)
+        
+        return (rcv_queue, send_queue)
+    
+    def _io_thread(self) -> None:
+        """Thread that interacts with the serial port.
+
+        What the IO thread executes every 0.01 seconds will be referred to as a "cycle".
+
+        Override of the IO thread.
+
+        Calls a function for executing a cycle rather than execute the default cycle itself.
+        1. Check that the receive and send queues are not being read from or written to.
+        2. If so, then copy the receive and send queues to another variable; if not,
+        then wait for them to stop being used. 
+        3. Execute the cycle function.
+        4. Check that the receive and send queues are not being read from or written to.
+        5. If so, then copy the temporary receive/send queues back to the receive queue and send
+        queue attributes; if not, then wait for them to stop being used.
+        """
+
+        # try to see if cycle function exists
+        # if not, then use default cycle function
+        try:
+            self.cyc_func
+        except AttributeError:
+            self.cyc_func = self._default_cycle
+
+        while (self._conn is not None):
+            try:
+                # make sure other threads cannot read/write variables
+                # copy the variables to temporary ones so the locks don't block for so long
+                with self._lock:
+                    _rcv_queue = self._rcv_queue.copy()
+                    _send_queue = self._to_send.copy()
+
+                self.cyc_func(self._conn, _rcv_queue, _send_queue)
+                
+                # make sure other threads cannot read/write variables
+                with self._lock:
+                    # copy the variables back
+                    self._rcv_queue = _rcv_queue.copy()
+                    self._to_send = _send_queue.copy()
+
+                time.sleep(0.01)  # rest CPU
+
+            except (base_connection.ConnectException, OSError, serial.SerialException):
+                # Disconnected, as all of the self.conn (pyserial) operations will raise
+                # an exception if the port is not connected.
+
+                # reset connection and IO variables
+                self._conn = None
+                self._reset()
+
+                if (self._exit_on_disconnect):
+                    os.kill(os.getpid(), signal.SIGTERM)
+
+                # exit thread
+                return
+        
