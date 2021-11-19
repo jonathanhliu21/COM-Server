@@ -52,6 +52,13 @@ class SendQueue:
 
         return len(self._send_queue)
     
+    def __repr__(self) -> str:
+        """
+        String representation of queue
+        """
+
+        return f"SendQueue{self._send_queue}"
+    
     def front(self) -> bytes:
         """Returns the first element of the send queue.
 
