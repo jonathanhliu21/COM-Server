@@ -63,6 +63,12 @@ I will change the merge branch if needed.
 
 **NOTE:** In the pull request, please specify the operating system and serial device (e.g. Arduino UNO, Arduino Mega, etc.) you tested COM-Server on.
 
+**NOTE**: To change the version, type in the below command, which should show the COM-Server version as `X.Y.N`. In `__init__`.py of the module and `setup.cfg`, change the `N`-value of the version to `N+1`. For example, if the version output is `0.0.2`, then change it to `0.0.3`. If it is `X.Y`, then change it to `X.Y.1`.
+
+```sh
+> com_server --version
+```
+
 
 ### Testing:
 
