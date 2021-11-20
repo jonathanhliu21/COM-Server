@@ -12,6 +12,7 @@ import typing as t
 import serial
 import serial.tools.list_ports
 
+
 def all_ports(**kwargs) -> t.Any:
     """Gets all ports from serial interface.
 
@@ -20,6 +21,7 @@ def all_ports(**kwargs) -> t.Any:
     """
 
     return serial.tools.list_ports.comports(**kwargs)
+
 
 class SendQueue:
     """The send queue object
@@ -45,21 +47,21 @@ class SendQueue:
         """
 
         self._send_queue = send_queue
-    
+
     def __len__(self) -> int:
         """
         Returns length of send queue
         """
 
         return len(self._send_queue)
-    
+
     def __repr__(self) -> str:
         """
         String representation of queue
         """
 
         return f"SendQueue{self._send_queue}"
-    
+
     def front(self) -> bytes:
         """Returns the first element of the send queue.
 
@@ -73,7 +75,7 @@ class SendQueue:
         """
 
         return self._send_queue[0]
-    
+
     def pop(self) -> None:
         """Removes the first index from the queue.
 
@@ -81,13 +83,13 @@ class SendQueue:
 
         Parameters:
         - None
-        
+
         Returns:
         - None
         """
 
         self._send_queue.pop(0)
-    
+
     def copy(self) -> list:
         """Returns a shallow copy of the send queue list. 
 
@@ -102,7 +104,7 @@ class SendQueue:
         Returns:
         - A shallow copy of the send queue
         """
-    
+
         return self._send_queue.copy()
 
     def deepcopy(self) -> list:
@@ -121,9 +123,10 @@ class SendQueue:
 
         return copy.deepcopy(self._send_queue)
 
+
 class ReceiveQueue:
     """The ReceiveQueue object.
-    
+
     This object is a queue, but the user can 
     only add bytes object(s) to it. 
 
@@ -144,21 +147,21 @@ class ReceiveQueue:
 
         self._rcv_queue = rcv_queue
         self._queue_size = queue_size
-    
+
     def __len__(self) -> int:
         """
         Returns the length of the receive queue.
         """
 
         return len(self._rcv_queue)
-    
+
     def __repr__(self) -> str:
         """
         String representation of queue.
         """
 
         return f"ReceiveQueue{self._rcv_queue}"
-    
+
     def pushitems(self, *args) -> None:
         """Adds a list of items to the receive queue.
 
@@ -176,7 +179,7 @@ class ReceiveQueue:
         for obj in args:
             if (not isinstance(obj, bytes)):
                 raise TypeError("Every argument must be a bytes object")
-            
+
             # add timestamp, obj to queue
             self._rcv_queue.append((time.time(), obj))
 
@@ -201,7 +204,7 @@ class ReceiveQueue:
         Returns:
         - A shallow copy of the receive queue
         """
-    
+
         return self._rcv_queue.copy()
 
     def deepcopy(self) -> list:
