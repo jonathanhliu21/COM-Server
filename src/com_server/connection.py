@@ -583,9 +583,9 @@ class Connection(base_connection.BaseConnection):
         # try to see if cycle function exists
         # if not, then use default cycle function
         try:
-            self.cyc_func
+            self._cyc_func
         except AttributeError:
-            self.cyc_func = self._default_cycle
+            self._cyc_func = self._default_cycle
 
         while (self._conn is not None):
             try:
@@ -595,12 +595,8 @@ class Connection(base_connection.BaseConnection):
                     _rcv_queue = tools.ReceiveQueue(self._rcv_queue.copy(), self._queue_size)
                     _send_queue = tools.SendQueue(self._to_send.copy())
 
-                self.cyc_func(self._conn, _rcv_queue, _send_queue)
+                self._cyc_func(self._conn, _rcv_queue, _send_queue)
 
-                if (len(_rcv_queue) > self._queue_size):
-                    # if greater than queue size, then pop first element
-                    _rcv_queue.pop(0)
-                
                 # make sure other threads cannot read/write variables
                 with self._lock:
                     # copy the variables back
