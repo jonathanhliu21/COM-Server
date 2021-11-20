@@ -434,6 +434,8 @@ class Connection(base_connection.BaseConnection):
     def custom_io_thread(self, func) -> t.Callable:
         """A decorator custom IO thread rather than using the default one.
 
+        It is recommended to read `pyserial`'s documentation before creating a custom IO thread.
+
         What the IO thread executes every 0.01 seconds will be referred to as a "cycle".
 
         Note that this method should be called **before** `connect()` is called, or
