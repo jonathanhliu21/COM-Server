@@ -5,8 +5,11 @@
 Contains implementation of connection object.
 """
 
+import os
 import time
 import typing as t
+import serial
+import signal
 
 from serial.serialutil import SerialException
 
@@ -427,6 +430,59 @@ class Connection(base_connection.BaseConnection):
         """
 
         return tools.all_ports(**kwargs)
+    
+    def custom_io_thread(self, func) -> t.Callable:
+        """A decorator custom IO thread rather than using the default one.
+
+        It is recommended to read `pyserial`'s documentation before creating a custom IO thread.
+
+        What the IO thread executes every 0.01 seconds will be referred to as a "cycle".
+
+        Note that this method should be called **before** `connect()` is called, or
+        else the thread will use the default cycle.
+
+        To see the default cycle, see the documentation of `BaseConnection`.
+
+        What the IO thread will do now is:
+
+        1. Check if anything is using (reading from/writing to) the variables
+        2. If not, copy the variables into a `SendQueue` and `ReceiveQueue` object.
+        3. Call the `custom_io_thread` function (if none, calls the default cycle)
+        4. Copy the results from the function back into the send queue and receive queue.
+        5. Rest for 0.01 seconds to rest the CPU
+
+        The cycle should be in a function that this decorator will be on top of.
+        The function should accept three parameters:
+        
+        - `conn` (a `serial.Serial` object)
+        - `rcv_queue` (a `ReceiveQueue` object; see more on how to use it in its documentation)
+        - `send_queue` (a `SendQueue` object; see more on how to use it in its documentation)
+
+        To enable autocompletion on your text editor, you can add type hinting:
+
+        ```py
+        from com_server import Connection, SendQueue, ReceiveQueue
+        from serial import Serial
+
+        conn = Connection(...)
+        
+        # some code
+
+        @conn.custom_io_thread
+        def custom_cycle(conn: Serial, rcv_queue: ReceiveQueue, send_queue: SendQueue):
+            # code here
+        
+        conn.connect() # call this AFTER custom_io_thread()
+
+        # more code
+        ``` 
+
+        The function below the decorator should not return anything.
+        """
+
+        self._cyc_func = func
+
+        return func
 
     def _check_connect(self) -> bool:
         """
@@ -527,3 +583,92 @@ class Connection(base_connection.BaseConnection):
 
         # correct response has been received
         return True
+    
+    def _default_cycle(self, conn: serial.Serial, rcv_queue: tools.ReceiveQueue, send_queue: tools.SendQueue) -> None:
+        """
+        What the IO thread executes every 0.01 seconds will be referred to as a "cycle".
+
+        This is the default "cycle" of the IO thread, described here:
+
+        1. Checks if there is any data to be received
+        2. If there is, reads all the data and puts the `bytes` received into the receive queue
+        3. Tries to send everything in the send queue; breaks when 0.5 seconds is reached (will continue if send queue is empty)
+        4. Rest for 0.01 seconds to lessen processing power
+        """
+
+        # keep on trying to poll data as long as connection is still alive
+        if (conn.in_waiting):
+            # read everything from serial buffer
+            incoming = conn.read_all()
+
+            # add to queue
+            rcv_queue.pushitems(incoming)
+
+        # sending data (send one at a time in queue for 0.5 seconds)
+        st_t = time.time() # start time
+        while (time.time() - st_t < 0.5):
+            if (len(send_queue) > 0):
+                conn.write(send_queue.front()) # write the front of the send queue 
+                conn.flush()
+                send_queue.pop() # pop the queue
+            else:
+                # break out if all sent
+                break
+            time.sleep(0.01)
+         
+    def _io_thread(self) -> None:
+        """Thread that interacts with the serial port.
+
+        What the IO thread executes every 0.01 seconds will be referred to as a "cycle".
+
+        Override of the IO thread.
+
+        Calls a function for executing a cycle rather than execute the default cycle itself.
+        1. Check that the receive and send queues are not being read from or written to.
+        2. If so, then copy the receive and send queues to another variable; if not,
+        then wait for them to stop being used. 
+        3. Execute the cycle function.
+        4. Check that the receive and send queues are not being read from or written to.
+        5. If so, then copy the temporary receive/send queues back to the receive queue and send
+        queue attributes; if not, then wait for them to stop being used.
+        """
+
+        # try to see if cycle function exists
+        # if not, then use default cycle function
+        try:
+            self._cyc_func
+        except AttributeError:
+            self._cyc_func = self._default_cycle
+
+        while (self._conn is not None):
+            try:
+                # make sure other threads cannot read/write variables
+                # copy the variables to temporary ones so the locks don't block for so long
+                with self._lock:
+                    _rcv_queue = tools.ReceiveQueue(self._rcv_queue.copy(), self._queue_size)
+                    _send_queue = tools.SendQueue(self._to_send.copy())
+
+                self._cyc_func(self._conn, _rcv_queue, _send_queue)
+
+                # make sure other threads cannot read/write variables
+                with self._lock:
+                    # copy the variables back
+                    self._rcv_queue = _rcv_queue.copy()
+                    self._to_send = _send_queue.copy()
+
+                time.sleep(0.01)  # rest CPU
+
+            except (base_connection.ConnectException, OSError, serial.SerialException):
+                # Disconnected, as all of the self.conn (pyserial) operations will raise
+                # an exception if the port is not connected.
+
+                # reset connection and IO variables
+                self._conn = None
+                self._reset()
+
+                if (self._exit_on_disconnect):
+                    os.kill(os.getpid(), signal.SIGTERM)
+
+                # exit thread
+                return
+        

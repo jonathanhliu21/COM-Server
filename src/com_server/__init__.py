@@ -17,7 +17,7 @@ from .api_server import ConnectionResource, RestApiHandler, EndpointExistsExcept
 from .constants import *
 from .base_connection import BaseConnection, ConnectException
 from .connection import Connection
-from .tools import all_ports
+from .tools import all_ports, SendQueue, ReceiveQueue
 
 from .api_builtins import Builtins
 
