@@ -159,7 +159,7 @@ class ReceiveQueue:
 
         return f"ReceiveQueue{self._rcv_queue}"
     
-    def additems(self, *args) -> None:
+    def pushitems(self, *args) -> None:
         """Adds a list of items to the receive queue.
 
         All items in `*args` must be a `bytes` object. A
@@ -187,6 +187,9 @@ class ReceiveQueue:
     def copy(self) -> list:
         """Returns a shallow copy of the receive queue list. 
 
+        The receive queue list will be a list of tuples:
+        - (timestamp, bytes data)
+
         Using this to copy to a list may be dangerous, as
         altering elements in the list may alter the elements
         in the receive queue itself. To prevent this, use the
@@ -203,6 +206,9 @@ class ReceiveQueue:
 
     def deepcopy(self) -> list:
         """Returns a deepcopy of the receive queue.
+
+        The receive queue list will be a list of tuples:
+        - (timestamp, bytes data)
 
         By using this, you can modify the list without altering
         any elements of the actual send queue itself. However,
