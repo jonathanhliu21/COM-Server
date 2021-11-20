@@ -531,7 +531,7 @@ class Connection(base_connection.BaseConnection):
         # correct response has been received
         return True
     
-    def _default_cycle(self, conn: serial.Serial, rcv_queue: "list[tuple[float, bytes]]", send_queue: "list[tuple[float, bytes]]") -> "tuple[list[tuple[float, bytes]]]":
+    def _default_cycle(self, conn: serial.Serial, rcv_queue: tools.ReceiveQueue, send_queue: tools.SendQueue) -> None:
         """
         What the IO thread executes every 0.01 seconds will be referred to as a "cycle".
 
@@ -549,24 +549,20 @@ class Connection(base_connection.BaseConnection):
             incoming = conn.read_all()
 
             # add to queue
-            rcv_queue.append((time.time(), incoming)) # tuple (timestamp, str)
-            if (len(rcv_queue) > self._queue_size):
-                # if greater than queue size, then pop first element
-                rcv_queue.pop(0)
+            rcv_queue.pushitems(incoming)
 
         # sending data (send one at a time in queue for 0.5 seconds)
         st_t = time.time() # start time
         while (time.time() - st_t < 0.5):
             if (len(send_queue) > 0):
-                conn.write(send_queue.pop(0))
+                conn.write(send_queue.front()) # write the front of the send queue 
                 conn.flush()
+                send_queue.pop() # pop the queue
             else:
                 # break out if all sent
                 break
             time.sleep(0.01)
-        
-        return (rcv_queue, send_queue)
-    
+         
     def _io_thread(self) -> None:
         """Thread that interacts with the serial port.
 
@@ -596,8 +592,8 @@ class Connection(base_connection.BaseConnection):
                 # make sure other threads cannot read/write variables
                 # copy the variables to temporary ones so the locks don't block for so long
                 with self._lock:
-                    _rcv_queue = self._rcv_queue.copy()
-                    _send_queue = self._to_send.copy()
+                    _rcv_queue = tools.ReceiveQueue(self._rcv_queue.copy(), self._queue_size)
+                    _send_queue = tools.SendQueue(self._to_send.copy())
 
                 self.cyc_func(self._conn, _rcv_queue, _send_queue)
 
