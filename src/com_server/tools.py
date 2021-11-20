@@ -174,6 +174,12 @@ class ReceiveQueue:
         A tuple (timestamp, bytes) will be added. The timestamp
         will be regenerated for each iteration of the for loop
         so they will be in order when binary searching.
+
+        Parameters:
+        - `*args`: The bytes objects to add
+
+        Returns:
+        - Nothing
         """
 
         for obj in args:

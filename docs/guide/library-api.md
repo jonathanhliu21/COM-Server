@@ -881,6 +881,218 @@ Parameters:
 
 ---
 
+### com_server.SendQueue
+
+The send queue object.
+
+This object is like a queue but cannot be iterated through. 
+It contains methods such as `front()` and `pop()`, just like
+the `queue` data structure in C++. However, objects cannot
+be added to it because objects should only be added through
+the `send()` method. 
+
+Makes sure the user only reads and pops from send queue
+and does not directly add or delete anything from the queue.
+
+#### SendQueue.\_\_init\_\_()
+
+```py
+def __init__(send_queue)
+```
+
+Constructor for the send queue object.
+
+Parameters:
+
+- `send_queue` (list): The list that will act as the send queue
+
+Returns:
+
+- Nothing
+
+#### SendQueue.front()
+
+```py
+def front()
+```
+
+Returns the first element of the send queue.
+
+Raises an `IndexError` if the length of the send queue is 0.
+
+Parameters:
+
+- None
+
+Returns:
+
+- The bytes object to send 
+
+#### SendQueue.pop()
+
+```py
+def pop()
+```
+
+Removes the first index from the queue.
+
+Raises an `IndexError` if the length of the send queue is 0.
+
+Parameters:
+
+- None
+
+Returns:
+
+- None
+
+#### SendQueue.copy()
+
+```py
+def copy()
+```
+
+Returns a shallow copy of the send queue list. 
+
+Using this to copy to a list may be dangerous, as
+altering elements in the list may alter the elements
+in the send queue itself. To prevent this, use the
+`deepcopy()` method.
+
+Parameters:
+
+- None
+
+Returns:
+
+- A shallow copy of the send queue
+
+#### com_server.deepcopy()
+
+```py
+def deepcopy()
+```
+
+Returns a deepcopy of the send queue list.
+
+By using this, you can modify the list without altering
+any elements of the actual send queue itself. However,
+it is a little more resource intensive.
+
+Parameters:
+
+- None
+
+Returns:
+
+- A deep copy of the send queue
+
+---
+
+### com_server.ReceiveQueue
+
+The ReceiveQueue object.
+
+This object is a queue, but the user can 
+only add bytes object(s) to it. 
+
+Makes sure the user does not directly add,
+delete, or modify the queue. 
+
+#### ReceiveQueue.\_\_init\_\_()
+
+```py
+def __init__(rcv_queue, queue_size)
+```
+
+Constructor for the send queue object.
+
+Parameters:
+
+- `rcv_queue` (list): The list that will act as the receive queue.
+- `queue_size` (int): The maximum size of the receive queue
+
+Returns:
+
+- Nothing 
+
+#### ReceiveQueue.pushitems()
+
+```py
+def pushitems(*args)
+```
+
+Adds a list of items to the receive queue.
+
+All items in `*args` must be a `bytes` object. A
+`TypeError` will be raised if not.
+
+If the size exceeds `queue_size` when adding, then
+it will pop the front of the queue. 
+
+A tuple (timestamp, bytes) will be added. The timestamp
+will be regenerated for each iteration of the for loop
+so they will be in order when binary searching.
+
+Parameters:
+
+- `*args`: The bytes objects to add
+
+Returns:
+
+- Nothing
+
+#### ReceiveQueue.copy()
+
+```py
+def copy()
+```
+
+Returns a shallow copy of the receive queue list. 
+
+The receive queue list will be a list of tuples:
+
+- (timestamp, bytes data)
+
+Using this to copy to a list may be dangerous, as
+altering elements in the list may alter the elements
+in the receive queue itself. To prevent this, use the
+`deepcopy()` method.
+
+Parameters:
+
+- None
+
+Returns:
+
+- A shallow copy of the receive queue
+
+#### ReceiveQueue.deepcopy()
+
+```py
+def deepcopy()
+```
+
+Returns a deepcopy of the receive queue.
+
+The receive queue list will be a list of tuples:
+
+- (timestamp, bytes data)
+
+By using this, you can modify the list without altering
+any elements of the actual send queue itself. However,
+it is a little more resource intensive.
+
+Parameters:
+
+- None
+
+Returns:
+
+- A deep copy of the receive queue
+
+---
+
 ## Constants
 
 ```py
@@ -894,6 +1106,13 @@ NO_SEND_INTERVAL = 0
 ```
 
 Use this if you do not want a send interval. Not recommended.
+
+```py
+NORMAL_BAUD_RATE = 9600
+FAST_BAUD_RATE = 115200
+```
+
+Standard baud rates that are commonly used.
 
 ```py
 NO_RCV_QUEUE = 1 
