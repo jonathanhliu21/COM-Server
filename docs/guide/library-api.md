@@ -664,6 +664,59 @@ Parameters: See link above.
 
 Returns: A generator-like object (see link above)
 
+#### Connection.custom_io_thread()
+
+```py
+def custom_io_thread(func)
+```
+
+A decorator custom IO thread rather than using the default one.
+
+It is recommended to read `pyserial`'s documentation before creating a custom IO thread.
+
+What the IO thread executes every 0.01 seconds will be referred to as a "cycle".
+
+Note that this method should be called **before** `connect()` is called, or
+else the thread will use the default cycle.
+
+To see the default cycle, see the documentation of `BaseConnection`.
+
+What the IO thread will do now is:
+
+1. Check if anything is using (reading from/writing to) the variables
+2. If not, copy the variables into a `SendQueue` and `ReceiveQueue` object.
+3. Call the `custom_io_thread` function (if none, calls the default cycle)
+4. Copy the results from the function back into the send queue and receive queue.
+5. Rest for 0.01 seconds to rest the CPU
+
+The cycle should be in a function that this decorator will be on top of.
+The function should accept three parameters:
+
+- `conn` (a `serial.Serial` object)
+- `rcv_queue` (a `ReceiveQueue` object; see more on how to use it in its documentation)
+- `send_queue` (a `SendQueue` object; see more on how to use it in its documentation)
+
+To enable autocompletion on your text editor, you can add type hinting:
+
+```py
+from com_server import Connection, SendQueue, ReceiveQueue
+from serial import Serial
+
+conn = Connection(...)
+
+# some code
+
+@conn.custom_io_thread
+def custom_cycle(conn: Serial, rcv_queue: ReceiveQueue, send_queue: SendQueue):
+    # code here
+
+conn.connect() # call this AFTER custom_io_thread()
+
+# more code
+``` 
+
+The function below the decorator should not return anything.
+
 ---
 
 ### com_server.RestApiHandler
