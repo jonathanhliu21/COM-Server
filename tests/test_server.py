@@ -77,10 +77,10 @@ def test_duplicate_class_no_exception() -> None:
         
         return Hello_World_
     
-    for e, r in handler.all_endpoints: 
-        handler.api.add_resource(r, e)
+    for e, r in handler._all_endpoints: 
+        handler._api.add_resource(r, e)
     
-    assert len(handler.all_endpoints) == 2
+    assert len(handler._all_endpoints) == 2
 
 def test_duplicate_func_name_no_exception() -> None:
     """
@@ -106,10 +106,10 @@ def test_duplicate_func_name_no_exception() -> None:
         
         return Hello_World_
     
-    for e, r in handler.all_endpoints: 
-        handler.api.add_resource(r, e)
+    for e, r in handler._all_endpoints: 
+        handler._api.add_resource(r, e)
     
-    assert len(handler.all_endpoints) == 2
+    assert len(handler._all_endpoints) == 2
 
 if (__name__ == "__main__"):
     # pytest should not run this

@@ -690,15 +690,16 @@ More information on [Flask](https://flask.palletsprojects.com/en/2.0.x/) and
 Register and recall endpoints:
 
 - `/register` (GET): An endpoint to register an IP; other endpoints will result in `400` status code
-if they are accessed without accessing this first; if an IP is already registered then this will
-result in `400`; IPs must call this first before accessing serial port
+if they are accessed without accessing this first (unless `has_register_recall` is False); 
+if an IP is already registered then this will result in `400`; IPs must call this first before 
+accessing serial port (unless `has_register_recall` is False) 
 - `/recall` (GET): After registered, can call `/recall` to "free" IP from server, allowing other IPs to 
 call `/register` to use the serial port
 
 #### RestApiHandler.\_\_init\_\_()
 
 ```py
-def __init__(conn, **kwargs)
+def __init__(conn, has_register_recall, **kwargs)
 ```
 
 Constructor for class
@@ -706,6 +707,10 @@ Constructor for class
 Parameters:
 
 - `conn` (`Connection`): The `Connection` object the API is going to be associated with. 
+- `has_register_recall` (bool): If False, removes the `/register` and `/recall` endpoints
+so the user will not have to use them in order to access the other endpoints of the API.
+That is, visiting endpoints will not respond with a 400 status code even if `/register` was not
+accessed. By default True. 
 - `**kwargs`, will be passed to `flask_restful.Api()`. See [here](https://flask-restful.readthedocs.io/en/latest/api.html#id1) for more info.
 
 May raise:
@@ -742,7 +747,8 @@ interprets duplicate class names as duplicate endpoints.
 Parameters:
 
 - `endpoint`: The endpoint to the resource. Cannot repeat.
-`/register` and `/recall` cannot be used.
+`/register` and `/recall` cannot be used, even if
+`has_register_recall` is False
 
 May raise:
 

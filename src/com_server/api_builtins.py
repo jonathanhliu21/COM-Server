@@ -63,7 +63,7 @@ class Builtins:
         - `api`: The `RestApiHandler` class that this class should wrap around
         """
 
-        if (not isinstance(handler.conn, Connection)):
+        if (not isinstance(handler._conn, Connection)):
             raise TypeError("The connection object passed into the handler must be a Connection type")
 
         self.handler = handler
