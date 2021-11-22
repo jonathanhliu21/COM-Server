@@ -1,6 +1,6 @@
 # 0.1 Development Release 1
 
-Previous version: 0.0.2
+Previous version: 0.0.*
 
 ## Changes from previous version:
 
@@ -10,3 +10,4 @@ Previous version: 0.0.2
 - Added constants for the common baud rates:
     - `NORMAL_BAUD_RATE`: 9600 bits/sec
     - `FAST_BAUD_RATE`: 115200 bits/sec
+- Added a changelog to keep track of changes
