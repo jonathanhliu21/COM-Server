@@ -2,7 +2,9 @@
 
 ## Endpoints from RestApiHandler
 
-These endpoints cannot be used in any case with the `RestApiHandler`. If they are defined again by the user, it will raise `com_server.EndpointExistsException`.
+These endpoints cannot be used in any case with the `RestApiHandler`, even if `has_register_recall` is False. If they are defined again by the user, it will raise `com_server.EndpointExistsException`.
+
+These endpoints will not apply if `has_register_recall` is False, and the response will be a `404 Not Found`.
 
 ```txt
 /register
