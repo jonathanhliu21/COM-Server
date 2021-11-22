@@ -51,42 +51,50 @@ class RestApiHandler:
     More information on [Flask](https://flask.palletsprojects.com/en/2.0.x/) and [flask-restful](https://flask-restful.readthedocs.io/en/latest/).
 
     Register and recall endpoints:
+
     - `/register` (GET): An endpoint to register an IP; other endpoints will result in `400` status code
-    if they are accessed without accessing this first; if an IP is already registered then this will
-    result in `400`; IPs must call this first before accessing serial port 
+    if they are accessed without accessing this first (unless `has_register_recall` is False); 
+    if an IP is already registered then this will result in `400`; IPs must call this first before 
+    accessing serial port (unless `has_register_recall` is False) 
     - `/recall` (GET): After registered, can call `/recall` to "free" IP from server, allowing other IPs to 
     call `/register` to use the serial port
     """
 
-    def __init__(self, conn: t.Union[t.Type[base_connection.BaseConnection], t.Type[connection.Connection]], **kwargs) -> None:
+    def __init__(self, conn: t.Union[t.Type[base_connection.BaseConnection], t.Type[connection.Connection]], has_register_recall: bool = True, **kwargs) -> None:
         """Constructor for class
 
         Parameters:
         - `conn` (`Connection`): The `Connection` object the API is going to be associated with.  
+        - `has_register_recall` (bool): If False, removes the `/register` and `/recall` endpoints
+        so the user will not have to use them in order to access the other endpoints of the API.
+        That is, visiting endpoints will not respond with a 400 status code even if `/register` was not
+        accessed. By default True. 
         - `**kwargs`, will be passed to `flask_restful.Api()`. See [here](https://flask-restful.readthedocs.io/en/latest/api.html#id1) for more info.
         """
 
         # from above
-        self.conn = conn
+        self._conn = conn
+        self._has_register_recall = has_register_recall
 
         # flask, flask_restful
-        self.app = flask.Flask(__name__)
-        self.api = flask_restful.Api(self.app, **kwargs)
+        self._app = flask.Flask(__name__)
+        self._api = flask_restful.Api(self._app, **kwargs)
 
         # other
-        self.all_endpoints = [] # list of all endpoints in tuple (endpoint str, resource class)
-        self.registered = None # keeps track of who is registered; None if not registered
+        self._all_endpoints = [] # list of all endpoints in tuple (endpoint str, resource class)
+        self._registered = None # keeps track of who is registered; None if not registered
 
-        # add /register and /recall endpoints
-        self.api.add_resource(self._register(), "/register")
-        self.api.add_resource(self._recall(), "/recall")
+        if (has_register_recall):
+            # add /register and /recall endpoints
+            self._api.add_resource(self._register(), "/register")
+            self._api.add_resource(self._recall(), "/recall")
     
     def __repr__(self) -> str:
         """Printing the API object"""
 
         return f"RestApiHandler<id={hex(id(self))}>" \
-            f"{{app={self.app}, api={self.api}, conn={self.conn}, " \
-            f"registered={self.registered}, endpoints={self.all_endpoints}}}"
+            f"{{app={self._app}, api={self._api}, conn={self._conn}, " \
+            f"registered={self._registered}, endpoints={self._all_endpoints}}}"
     
     def add_endpoint(self, endpoint: str) -> t.Callable:
         """Decorator that adds an endpoint
@@ -112,14 +120,15 @@ class RestApiHandler:
 
         Parameters:
         - `endpoint`: The endpoint to the resource. Cannot repeat.
-        `/register` and `/recall` cannot be used.
+        `/register` and `/recall` cannot be used, even if
+        `has_register_recall` is False
         """
 
         def _checks(resource: t.Any) -> None:
             """Checks endpoint and resource"""
 
             # check if endpoint exists already
-            check = [i for i, _ in self.all_endpoints] 
+            check = [i for i, _ in self._all_endpoints] 
             if (endpoint in check):
                 raise EndpointExistsException(f"Endpoint \"{endpoint}\" already exists")
             
@@ -132,7 +141,7 @@ class RestApiHandler:
                 raise TypeError("resource has to extend com_server.ConnectionResource")
             
             # check if resource name is taken, if so, change it (flask_restful interperets duplicate names as multiple endpoints)
-            names = [i.__name__ for _, i in self.all_endpoints]
+            names = [i.__name__ for _, i in self._all_endpoints]
             if (resource.__name__ in names):
                 s = f"{resource.__name__}"
 
@@ -146,7 +155,7 @@ class RestApiHandler:
         def _outer(func: t.Callable) -> t.Callable:
             """Decorator"""
 
-            resource = func(self.conn) # get resource function
+            resource = func(self._conn) # get resource function
 
             # checks
             _checks(resource) # will raise exception if fails
@@ -154,7 +163,7 @@ class RestApiHandler:
             # req methods; _self is needed as these will be part of class functions
             def _get(_self, *args, **kwargs):
                 ip = flask.request.remote_addr
-                if (not self.registered or self.registered != ip):
+                if (self._has_register_recall and (not self._registered or self._registered != ip)):
                     # respond with 400 if not registered
                     flask_restful.abort(400, message="Not registered; only one connection at a time")
                 else:
@@ -162,7 +171,7 @@ class RestApiHandler:
             
             def _post(_self, *args, **kwargs):
                 ip = flask.request.remote_addr
-                if (not self.registered or self.registered != ip):
+                if (self._has_register_recall and (not self._registered or self._registered != ip)):
                     # respond with 400 if not registered
                     flask_restful.abort(400, message="Not registered; only one connection at a time")
                 else:
@@ -170,7 +179,7 @@ class RestApiHandler:
         
             def _head(_self, *args, **kwargs):
                 ip = flask.request.remote_addr
-                if (not self.registered or self.registered != ip):
+                if (self._has_register_recall and (not self._registered or self._registered != ip)):
                     # respond with 400 if not registered
                     flask_restful.abort(400, message="Not registered; only one connection at a time")
                 else:
@@ -178,7 +187,7 @@ class RestApiHandler:
 
             def _put(_self, *args, **kwargs):
                 ip = flask.request.remote_addr
-                if (not self.registered or self.registered != ip):
+                if (self._has_register_recall and (not self._registered or self._registered != ip)):
                     # respond with 400 if not registered
                     flask_restful.abort(400, message="Not registered; only one connection at a time")
                 else:
@@ -186,7 +195,7 @@ class RestApiHandler:
         
             def _delete(_self, *args, **kwargs):
                 ip = flask.request.remote_addr
-                if (not self.registered or self.registered != ip):
+                if (self._has_register_recall and (not self._registered or self._registered != ip)):
                     # respond with 400 if not registered
                     flask_restful.abort(400, message="Not registered; only one connection at a time")
                 else:
@@ -209,7 +218,7 @@ class RestApiHandler:
                 resource._delete = resource.delete
                 resource.delete = _delete
              
-            self.all_endpoints.append((endpoint, resource))
+            self._all_endpoints.append((endpoint, resource))
         
         return _outer
     
@@ -222,7 +231,7 @@ class RestApiHandler:
         for more info on `flask_restful` in general. 
         """
 
-        return self.api.add_resource(*args, **kwargs)
+        return self._api.add_resource(*args, **kwargs)
     
     def run_dev(self, **kwargs) -> None:
         """Launches the Flask app as a development server.
@@ -240,16 +249,16 @@ class RestApiHandler:
         - `debug`: If the app should be used in debug mode. 
         """
 
-        if (not self.conn.connected):
-            self.conn.connect() # connect the Connection obj if not connected
+        if (not self._conn.connected):
+            self._conn.connect() # connect the Connection obj if not connected
 
         # register all endpoints to flask_restful
-        for endpoint, resource in self.all_endpoints:
-            self.api.add_resource(resource, endpoint)
+        for endpoint, resource in self._all_endpoints:
+            self._api.add_resource(resource, endpoint)
 
-        self.app.run(**kwargs) 
+        self._app.run(**kwargs) 
 
-        self.conn.disconnect() # disconnect if stop running
+        self._conn.disconnect() # disconnect if stop running
     
     def run_prod(self, **kwargs) -> None:
         """Launches the Flask app as a Waitress production server.
@@ -261,16 +270,16 @@ class RestApiHandler:
         If nothing is included, then runs on `http://0.0.0.0:8080`
         """
 
-        if (not self.conn.connected):
-            self.conn.connect() # connect the Connection obj if not connected
+        if (not self._conn.connected):
+            self._conn.connect() # connect the Connection obj if not connected
 
         # register all endpoints to flask_restful
-        for endpoint, resource in self.all_endpoints:
-            self.api.add_resource(resource, endpoint)
+        for endpoint, resource in self._all_endpoints:
+            self._api.add_resource(resource, endpoint)
         
-        waitress.serve(self.app, **kwargs)
+        waitress.serve(self._app, **kwargs)
 
-        self.conn.disconnect() # disconnect if stop running
+        self._conn.disconnect() # disconnect if stop running
     
     @property
     def flask_obj(self) -> flask.Flask:
@@ -280,7 +289,7 @@ class RestApiHandler:
         This can be used to modify and customize the `Flask` object in this class.
         """
 
-        return self.app
+        return self._app
     
     @property
     def api_obj(self) -> flask_restful.Api:
@@ -290,7 +299,7 @@ class RestApiHandler:
         This can be used to modify and customize the `Api` object in this class.
         """
 
-        return self.api
+        return self._api
 
     def _register(self) -> t.Type[ConnectionResource]:
         """
@@ -316,13 +325,13 @@ class RestApiHandler:
                 ip = flask.request.remote_addr
                 
                 # check if already registered
-                if (self.registered):
-                    if (self.registered == ip):
+                if (self._registered):
+                    if (self._registered == ip):
                         flask_restful.abort(400, message="Double registration")
                     else:
                         flask_restful.abort(400, message="Not registered; only one connection at a time")
                 
-                self.registered = ip
+                self._registered = ip
 
                 return {"message": "OK"}
         
@@ -349,14 +358,14 @@ class RestApiHandler:
                 ip = flask.request.remote_addr
 
                 # check if not registered
-                if (not self.registered):
+                if (not self._registered):
                     flask_restful.abort(400, message="Nothing has been registered")
                 
                 # check if ip matches
-                if (ip != self.registered):
+                if (ip != self._registered):
                     flask_restful.abort(400, message="Not same user as one in session") 
                 
-                self.registered = None
+                self._registered = None
                 
                 return {"message": "OK"}
             

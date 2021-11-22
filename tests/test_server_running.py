@@ -24,6 +24,9 @@ except requests.exceptions.ConnectionError:
     pytestmark = pytest.mark.skip(
         reason="Server not launched. Make sure it is running on 0.0.0.0 with port 8080, or run \"com_server -p <port> -b <baud> run\".")
 
+def test_rcv_before_register() -> None:
+    r = requests.get(SERVER + "/receive")
+    assert r.status_code == 400
 
 def test_register() -> None:
     r = requests.get(SERVER + "/register")
