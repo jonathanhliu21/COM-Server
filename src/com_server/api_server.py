@@ -159,7 +159,7 @@ class RestApiHandler:
             # req methods; _self is needed as these will be part of class functions
             def _get(_self, *args, **kwargs):
                 ip = flask.request.remote_addr
-                if (not self._registered or self._registered != ip):
+                if (self._has_register_recall and (not self._registered or self._registered != ip)):
                     # respond with 400 if not registered
                     flask_restful.abort(400, message="Not registered; only one connection at a time")
                 else:
@@ -167,7 +167,7 @@ class RestApiHandler:
             
             def _post(_self, *args, **kwargs):
                 ip = flask.request.remote_addr
-                if (not self._registered or self._registered != ip):
+                if (self._has_register_recall and (not self._registered or self._registered != ip)):
                     # respond with 400 if not registered
                     flask_restful.abort(400, message="Not registered; only one connection at a time")
                 else:
@@ -175,7 +175,7 @@ class RestApiHandler:
         
             def _head(_self, *args, **kwargs):
                 ip = flask.request.remote_addr
-                if (not self._registered or self._registered != ip):
+                if (self._has_register_recall and (not self._registered or self._registered != ip)):
                     # respond with 400 if not registered
                     flask_restful.abort(400, message="Not registered; only one connection at a time")
                 else:
@@ -183,7 +183,7 @@ class RestApiHandler:
 
             def _put(_self, *args, **kwargs):
                 ip = flask.request.remote_addr
-                if (not self._registered or self._registered != ip):
+                if (self._has_register_recall and (not self._registered or self._registered != ip)):
                     # respond with 400 if not registered
                     flask_restful.abort(400, message="Not registered; only one connection at a time")
                 else:
@@ -191,7 +191,7 @@ class RestApiHandler:
         
             def _delete(_self, *args, **kwargs):
                 ip = flask.request.remote_addr
-                if (not self._registered or self._registered != ip):
+                if (self._has_register_recall and (not self._registered or self._registered != ip)):
                     # respond with 400 if not registered
                     flask_restful.abort(400, message="Not registered; only one connection at a time")
                 else:
