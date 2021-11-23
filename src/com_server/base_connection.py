@@ -466,6 +466,9 @@ class BaseConnection:
                 with self._lock:
                     _rcv_queue = self._rcv_queue.copy()
                     _send_queue = self._to_send.copy()
+                
+                # find number of objects to send; important for pruning send queue later
+                _num_to_send = len(_send_queue)
 
                 # keep on trying to poll data as long as connection is still alive
                 if (self._conn.in_waiting):
@@ -493,7 +496,11 @@ class BaseConnection:
                 with self._lock:
                     # copy the variables back
                     self._rcv_queue = _rcv_queue.copy()
-                    self._to_send = _send_queue.copy()
+
+                    # delete the first element of send queue attribute for every object that was sent
+                    # as those elements were the ones that were sent
+                    for i in range(_num_to_send):
+                        self._to_send.pop(0)
 
                 time.sleep(0.01)  # rest CPU
 
