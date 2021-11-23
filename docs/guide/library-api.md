@@ -140,7 +140,7 @@ Returns: None
 May raise:
 
 - `com_server.ConnectException` if the user calls this function while it is already connected and `exception` is True.
-- `serial.serialutil.SerialException` if the port given in `__init__` does not exist.
+- `serial.serialutil.SerialException` if the port(s) given in `__init__` does not exist.
 - `EnvironmentError` if `exit_on_disconnect` is True and the user is on Windows (_not tested_).
 
 #### BaseConnection.disconnect()
