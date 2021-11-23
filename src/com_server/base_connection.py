@@ -15,7 +15,7 @@ from types import TracebackType
 
 import serial
 
-from . import constants
+from . import constants, tools
 
 
 class ConnectException(Exception):
@@ -78,7 +78,7 @@ class BaseConnection:
         self,
         baud: int,
         port: str,
-        *args,
+        *ports,
         exception: bool = True,
         timeout: float = 1,
         send_interval: int = 1,
@@ -94,6 +94,7 @@ class BaseConnection:
         Parameters:
             - `baud` (int): The baud rate of the serial connection 
             - `port` (str): The serial port
+            - `*ports`: Alternative serial ports to choose if the first port does not work. The program will try the serial ports in order of arguments and will use the first one that works.
             - `timeout` (float) (optional): How long the program should wait, in seconds, for serial data before exiting. By default 1.
             - `exception` (bool) (optional): Raise an exception when there is a user error in the methods rather than just returning. By default True.
             - `send_interval` (int) (optional): Indicates how much time, in seconds, the program should wait before sending another message. 
@@ -109,6 +110,7 @@ class BaseConnection:
         # from above
         self._baud = int(baud)
         self._port = str(port)
+        self._ports = ports
         self._exception = bool(exception)
         self._timeout = abs(float(timeout))  # make sure positive
         self._pass_to_pyserial = kwargs
@@ -184,6 +186,23 @@ class BaseConnection:
 
         # timeout should be None in pyserial
         pyser_timeout = None if self._timeout == constants.NO_TIMEOUT else self._timeout
+
+        # user-given ports
+        _all_ports = [self._port] + list(self._ports)
+        # available ports
+        _all_avail_ports = [port for port, _, _ in tools.all_ports()]
+
+        # actual used port
+        _used_port = None
+        
+        for port in _all_ports:
+            if (port in _all_avail_ports):
+                _used_port = port
+                break
+        
+        # set port attribute to new port (useful when printing)
+        self._port = _used_port
+
         self._conn = serial.Serial(
             port=self._port, baudrate=self._baud, timeout=pyser_timeout, **self._pass_to_pyserial)
 
