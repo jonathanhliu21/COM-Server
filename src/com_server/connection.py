@@ -648,13 +648,20 @@ class Connection(base_connection.BaseConnection):
                     _rcv_queue = tools.ReceiveQueue(self._rcv_queue.copy(), self._queue_size)
                     _send_queue = tools.SendQueue(self._to_send.copy())
 
+                # find number of objects to send; important for pruning send queue later
+                _num_to_send = len(_send_queue)
+
                 self._cyc_func(self._conn, _rcv_queue, _send_queue)
 
                 # make sure other threads cannot read/write variables
                 with self._lock:
                     # copy the variables back
                     self._rcv_queue = _rcv_queue.copy()
-                    self._to_send = _send_queue.copy()
+
+                    # delete the first element of send queue attribute for every object that was sent
+                    # as those elements were the ones that were sent and are not needed anymore
+                    for _ in range(_num_to_send):
+                        self._to_send.pop(0)
 
                 time.sleep(0.01)  # rest CPU
 

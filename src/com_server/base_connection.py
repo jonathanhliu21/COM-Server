@@ -15,7 +15,7 @@ from types import TracebackType
 
 import serial
 
-from . import constants
+from . import constants, tools
 
 
 class ConnectException(Exception):
@@ -78,7 +78,7 @@ class BaseConnection:
         self,
         baud: int,
         port: str,
-        *args,
+        *ports,
         exception: bool = True,
         timeout: float = 1,
         send_interval: int = 1,
@@ -88,12 +88,13 @@ class BaseConnection:
     ) -> None:
         """Initializes the Base Connection class. 
 
-        `baud`, `port`, `timeout`, and `kwargs` will be passed to pyserial.  
+        `baud`, `port` (or a port within `ports`), `timeout`, and `kwargs` will be passed to pyserial.  
         For more information, see [here](https://pyserial.readthedocs.io/en/latest/pyserial_api.html#serial.Serial).
 
         Parameters:
             - `baud` (int): The baud rate of the serial connection 
             - `port` (str): The serial port
+            - `*ports`: Alternative serial ports to choose if the first port does not work. The program will try the serial ports in order of arguments and will use the first one that works.
             - `timeout` (float) (optional): How long the program should wait, in seconds, for serial data before exiting. By default 1.
             - `exception` (bool) (optional): Raise an exception when there is a user error in the methods rather than just returning. By default True.
             - `send_interval` (int) (optional): Indicates how much time, in seconds, the program should wait before sending another message. 
@@ -109,6 +110,7 @@ class BaseConnection:
         # from above
         self._baud = int(baud)
         self._port = str(port)
+        self._ports = ports
         self._exception = bool(exception)
         self._timeout = abs(float(timeout))  # make sure positive
         self._pass_to_pyserial = kwargs
@@ -184,6 +186,23 @@ class BaseConnection:
 
         # timeout should be None in pyserial
         pyser_timeout = None if self._timeout == constants.NO_TIMEOUT else self._timeout
+
+        # user-given ports
+        _all_ports = [self._port] + list(self._ports)
+        # available ports
+        _all_avail_ports = [port for port, _, _ in tools.all_ports()]
+
+        # actual used port
+        _used_port = "No port found"
+        
+        for port in _all_ports:
+            if (port in _all_avail_ports):
+                _used_port = port
+                break
+        
+        # set port attribute to new port (useful when printing)
+        self._port = _used_port
+
         self._conn = serial.Serial(
             port=self._port, baudrate=self._baud, timeout=pyser_timeout, **self._pass_to_pyserial)
 
@@ -447,6 +466,9 @@ class BaseConnection:
                 with self._lock:
                     _rcv_queue = self._rcv_queue.copy()
                     _send_queue = self._to_send.copy()
+                
+                # find number of objects to send; important for pruning send queue later
+                _num_to_send = len(_send_queue)
 
                 # keep on trying to poll data as long as connection is still alive
                 if (self._conn.in_waiting):
@@ -474,7 +496,11 @@ class BaseConnection:
                 with self._lock:
                     # copy the variables back
                     self._rcv_queue = _rcv_queue.copy()
-                    self._to_send = _send_queue.copy()
+
+                    # delete the first element of send queue attribute for every object that was sent
+                    # as those elements were the ones that were sent
+                    for _ in range(_num_to_send):
+                        self._to_send.pop(0)
 
                 time.sleep(0.01)  # rest CPU
 
