@@ -499,7 +499,7 @@ class BaseConnection:
 
                     # delete the first element of send queue attribute for every object that was sent
                     # as those elements were the ones that were sent
-                    for i in range(_num_to_send):
+                    for _ in range(_num_to_send):
                         self._to_send.pop(0)
 
                 time.sleep(0.01)  # rest CPU
