@@ -193,7 +193,7 @@ class BaseConnection:
         _all_avail_ports = [port for port, _, _ in tools.all_ports()]
 
         # actual used port
-        _used_port = None
+        _used_port = "No port found"
         
         for port in _all_ports:
             if (port in _all_avail_ports):
