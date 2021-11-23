@@ -66,18 +66,19 @@ If this does not happen, then the IO thread will still be running for an object 
 #### BaseConnection.\_\_init\_\_()
 
 ```py
-def __init__(baud, port, exception=True, timeout=1, queue_size=256, exit_on_disconnect=True, **kwargs)
+def __init__(baud, port, *ports, exception=True, timeout=1, queue_size=256, exit_on_disconnect=True, **kwargs)
 ```
 
 Initializes the Base Connection class. 
 
-`baud`, `port`, `timeout`, and `kwargs` will be passed to pyserial.  
+`baud`, `port` (or a port within `ports`), `timeout`, and `kwargs` will be passed to pyserial.  
 For more information, see [here](https://pyserial.readthedocs.io/en/latest/pyserial_api.html#serial.Serial).
 
 Parameters:
 
 - `baud` (int): The baud rate of the serial connection 
 - `port` (str): The serial port
+- `*ports`: Alternative serial ports to choose if the first port does not work. The program will try the serial ports in order of arguments and will use the first one that works.
 - `timeout` (float) (optional): How long the program should wait, in seconds, for serial data before exiting. By default 1.
 - `exception` (bool) (optional): Raise an exception when there is a user error in the methods rather than just returning. By default True.
 - `send_interval` (int) (optional): Indicates how much time, in seconds, the program should wait before sending another message. 
