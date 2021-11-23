@@ -2,7 +2,7 @@
 name: Bug report
 about: Create a report to help us improve
 title: ''
-labels: ''
+labels: bug
 assignees: ''
 
 ---
@@ -24,14 +24,15 @@ A clear and concise description of what you expected to happen.
 If applicable, add screenshots to help explain your problem.
 
 **Desktop (please complete the following information):**
- - OS: [e.g. Windows, MacOS, Linux (please include distro)]
+ - OS: [e.g. Windows, MacOS, Linux (please include distro and version)]
  - Browser [e.g. chrome, safari]
- - Version [e.g. 0.0]
+ - COM-Server Version [e.g. 0.0]
 
 **Python Version**  
-Python &lt; 3.6 is not supported
+Python < 3.6 is not supported
 
-**COM-Server Version**  
+**Serial port type**
+What the serial port is connected to (e.g. Arduino Nano, Arduino UNO, etc.). Please be as specific as possible. 
 
 **Additional context**
 Add any other context about the problem here.
