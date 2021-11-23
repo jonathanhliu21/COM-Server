@@ -88,7 +88,7 @@ class BaseConnection:
     ) -> None:
         """Initializes the Base Connection class. 
 
-        `baud`, `port`, `timeout`, and `kwargs` will be passed to pyserial.  
+        `baud`, `port` (or a port within `ports`), `timeout`, and `kwargs` will be passed to pyserial.  
         For more information, see [here](https://pyserial.readthedocs.io/en/latest/pyserial_api.html#serial.Serial).
 
         Parameters:
