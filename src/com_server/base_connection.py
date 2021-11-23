@@ -423,6 +423,17 @@ class BaseConnection:
 
         return len(self._rcv_queue) - last_rcv_ind - 1 
     
+    @property
+    def port(self) -> str:
+        """Returns the current port of the connection
+
+        Getter:
+
+        - Gets the current port of the connection 
+        """
+
+        return self._port
+    
     @timeout.setter
     def timeout(self, value: float) -> None:
         self._timeout = abs(float(value))

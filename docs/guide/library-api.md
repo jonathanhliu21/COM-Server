@@ -299,6 +299,14 @@ May raise:
 
 - `ConnectException` if serial port is not connected and `exception` is True.
 
+#### BaseConnection.port
+
+Returns the current port of the connection
+
+Getter:
+
+- Gets the current port of the connection 
+
 ---
 
 ### com_server.Connection
@@ -397,6 +405,9 @@ See [BaseConnection.conn_obj](#baseconnectionconn_obj)
 
 #### Connection.available
 See [BaseConnection.available](#baseconnectionavailable)
+
+#### Connection.port
+See [BaseConnection.port](#baseconnectionport)
 
 #### Connection.conv_bytes_to_str()
 
