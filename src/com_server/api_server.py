@@ -9,6 +9,7 @@ the web API for the Serial port.
 import typing as t
 
 import flask
+import flask_cors
 import flask_restful
 import waitress
 
