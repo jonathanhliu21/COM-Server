@@ -11,6 +11,7 @@ import typing as t
 import flask
 import flask_restful
 import waitress
+from flask_cors import CORS
 
 from . import base_connection, connection  # for typing
 
@@ -60,7 +61,13 @@ class RestApiHandler:
     call `/register` to use the serial port
     """
 
-    def __init__(self, conn: t.Union[t.Type[base_connection.BaseConnection], t.Type[connection.Connection]], has_register_recall: bool = True, **kwargs) -> None:
+    def __init__(
+        self,
+        conn: t.Union[t.Type[base_connection.BaseConnection], t.Type[connection.Connection]],
+        has_register_recall: bool = True,
+        add_cors: bool = False,
+        **kwargs
+    ) -> None:
         """Constructor for class
 
         Parameters:
@@ -69,6 +76,7 @@ class RestApiHandler:
         so the user will not have to use them in order to access the other endpoints of the API.
         That is, visiting endpoints will not respond with a 400 status code even if `/register` was not
         accessed. By default True. 
+        - `add_cors` (bool): If True, then the Flask app will have [cross origin resource sharing](https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS) enabled. By default False.
         - `**kwargs`, will be passed to `flask_restful.Api()`. See [here](https://flask-restful.readthedocs.io/en/latest/api.html#id1) for more info.
         """
 
@@ -79,6 +87,9 @@ class RestApiHandler:
         # flask, flask_restful
         self._app = flask.Flask(__name__)
         self._api = flask_restful.Api(self._app, **kwargs)
+
+        if (add_cors):
+            CORS(self._app)
 
         # other
         self._all_endpoints = [] # list of all endpoints in tuple (endpoint str, resource class)
