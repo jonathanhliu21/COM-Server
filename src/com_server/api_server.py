@@ -65,6 +65,7 @@ class RestApiHandler:
         self,
         conn: t.Union[t.Type[base_connection.BaseConnection], t.Type[connection.Connection]],
         has_register_recall: bool = True,
+        add_cors: bool = False,
         **kwargs
     ) -> None:
         """Constructor for class
