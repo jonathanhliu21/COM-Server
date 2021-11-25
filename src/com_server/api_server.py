@@ -61,7 +61,12 @@ class RestApiHandler:
     call `/register` to use the serial port
     """
 
-    def __init__(self, conn: t.Union[t.Type[base_connection.BaseConnection], t.Type[connection.Connection]], has_register_recall: bool = True, **kwargs) -> None:
+    def __init__(
+        self,
+        conn: t.Union[t.Type[base_connection.BaseConnection], t.Type[connection.Connection]],
+        has_register_recall: bool = True,
+        **kwargs
+    ) -> None:
         """Constructor for class
 
         Parameters:
