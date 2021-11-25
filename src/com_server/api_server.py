@@ -9,9 +9,9 @@ the web API for the Serial port.
 import typing as t
 
 import flask
-import flask_cors
 import flask_restful
 import waitress
+from flask_cors import CORS
 
 from . import base_connection, connection  # for typing
 
@@ -89,7 +89,7 @@ class RestApiHandler:
         self._api = flask_restful.Api(self._app, **kwargs)
 
         if (add_cors):
-            flask_cors.CORS(self._app)
+            CORS(self._app)
 
         # other
         self._all_endpoints = [] # list of all endpoints in tuple (endpoint str, resource class)
