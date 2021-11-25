@@ -68,7 +68,7 @@ class RestApiHandler:
         add_cors: bool = False,
         **kwargs
     ) -> None:
-        """Constructor for class
+        """Constructor for classf
 
         Parameters:
         - `conn` (`Connection`): The `Connection` object the API is going to be associated with.  
