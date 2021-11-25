@@ -76,6 +76,7 @@ class RestApiHandler:
         so the user will not have to use them in order to access the other endpoints of the API.
         That is, visiting endpoints will not respond with a 400 status code even if `/register` was not
         accessed. By default True. 
+        - `add_cors` (bool): If True, then the Flask app will have [cross origin resource sharing](https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS) enabled. By default False.
         - `**kwargs`, will be passed to `flask_restful.Api()`. See [here](https://flask-restful.readthedocs.io/en/latest/api.html#id1) for more info.
         """
 
