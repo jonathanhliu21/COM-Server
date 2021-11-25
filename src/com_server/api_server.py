@@ -87,6 +87,9 @@ class RestApiHandler:
         self._app = flask.Flask(__name__)
         self._api = flask_restful.Api(self._app, **kwargs)
 
+        if (add_cors):
+            flask_cors.CORS(self._app)
+
         # other
         self._all_endpoints = [] # list of all endpoints in tuple (endpoint str, resource class)
         self._registered = None # keeps track of who is registered; None if not registered
