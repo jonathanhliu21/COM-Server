@@ -29,6 +29,12 @@ Serial ports:
 - Arduino UNO
 - Arduino Nano
 
+## Recommended use
+COM-Server is **not** meant to be used like a normal JSON API, even though it uses Flask and Flask-restful. If there are many different devices accessing the endpoints at the same time, data will be backed up, since the serial communication is relatively slow and things cannot be sent to the serial device at the same time. 
+
+The server is recommended to be used like a socket, and it should be used as a way for another process (should be only one; COM-Server has no implemented synchronization) on one computer (could be the same computer or another one on the same network) to communicate with the serial port via `pyserial` and this Python program. 
+ 
+
 ## Installation
 
 **NOTE**: COM-Server only works on Python >= 3.6.
