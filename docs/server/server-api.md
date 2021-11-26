@@ -317,7 +317,7 @@ $ curl -X POST -d "data=hello" -d $'ending=\n' <url>
 
 ### JSON
 
-Escape characters do not yet work with JSON.
+Escape characters should work normally with JSON. 
 
 ### Adding more programs
 
