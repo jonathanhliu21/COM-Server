@@ -191,8 +191,8 @@ if (sys.platform.startswith("linux")):
 elif (sys.platform.startswith("darwin")):
     # mac; use cu.*, not tty.*
     _usb = glob.glob("/dev/cu.usbserial*")
-    _acm = []
-    MATCH = "/dev/cu.usbserial.*"
+    _acm = glob.glob("/dev/cu.usbmodem*")
+    MATCH = "/dev/cu.usb(serial|modem).*"
 elif (sys.platform.startswith("win")):
     # windows
     _usb = [f"COM{i+1}" for i in range(256)]

@@ -298,3 +298,27 @@ Response:
     - `{"message": "OK", ports = [["...", "...", "..."], "..."]}` where "ports"
     is a list of lists of size 3, each one indicating the port, description, and
     technical description
+
+## Escape characters
+
+When including escape characters (newlines, carriage returns, etc.) in a post request to one of the endpoints, the request might not interpret the character. For example, in some cases, if you send `ending="\n"` to the `/send` endpoint (other endpoints have this issue too; we're just using `/send` as an example), the server may interpret it as `\\n` (a backslash followed by `n`), rather than an actual newline. Below contains a list of ways to solve this for different programs:
+
+### Python requests library
+
+The Python requests library works by default if you put a normal newline character `\n` (or any other escape character) in the string. 
+
+### cURL
+
+If you are using `zsh` or `bash`, then you can use the `$''` syntax to include escape characters. For example, sending data to `/send` with cURL can look like:
+
+```bash
+$ curl -X POST -d "data=hello" -d $'ending=\n' <url>
+```
+
+### JSON
+
+Escape characters do not yet work with JSON.
+
+### Adding more programs
+
+If you want to add more programs to this list, feel free to submit a [pull request](https://github.com/jonyboi396825/COM-Server/pulls). If something does not work or you see something wrong, please submit an [issue](https://github.com/jonyboi396825/COM-Server/issues) under the category "Documentation."

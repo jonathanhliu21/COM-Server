@@ -272,3 +272,10 @@ conn.disconnect()
 
 Again, note that the endpoints listed above cannot be used.
 
+## Using the endpoints
+
+Assuming that you're using the `com_server` command to run or `has_register_recall` is False when initializing your `RestApiHandler`, then you need to access the `/register` and `/recall` to ensure to the program that there is only one IP/device connecting (see [Recommended Use](/#recommended-use)). 
+
+When you are beginning to use the serial port, send a GET request to `/register`, and when you are finished, send a GET request to `/recall`. There are no arguments needed.
+
+There is a built-in endpoint for almost every of the methods in `Connection`, in addition to the `send` and `receive` methods of `BaseConnection`. See the [Server API](/server/server-api) for more information on how to use them. Note that if you send a request to the `/send` endpoint or a send-based endpoint (an endpoint that sends any data to the serial port) too rapidly (under the time specified in `send_interval`), it will respond with a 502 error. 

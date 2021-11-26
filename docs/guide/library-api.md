@@ -791,7 +791,7 @@ Some arguments include:
 
 - `host`: The host of the server. Ex: `localhost`, `0.0.0.0`, `127.0.0.1`, etc.
 - `port`: The port to host it on. Ex: `5000` (default), `8000`, `8080`, etc.
-- `debug`: If the app should be used in debug mode. 
+- `debug`: If the app should be used in debug mode. Note that this may break some things because of reloads.
 
 May raise:
 
