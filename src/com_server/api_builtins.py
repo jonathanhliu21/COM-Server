@@ -43,7 +43,7 @@ class Builtins:
     The above endpoints will not be available if the class is used.
     """
 
-    def __init__(self, handler: RestApiHandler) -> None:
+    def __init__(self, handler: RestApiHandler, verbose: bool = False) -> None:
         """Constructor for class that contains builtin endpoints
 
         Adds endpoints to given `RestApiHandler` class;
@@ -61,12 +61,14 @@ class Builtins:
 
         Parameters:
         - `api`: The `RestApiHandler` class that this class should wrap around
+        - `verbose`: Prints the arguments it receives to stdout. Should not be used in production.
         """
 
         if (not isinstance(handler._conn, Connection)):
             raise TypeError("The connection object passed into the handler must be a Connection type")
 
-        self.handler = handler
+        self._handler = handler
+        self._verbose = verbose
 
         # add all endpoints
         self._add_all()
@@ -75,31 +77,31 @@ class Builtins:
         """Adds all endpoints to handler"""
         
         # /send 
-        self.handler.add_endpoint("/send")(self._send)
+        self._handler.add_endpoint("/send")(self._send)
         
         # /receive
-        self.handler.add_endpoint("/receive")(self._receive)
+        self._handler.add_endpoint("/receive")(self._receive)
 
         # /receive/all
-        self.handler.add_endpoint("/receive/all")(self._receive_all)
+        self._handler.add_endpoint("/receive/all")(self._receive_all)
 
         # /get
-        self.handler.add_endpoint("/get")(self._get)
+        self._handler.add_endpoint("/get")(self._get)
 
         # /send/get_first
-        self.handler.add_endpoint("/send/get_first")(self._get_first_response)
+        self._handler.add_endpoint("/send/get_first")(self._get_first_response)
 
         # /get/wait
-        self.handler.add_endpoint("/get/wait")(self._wait_for_response)
+        self._handler.add_endpoint("/get/wait")(self._wait_for_response)
 
         # /send/get
-        self.handler.add_endpoint("/send/get")(self._send_for_response)
+        self._handler.add_endpoint("/send/get")(self._send_for_response)
 
         # /connected
-        self.handler.add_endpoint("/connected")(self._connected)
+        self._handler.add_endpoint("/connected")(self._connected)
 
         # /list_ports
-        self.handler.add_endpoint("/list_ports")(self._list_all)
+        self._handler.add_endpoint("/list_ports")(self._list_all)
     
     # throwaway variable at beginning because it is part of class, "self" would be passed
     def _send(_, conn: Connection) -> t.Type[ConnectionResource]:
