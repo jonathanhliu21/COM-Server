@@ -317,7 +317,7 @@ $ curl -X POST -d "data=hello" -d $'ending=\n' <url>
 
 ### JSON
 
-When sending JSON data to then endpoints, use `\\n`, `\\r`, etc. for escape characters. That is, add an additional backslash to the beginning of the character.
+Escape characters do not yet work with JSON.
 
 ### Adding more programs
 
