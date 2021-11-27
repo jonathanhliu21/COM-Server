@@ -26,6 +26,9 @@ class ConnectionResource(flask_restful.Resource):
     Have `get()`, `post()`, and other methods for the types of responses you need.
     """
 
+    # typing for autocompletion
+    conn: connection.Connection 
+
     # functions will be implemented in subclasses
 
 class RestApiHandler:
@@ -110,13 +113,12 @@ class RestApiHandler:
     def add_endpoint(self, endpoint: str) -> t.Callable:
         """Decorator that adds an endpoint
 
-        This decorator needs to go above a function which
-        contains a nested class that extends `ConnectionResource`.
-        The function needs a parameter indicating the serial connection.
-        The function needs to return that nested class.
-        The class should contain implementations of request
-        methods such as `get()`, `post()`, etc. similar to the 
-        `Resource` class from `flask_restful`.
+        This decorator should go above a class that
+        extends `ConnectionResource`. The class should 
+        contain implementations of request methods such as
+        `get()`, `post()`, etc. similar to the `Resource`
+        class from `flask_restful`. To use the connection
+        object, use the `self.conn` attribute.
 
         For more information, see the `flask_restful` [documentation](https://flask-restful.readthedocs.io).
 
@@ -161,15 +163,13 @@ class RestApiHandler:
                     s += "_"
                 
                 resource.__name__ = s
-        
 
-        def _outer(func: t.Callable) -> t.Callable:
-            """Decorator"""
+        def _outer(resource: t.Type[ConnectionResource]) -> t.Type:
+            # checks; will raise exception if fails
+            _checks(resource)
 
-            resource = func(self._conn) # get resource function
-
-            # checks
-            _checks(resource) # will raise exception if fails
+            # assign connection obj
+            resource.conn = self._conn
 
             # req methods; _self is needed as these will be part of class functions
             def _get(_self, *args, **kwargs):
@@ -230,6 +230,8 @@ class RestApiHandler:
                 resource.delete = _delete
              
             self._all_endpoints.append((endpoint, resource))
+
+            return resource
         
         return _outer
     

@@ -1,6 +1,11 @@
-# 0.1 Development Release 1
+# 0.1 Beta Release 0
 
 Previous version: 0.0.*
+
+## IMPORTANT: BREAKING changes from previous version:
+
+- Changed the way the `RestApiHandler.add_endpoint` decorator works:
+    - Instead of having the decorator above a function which returns a nested class, the decorator will instead go directly above the class that extends `ConnectionResource`. To use the connection, use `self.conn` in the methods.
 
 ## Changes from previous version:
 
