@@ -22,7 +22,7 @@ with the serial port in an development environment or a
 production environment.
 
 Usage:
-    com_server (-p | --serport) <serport> (-b | --baud) <baud> run [--env=<env>] [--host=<host>] [--port=<port>] [--s-int=<s-int>] [--to=<to>] [--cors]
+    com_server (-p | --serport) <serport> (-b | --baud) <baud> run [--env=<env>] [--host=<host>] [--port=<port>] [--s-int=<s-int>] [--to=<to>] [--cors] [-v | --verbose]
     com_server -h | --help
     com_server --version
 
@@ -36,6 +36,7 @@ Options:
                     How long, in seconds, the program should wait between sending to serial port [default: 1].
     --to=<to>       How long, in seconds, the program should wait before exiting when performing time-consuming tasks [default: 1].
     --cors          If set, then the program will add cross origin resource sharing.
+    -v, --verbose   Prints arguments each endpoints receives to stdout. Should not be used in production.
 
     -h, --help      Show help.
     --version       Show version.
@@ -70,12 +71,13 @@ def main() -> None:
         timeout = args["--to"].strip()
         send_interval = args["--s-int"].strip()
         add_cors = args["--cors"]
+        verbose = args["--verbose"]
 
         if (env not in ('dev', 'prod')):
             print("Value of <env> must be \"dev\" or \"prod\".")
             sys.exit(1)
         
-        runner.run(baud, serport, env, host, port, timeout, send_interval, add_cors)
+        runner.run(baud, serport, env, host, port, timeout, send_interval, add_cors, verbose)
 
         print("Exited")
 

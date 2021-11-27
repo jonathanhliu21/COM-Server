@@ -7,7 +7,7 @@ Contains implementation of `run` argument from the CLI.
 
 from . import Connection, RestApiHandler, Builtins
 
-def run(baud: int, ser_port: int, env: str, host: str, port: str, timeout: int, send_interval: int, cors: bool) -> None:
+def run(baud: int, ser_port: int, env: str, host: str, port: str, timeout: int, send_interval: int, cors: bool, verbose: bool) -> None:
     # init connection
 
     print("Starting up connection with serial port...")
@@ -15,7 +15,7 @@ def run(baud: int, ser_port: int, env: str, host: str, port: str, timeout: int, 
         print("Connection with serial port established")
 
         handler = RestApiHandler(conn, add_cors=cors)
-        Builtins(handler)
+        Builtins(handler, verbose=verbose)
 
         if (env == "dev"):
             print("Launching Flask app...")
