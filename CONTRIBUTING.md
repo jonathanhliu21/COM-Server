@@ -85,6 +85,10 @@ When writing tests, use the `pytest` library, and make them as specific as possi
 
 I am also open to those who write new tests to already existing code, especially ones that can test if the methods of the `BaseConnection` and `Connection` classes are behaving properly.
 
+### Formatting:
+
+Please format your code using [Black](https://black.readthedocs.io/en/stable/index.html).
+
 ### Building documentation
 
 COM-Server uses `mkdocs` for its documentation. To build the documentation:
