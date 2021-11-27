@@ -791,13 +791,12 @@ def add_endpoint(endpoint)
 
 Decorator that adds an endpoint
 
-This decorator needs to go above a function which
-contains a nested class that extends `ConnectionResource`.
-The function needs a parameter indicating the serial connection.
-The function needs to return that nested class.
-The class should contain implementations of request
-methods such as `get()`, `post()`, etc. similar to the 
-`Resource` class from `flask_restful`.
+This decorator should go above a class that
+extends `ConnectionResource`. The class should 
+contain implementations of request methods such as
+`get()`, `post()`, etc. similar to the `Resource`
+class from `flask_restful`. To use the connection
+object, use the `self.conn` attribute.
 
 For more information, see the `flask_restful` [documentation](https://flask-restful.readthedocs.io).
 
@@ -815,11 +814,6 @@ Parameters:
 - `endpoint`: The endpoint to the resource. Cannot repeat.
 `/register` and `/recall` cannot be used, even if
 `has_register_recall` is False
-
-May raise:
-
-- `com_server.EndpointExistsException`: If an endpoint already exists
-- `TypeError` if the function does not return a class that extends `com_server.ConnectionResource`
 
 #### RestApiHandler.add_resource()
 
