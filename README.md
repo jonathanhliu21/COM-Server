@@ -2,6 +2,7 @@
 
 ![GitHub Workflow Status](https://img.shields.io/github/workflow/status/jonyboi396825/COM-Server/Run%20Pytest%20(Push%20to%20master))
 [![Documentation Status](https://readthedocs.org/projects/com-server/badge/?version=latest)](https://com-server.readthedocs.io/en/latest/?badge=latest)
+![GitHub Workflow Status](https://img.shields.io/github/workflow/status/jonyboi396825/COM-Server/Upload%20Python%20Package?label=PyPI%20upload)
 
 COM-Server is a Python library and a local web server that hosts an API locally and interacts with serial or COM ports. The Python library provides a different way of sending and receiving data from the serial port using a thread, and it also gives a set of tools that simplifies the task of manipulating data to and from the port. Additionally, the server makes it easier for other processes to communicate with the serial port.
 
