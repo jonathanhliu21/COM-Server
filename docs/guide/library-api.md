@@ -764,7 +764,7 @@ call `/register` to use the serial port
 #### RestApiHandler.\_\_init\_\_()
 
 ```py
-def __init__(conn, has_register_recall, add_cors, **kwargs)
+def __init__(conn, has_register_recall=True, add_cors=False, **kwargs)
 ```
 
 Constructor for class
@@ -929,7 +929,7 @@ The above endpoints will not be available if the class is used.
 #### Builtins.\_\_init\_\_()
 
 ```py
-def __init__(handler)
+def __init__(handler, verbose=False)
 ```
 
 Constructor for class that contains builtin endpoints
@@ -950,6 +950,7 @@ handler.run() # runs the server
 Parameters:
 
 - `api`: The `RestApiHandler` class that this class should wrap around
+- `verbose`: Prints the arguments it receives to stdout. Should not be used in production.
 
 ---
 
