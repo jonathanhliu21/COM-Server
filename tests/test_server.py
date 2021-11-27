@@ -14,25 +14,18 @@ def test_endpointexistsexception() -> None:
     handler = com_server.RestApiHandler(conn)
 
     @handler.add_endpoint("/test1")
-    def test1(conn):
-        class Test1(com_server.ConnectionResource):
-            pass
-
-        return Test1
+    class Test1(com_server.ConnectionResource):
+        pass
 
     # should raise EndpointExistsException
     with pytest.raises(com_server.api_server.EndpointExistsException) as e:
         @handler.add_endpoint("/test1")
-        def test2(conn):
-            class Test1(com_server.ConnectionResource):
-                pass
-
-            return Test1
+        class Test1(com_server.ConnectionResource):
+            pass
 
     ex = e.value
     assert isinstance(ex, com_server.api_server.EndpointExistsException)
     
-
 def test_subclass_type_exception() -> None:
     """
     Tests if exception is being thrown if subclass extends wrong type
@@ -44,11 +37,8 @@ def test_subclass_type_exception() -> None:
     # should raise TypeError
     with pytest.raises(TypeError) as e:
         @handler.add_endpoint("/test2")
-        def test2(conn):
-            class Test1(Resource):
-                pass
-
-            return Test1
+        class Test1(Resource):
+            pass
     
     ex = e.value
     assert isinstance(ex, TypeError)
@@ -62,20 +52,14 @@ def test_duplicate_class_no_exception() -> None:
     handler = com_server.RestApiHandler(conn)
 
     @handler.add_endpoint("/hello_world")
-    def hello_world_test(conn):
-        class Hello_World_(com_server.ConnectionResource):
-            def get(self):
-                return {"hello": "world"}
-    
-        return Hello_World_
+    class Hello_World_(com_server.ConnectionResource):
+        def get(self):
+            return {"hello": "world"} 
     
     @handler.add_endpoint("/hello_world_2")
-    def hello_world_2_test(conn):
-        class Hello_World_(com_server.ConnectionResource):
-            def get(self):
-                return {"hello": "world2"}
-        
-        return Hello_World_
+    class Hello_World_(com_server.ConnectionResource):
+        def get(self):
+            return {"hello": "world2"}    
     
     for e, r in handler._all_endpoints: 
         handler._api.add_resource(r, e)
@@ -91,20 +75,15 @@ def test_duplicate_func_name_no_exception() -> None:
     handler = com_server.RestApiHandler(conn)
 
     @handler.add_endpoint("/hello_world")
-    def hello_world_test(conn):
-        class Hello_World_(com_server.ConnectionResource):
-            def get(self):
-                return {"hello": "world"}
+    class Hello_World_(com_server.ConnectionResource):
+        def get(self):
+            return {"hello": "world"}
     
-        return Hello_World_
     
     @handler.add_endpoint("/hello_world_2")
-    def hello_world_test(conn):
-        class Hello_World_(com_server.ConnectionResource):
-            def get(self):
-                return {"hello": "world2"}
-        
-        return Hello_World_
+    class Hello_World_(com_server.ConnectionResource):
+        def get(self):
+            return {"hello": "world2"}    
     
     for e, r in handler._all_endpoints: 
         handler._api.add_resource(r, e)
@@ -118,20 +97,13 @@ if (__name__ == "__main__"):
     handler = com_server.RestApiHandler(conn)
 
     @handler.add_endpoint("/hello_world")
-    def hello_world_test(conn):
-        class Hello_World_(com_server.ConnectionResource):
-            def get(self):
-                return {"hello": "world"}
+    class Hello_World_(com_server.ConnectionResource):
+        def get(self):
+            return {"hello": "world"} 
     
-        return Hello_World_
-    
-    @handler.add_endpoint("/hello_world_2")
-    def hello_world_2_test(conn):
-        class Hello_World_(com_server.ConnectionResource):
-            def get(self):
-                return {"hello": "world2"}
-        
-        return Hello_World_
+    class Hello_World_(com_server.ConnectionResource):
+        def get(self):
+            return {"hello": "world2"}    
     
     handler.run_dev(host='0.0.0.0', port=8080)
     
