@@ -77,34 +77,34 @@ class Builtins:
         """Adds all endpoints to handler"""
         
         # /send 
-        self._handler.add_endpoint("/send")(self._send)
+        self._handler.add_endpoint("/send")(self._send())
         
         # /receive
-        self._handler.add_endpoint("/receive")(self._receive)
+        self._handler.add_endpoint("/receive")(self._receive())
 
         # /receive/all
-        self._handler.add_endpoint("/receive/all")(self._receive_all)
+        self._handler.add_endpoint("/receive/all")(self._receive_all())
 
         # /get
-        self._handler.add_endpoint("/get")(self._get)
+        self._handler.add_endpoint("/get")(self._get())
 
         # /send/get_first
-        self._handler.add_endpoint("/send/get_first")(self._get_first_response)
+        self._handler.add_endpoint("/send/get_first")(self._get_first_response())
 
         # /get/wait
-        self._handler.add_endpoint("/get/wait")(self._wait_for_response)
+        self._handler.add_endpoint("/get/wait")(self._wait_for_response())
 
         # /send/get
-        self._handler.add_endpoint("/send/get")(self._send_for_response)
+        self._handler.add_endpoint("/send/get")(self._send_for_response())
 
         # /connected
-        self._handler.add_endpoint("/connected")(self._connected)
+        self._handler.add_endpoint("/connected")(self._connected())
 
         # /list_ports
-        self._handler.add_endpoint("/list_ports")(self._list_all)
+        self._handler.add_endpoint("/list_ports")(self._list_all())
     
-    # throwaway variable at beginning because it is part of class, "self" would be passed
-    def _send(_, conn: Connection) -> t.Type[ConnectionResource]:
+    # keeping outside wrapper function for documentation
+    def _send(_) -> t.Type[ConnectionResource]:
         """
         Endpoint to send data to the serial port.
         Calls `Connection.send()` with given arguments in request.
@@ -136,7 +136,7 @@ class Builtins:
                 args = self.parser.parse_args(strict=True)
 
                 # no need for check_type because everything will be parsed as a string
-                res = conn.send(*args["data"], ending=args["ending"], concatenate=args["concatenate"])
+                res = self.conn.send(*args["data"], ending=args["ending"], concatenate=args["concatenate"])
 
                 if (not res):
                     # abort if failed to send
@@ -146,7 +146,7 @@ class Builtins:
 
         return _Sending
     
-    def _receive(_, conn: Connection) -> t.Type[ConnectionResource]:
+    def _receive(_) -> t.Type[ConnectionResource]:
         """
         Endpoint to get data that was recently received.
         If POST, calls `Connection.receive_str(...)` with arguments given in request.
@@ -185,7 +185,7 @@ class Builtins:
             parser.add_argument("strip", type=bool, default=False, help="If the string should be stripped of whitespaces and newlines before responding")
 
             def get(self) -> dict:
-                res = conn.receive_str()
+                res = self.conn.receive_str()
 
                 return {
                     "message": "OK",
@@ -196,7 +196,7 @@ class Builtins:
             def post(self) -> dict:
                 args = self.parser.parse_args(strict=True)
 
-                res = conn.receive_str(num_before=args["num_before"], read_until=args["read_until"], strip=args["strip"])
+                res = self.conn.receive_str(num_before=args["num_before"], read_until=args["read_until"], strip=args["strip"])
 
                 return {
                     "message": "OK",
@@ -206,7 +206,7 @@ class Builtins:
         
         return _Receiving
     
-    def _receive_all(_, conn: Connection) -> t.Type[ConnectionResource]:
+    def _receive_all(_) -> t.Type[ConnectionResource]:
         """
         Returns the entire receive queue. Calls `Connection.get_all_rcv_str(...)`.
         If POST then uses arguments in request.
@@ -240,7 +240,7 @@ class Builtins:
             parser.add_argument("strip", type=bool, default=False, help="If the string should be stripped of whitespaces and newlines before responding")
 
             def get(self) -> dict:
-                all_rcv = conn.get_all_rcv_str()
+                all_rcv = self.conn.get_all_rcv_str()
 
                 return {
                     "message": "OK",
@@ -251,7 +251,7 @@ class Builtins:
             def post(self) -> dict:
                 args = self.parser.parse_args(strict=True)
 
-                all_rcv = conn.get_all_rcv_str(read_until=args["read_until"], strip=args["strip"])
+                all_rcv = self.conn.get_all_rcv_str(read_until=args["read_until"], strip=args["strip"])
 
                 return {
                     "message": "OK",
@@ -261,7 +261,7 @@ class Builtins:
 
         return _ReceiveAll
     
-    def _get(_, conn: Connection) -> t.Type[ConnectionResource]:
+    def _get(_) -> t.Type[ConnectionResource]:
         """
         Waits for the first string from the serial port after request.
         If no string after timeout (specified on server side), then responds with 502.
@@ -298,7 +298,7 @@ class Builtins:
             parser.add_argument("strip", type=bool, default=False, help="If the string should be stripped of whitespaces and newlines before responding")
 
             def get(self) -> dict:
-                got = conn.get(str)
+                got = self.conn.get(str)
 
                 if (got is None):
                     flask_restful.abort(502, message="Nothing received")
@@ -311,7 +311,7 @@ class Builtins:
             def post(self) -> dict:
                 args = self.parser.parse_args(strict=True)
 
-                got = conn.get(str, read_until=args["read_until"], strip=args["strip"])
+                got = self.conn.get(str, read_until=args["read_until"], strip=args["strip"])
 
                 if (got is None):
                     flask_restful.abort(502, message="Nothing received")
@@ -323,7 +323,7 @@ class Builtins:
 
         return _Get
 
-    def _get_first_response(_, conn: Connection) -> t.Type[ConnectionResource]:
+    def _get_first_response(_) -> t.Type[ConnectionResource]:
         """
         Respond with the first string received from the 
         serial port after sending something given in request.
@@ -365,7 +365,7 @@ class Builtins:
             def post(self) -> dict:
                 args = self.parser.parse_args(strict=True)
 
-                res = conn.get_first_response(*args["data"], is_bytes=False, ending=args["ending"], concatenate=args["concatenate"], read_until=args["read_until"], strip=args["strip"])
+                res = self.conn.get_first_response(*args["data"], is_bytes=False, ending=args["ending"], concatenate=args["concatenate"], read_until=args["read_until"], strip=args["strip"])
 
                 if (res is None):
                     flask_restful.abort(502, message="Nothing received")
@@ -377,7 +377,7 @@ class Builtins:
 
         return _GetFirst
     
-    def _wait_for_response(_, conn: Connection) -> t.Type[ConnectionResource]:
+    def _wait_for_response(_) -> t.Type[ConnectionResource]:
         """
         Waits until connection receives string data given in request.
         Calls `Connection.wait_for_response(...)`.
@@ -414,7 +414,7 @@ class Builtins:
             def post(self) -> dict:
                 args = self.parser.parse_args(strict=True)
                 
-                res = conn.wait_for_response(response=args["response"], read_until=args["read_until"], strip=args["strip"])
+                res = self.conn.wait_for_response(response=args["response"], read_until=args["read_until"], strip=args["strip"])
 
                 if (not res):
                     flask_restful.abort(502, message="Nothing received")
@@ -423,7 +423,7 @@ class Builtins:
         
         return _WaitResponse
     
-    def _send_for_response(_, conn: Connection) -> t.Type[ConnectionResource]:
+    def _send_for_response(_) -> t.Type[ConnectionResource]:
         """
         Continues sending something until connection receives data given in request.
         Calls `Connection.send_for_response(...)`
@@ -466,7 +466,7 @@ class Builtins:
             def post(self) -> dict:
                 args = self.parser.parse_args(strict=True)
 
-                res = conn.send_for_response(args["response"], *args["data"], ending=args["ending"], concatenate=args["concatenate"], read_until=args["read_until"], strip=args["strip"])
+                res = self.conn.send_for_response(args["response"], *args["data"], ending=args["ending"], concatenate=args["concatenate"], read_until=args["read_until"], strip=args["strip"])
 
                 if (not res):
                     flask_restful.abort(502, message="Nothing received")
@@ -475,7 +475,7 @@ class Builtins:
 
         return _SendResponse
     
-    def _connected(self, conn: Connection) -> t.Type[Connection]:
+    def _connected(self) -> t.Type[Connection]:
         """
         Indicates if the serial port is currently connected or not.
         Returns the `Connection.connected` property. 
@@ -494,13 +494,13 @@ class Builtins:
             def get(self) -> dict:
                 return {
                     "message": "OK",
-                    "connected": conn.connected
+                    "connected": self.conn.connected
                 }
         
         return _GetConnectedState
     
     # both throwaway as connection not needed
-    def _list_all(_, __) -> t.Type[ConnectionResource]:
+    def _list_all(_) -> t.Type[ConnectionResource]:
         """
         Lists all available Serial ports. Calls `com_server.tools.all_ports()`
         and returns list of lists of size 3: [`port`, `description`, `technical description`]
