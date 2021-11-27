@@ -815,6 +815,12 @@ Parameters:
 `/register` and `/recall` cannot be used, even if
 `has_register_recall` is False
 
+May raise:
+
+- `com_server.EndpointExistsException`: If an endpoint already exists
+- `TypeError` if the class does not extend `com_server.ConnectionResource`
+
+
 #### RestApiHandler.add_resource()
 
 ```py
