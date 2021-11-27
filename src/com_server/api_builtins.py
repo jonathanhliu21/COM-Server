@@ -104,7 +104,7 @@ class Builtins:
         self._handler.add_endpoint("/list_ports")(self._list_all())
     
     # keeping outside wrapper function for documentation
-    def _send(_) -> t.Type[ConnectionResource]:
+    def _send(_self) -> t.Type[ConnectionResource]:
         """
         Endpoint to send data to the serial port.
         Calls `Connection.send()` with given arguments in request.
@@ -135,6 +135,9 @@ class Builtins:
             def post(self) -> dict:
                 args = self.parser.parse_args(strict=True)
 
+                if (_self._verbose):
+                    print("Arguments for /send:", args)
+
                 # no need for check_type because everything will be parsed as a string
                 res = self.conn.send(*args["data"], ending=args["ending"], concatenate=args["concatenate"])
 
@@ -146,7 +149,7 @@ class Builtins:
 
         return _Sending
     
-    def _receive(_) -> t.Type[ConnectionResource]:
+    def _receive(_self) -> t.Type[ConnectionResource]:
         """
         Endpoint to get data that was recently received.
         If POST, calls `Connection.receive_str(...)` with arguments given in request.
@@ -178,7 +181,6 @@ class Builtins:
         """
 
         class _Receiving(ConnectionResource):
-
             parser = reqparse.RequestParser()
             parser.add_argument("num_before", type=int, default=0, help="Which receive data to return")
             parser.add_argument("read_until", default=None, help="What character the string should read until")
@@ -196,6 +198,9 @@ class Builtins:
             def post(self) -> dict:
                 args = self.parser.parse_args(strict=True)
 
+                if (_self._verbose):
+                    print("Arguments for /receive:", args)
+
                 res = self.conn.receive_str(num_before=args["num_before"], read_until=args["read_until"], strip=args["strip"])
 
                 return {
@@ -206,7 +211,7 @@ class Builtins:
         
         return _Receiving
     
-    def _receive_all(_) -> t.Type[ConnectionResource]:
+    def _receive_all(_self) -> t.Type[ConnectionResource]:
         """
         Returns the entire receive queue. Calls `Connection.get_all_rcv_str(...)`.
         If POST then uses arguments in request.
@@ -251,6 +256,9 @@ class Builtins:
             def post(self) -> dict:
                 args = self.parser.parse_args(strict=True)
 
+                if (_self._verbose):
+                    print("Arguments for /receive/all:", args)
+
                 all_rcv = self.conn.get_all_rcv_str(read_until=args["read_until"], strip=args["strip"])
 
                 return {
@@ -261,7 +269,7 @@ class Builtins:
 
         return _ReceiveAll
     
-    def _get(_) -> t.Type[ConnectionResource]:
+    def _get(_self) -> t.Type[ConnectionResource]:
         """
         Waits for the first string from the serial port after request.
         If no string after timeout (specified on server side), then responds with 502.
@@ -311,6 +319,9 @@ class Builtins:
             def post(self) -> dict:
                 args = self.parser.parse_args(strict=True)
 
+                if (_self._verbose):
+                    print("Arguments for /get:", args)
+
                 got = self.conn.get(str, read_until=args["read_until"], strip=args["strip"])
 
                 if (got is None):
@@ -323,7 +334,7 @@ class Builtins:
 
         return _Get
 
-    def _get_first_response(_) -> t.Type[ConnectionResource]:
+    def _get_first_response(_self) -> t.Type[ConnectionResource]:
         """
         Respond with the first string received from the 
         serial port after sending something given in request.
@@ -365,6 +376,9 @@ class Builtins:
             def post(self) -> dict:
                 args = self.parser.parse_args(strict=True)
 
+                if (_self._verbose):
+                    print("Arguments for /send/get_first:", args)
+
                 res = self.conn.get_first_response(*args["data"], is_bytes=False, ending=args["ending"], concatenate=args["concatenate"], read_until=args["read_until"], strip=args["strip"])
 
                 if (res is None):
@@ -377,7 +391,7 @@ class Builtins:
 
         return _GetFirst
     
-    def _wait_for_response(_) -> t.Type[ConnectionResource]:
+    def _wait_for_response(_self) -> t.Type[ConnectionResource]:
         """
         Waits until connection receives string data given in request.
         Calls `Connection.wait_for_response(...)`.
@@ -413,6 +427,9 @@ class Builtins:
 
             def post(self) -> dict:
                 args = self.parser.parse_args(strict=True)
+
+                if (_self._verbose):
+                    print("Arguments for /get/wait:", args)
                 
                 res = self.conn.wait_for_response(response=args["response"], read_until=args["read_until"], strip=args["strip"])
 
@@ -423,7 +440,7 @@ class Builtins:
         
         return _WaitResponse
     
-    def _send_for_response(_) -> t.Type[ConnectionResource]:
+    def _send_for_response(_self) -> t.Type[ConnectionResource]:
         """
         Continues sending something until connection receives data given in request.
         Calls `Connection.send_for_response(...)`
@@ -466,6 +483,9 @@ class Builtins:
             def post(self) -> dict:
                 args = self.parser.parse_args(strict=True)
 
+                if (_self._verbose):
+                    print("Arguments for /send/get:", args)
+
                 res = self.conn.send_for_response(args["response"], *args["data"], ending=args["ending"], concatenate=args["concatenate"], read_until=args["read_until"], strip=args["strip"])
 
                 if (not res):
@@ -475,7 +495,7 @@ class Builtins:
 
         return _SendResponse
     
-    def _connected(self) -> t.Type[Connection]:
+    def _connected(_self) -> t.Type[Connection]:
         """
         Indicates if the serial port is currently connected or not.
         Returns the `Connection.connected` property. 
@@ -500,7 +520,7 @@ class Builtins:
         return _GetConnectedState
     
     # both throwaway as connection not needed
-    def _list_all(_) -> t.Type[ConnectionResource]:
+    def _list_all(_self) -> t.Type[ConnectionResource]:
         """
         Lists all available Serial ports. Calls `com_server.tools.all_ports()`
         and returns list of lists of size 3: [`port`, `description`, `technical description`]
