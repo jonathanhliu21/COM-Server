@@ -764,7 +764,7 @@ call `/register` to use the serial port
 #### RestApiHandler.\_\_init\_\_()
 
 ```py
-def __init__(conn, has_register_recall, add_cors, **kwargs)
+def __init__(conn, has_register_recall=True, add_cors=False, **kwargs)
 ```
 
 Constructor for class
@@ -791,13 +791,12 @@ def add_endpoint(endpoint)
 
 Decorator that adds an endpoint
 
-This decorator needs to go above a function which
-contains a nested class that extends `ConnectionResource`.
-The function needs a parameter indicating the serial connection.
-The function needs to return that nested class.
-The class should contain implementations of request
-methods such as `get()`, `post()`, etc. similar to the 
-`Resource` class from `flask_restful`.
+This decorator should go above a class that
+extends `ConnectionResource`. The class should 
+contain implementations of request methods such as
+`get()`, `post()`, etc. similar to the `Resource`
+class from `flask_restful`. To use the connection
+object, use the `self.conn` attribute.
 
 For more information, see the `flask_restful` [documentation](https://flask-restful.readthedocs.io).
 
@@ -819,7 +818,8 @@ Parameters:
 May raise:
 
 - `com_server.EndpointExistsException`: If an endpoint already exists
-- `TypeError` if the function does not return a class that extends `com_server.ConnectionResource`
+- `TypeError` if the class does not extend `com_server.ConnectionResource`
+
 
 #### RestApiHandler.add_resource()
 
@@ -929,7 +929,7 @@ The above endpoints will not be available if the class is used.
 #### Builtins.\_\_init\_\_()
 
 ```py
-def __init__(handler)
+def __init__(handler, verbose=False)
 ```
 
 Constructor for class that contains builtin endpoints
@@ -950,6 +950,7 @@ handler.run() # runs the server
 Parameters:
 
 - `api`: The `RestApiHandler` class that this class should wrap around
+- `verbose`: Prints the arguments it receives to stdout. Should not be used in production.
 
 ---
 
