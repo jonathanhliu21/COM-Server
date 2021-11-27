@@ -28,7 +28,7 @@ from . import Connection, ConnectionResource, RestApiHandler, all_ports
 
 class Builtins:
     """Contains implementations of endpoints that call methods of `Connection` object
-    
+
     Endpoints include:
         - `/send` (POST): Send something through the serial port using `Connection.send()` with parameters in request; equivalent to `Connection.send(...)`
         - `/receive` (GET, POST): Respond with the most recent received string from the serial port; equivalent to `Connection.receive_str(...)`
@@ -64,21 +64,23 @@ class Builtins:
         - `verbose`: Prints the arguments it receives to stdout. Should not be used in production.
         """
 
-        if (not isinstance(handler._conn, Connection)):
-            raise TypeError("The connection object passed into the handler must be a Connection type")
+        if not isinstance(handler._conn, Connection):
+            raise TypeError(
+                "The connection object passed into the handler must be a Connection type"
+            )
 
         self._handler = handler
         self._verbose = verbose
 
         # add all endpoints
         self._add_all()
-    
+
     def _add_all(self):
         """Adds all endpoints to handler"""
-        
-        # /send 
+
+        # /send
         self._handler.add_endpoint("/send")(self._send())
-        
+
         # /receive
         self._handler.add_endpoint("/receive")(self._receive())
 
@@ -102,7 +104,7 @@ class Builtins:
 
         # /list_ports
         self._handler.add_endpoint("/list_ports")(self._list_all())
-    
+
     # keeping outside wrapper function for documentation
     def _send(_self) -> t.Type[ConnectionResource]:
         """
@@ -119,42 +121,59 @@ class Builtins:
         won't affect "data" if the size of the list is equal to 1. By default a space.
 
         Responses:
-        - `200 OK`: 
+        - `200 OK`:
             - `{"message": "OK"}` if send through
-        - `502 Bad Gateway`: 
+        - `502 Bad Gateway`:
             - `{"message": "Failed to send"}` if something went wrong with sending (i.e. `Connection.send()` returned false)
         """
 
         class _Sending(ConnectionResource):
             # make parser once when class is declared, don't add arguments each time request is made aka don't put in post()
             parser = reqparse.RequestParser()
-            parser.add_argument("data", required=True, action='append', help="Data the serial port should send; is required")
-            parser.add_argument("ending", default="\r\n", help="Ending that will be appended to the end of data before sending over serial port; default carriage return + newline")
-            parser.add_argument("concatenate", default=' ', help="What the strings in data should be concatenated by if list; by default a space")
+            parser.add_argument(
+                "data",
+                required=True,
+                action="append",
+                help="Data the serial port should send; is required",
+            )
+            parser.add_argument(
+                "ending",
+                default="\r\n",
+                help="Ending that will be appended to the end of data before sending over serial port; default carriage return + newline",
+            )
+            parser.add_argument(
+                "concatenate",
+                default=" ",
+                help="What the strings in data should be concatenated by if list; by default a space",
+            )
 
             def post(self) -> dict:
                 args = self.parser.parse_args(strict=True)
 
-                if (_self._verbose):
+                if _self._verbose:
                     print("Arguments for /send:", args)
 
                 # no need for check_type because everything will be parsed as a string
-                res = self.conn.send(*args["data"], ending=args["ending"], concatenate=args["concatenate"])
+                res = self.conn.send(
+                    *args["data"],
+                    ending=args["ending"],
+                    concatenate=args["concatenate"]
+                )
 
-                if (not res):
+                if not res:
                     # abort if failed to send
                     flask_restful.abort(502, message="Failed to send")
-                
+
                 return {"message": "OK"}
 
         return _Sending
-    
+
     def _receive(_self) -> t.Type[ConnectionResource]:
         """
         Endpoint to get data that was recently received.
         If POST, calls `Connection.receive_str(...)` with arguments given in request.
         If GET, calls `Connection.receive_str(...)` with default arguments (except strip=True). This means
-        that it responds with the latest received string with everything included after 
+        that it responds with the latest received string with everything included after
         being stripped of whitespaces and newlines.
 
         Method: GET, POST
@@ -168,7 +187,7 @@ class Builtins:
         if the bytes was `b'123456'` and "read_until" was 6, then it will return
         `'12345'`. If ommitted, then returns the entire string. By default returns entire string.
         - "strip" (bool) (optional): If true, then strips received and processed string of
-        whitespaces and newlines and responds with result. Otherwise, returns raw string. 
+        whitespaces and newlines and responds with result. Otherwise, returns raw string.
         Note that using {"strip": False} may not work; it is better to omit it.
         By default False.
 
@@ -182,9 +201,20 @@ class Builtins:
 
         class _Receiving(ConnectionResource):
             parser = reqparse.RequestParser()
-            parser.add_argument("num_before", type=int, default=0, help="Which receive data to return")
-            parser.add_argument("read_until", default=None, help="What character the string should read until")
-            parser.add_argument("strip", type=bool, default=False, help="If the string should be stripped of whitespaces and newlines before responding")
+            parser.add_argument(
+                "num_before", type=int, default=0, help="Which receive data to return"
+            )
+            parser.add_argument(
+                "read_until",
+                default=None,
+                help="What character the string should read until",
+            )
+            parser.add_argument(
+                "strip",
+                type=bool,
+                default=False,
+                help="If the string should be stripped of whitespaces and newlines before responding",
+            )
 
             def get(self) -> dict:
                 res = self.conn.receive_str()
@@ -192,31 +222,35 @@ class Builtins:
                 return {
                     "message": "OK",
                     "timestamp": res[0] if isinstance(res, tuple) else None,
-                    "data": res[1] if isinstance(res, tuple) else None
+                    "data": res[1] if isinstance(res, tuple) else None,
                 }
 
             def post(self) -> dict:
                 args = self.parser.parse_args(strict=True)
 
-                if (_self._verbose):
+                if _self._verbose:
                     print("Arguments for /receive:", args)
 
-                res = self.conn.receive_str(num_before=args["num_before"], read_until=args["read_until"], strip=args["strip"])
+                res = self.conn.receive_str(
+                    num_before=args["num_before"],
+                    read_until=args["read_until"],
+                    strip=args["strip"],
+                )
 
                 return {
                     "message": "OK",
                     "timestamp": res[0] if isinstance(res, tuple) else None,
-                    "data": res[1] if isinstance(res, tuple) else None
+                    "data": res[1] if isinstance(res, tuple) else None,
                 }
-        
+
         return _Receiving
-    
+
     def _receive_all(_self) -> t.Type[ConnectionResource]:
         """
         Returns the entire receive queue. Calls `Connection.get_all_rcv_str(...)`.
         If POST then uses arguments in request.
         If GET then uses default arguments (except strip=True), which means that
-        that it responds with the latest received string with everything included after 
+        that it responds with the latest received string with everything included after
         being stripped of whitespaces and newlines.
 
         Method: GET, POST
@@ -227,22 +261,31 @@ class Builtins:
         if the bytes was `b'123456'` and "read_until" was 6, then it will return
         `'12345'`. If ommitted, then returns the entire string. By default returns entire string.
         - "strip" (bool) (optional): If true, then strips received and processed string of
-        whitespaces and newlines and responds with result. Otherwise, returns raw string. 
+        whitespaces and newlines and responds with result. Otherwise, returns raw string.
         Note that using {"strip": False} may not work; it is better to omit it.
         By default False.
 
         Response:
         - `200 OK`:
-            - `{"message": "OK", "timestamps": [...], "data": [...]}`: where "timestamps" 
-            contains the list of timestamps in the receive queue and "data" contains the 
+            - `{"message": "OK", "timestamps": [...], "data": [...]}`: where "timestamps"
+            contains the list of timestamps in the receive queue and "data" contains the
             list of data in the receive queue. The indices for "timestamps" and "data" match.
-        """ 
+        """
 
         class _ReceiveAll(ConnectionResource):
-            
+
             parser = reqparse.RequestParser()
-            parser.add_argument("read_until", default=None, help="What character the string should read until")
-            parser.add_argument("strip", type=bool, default=False, help="If the string should be stripped of whitespaces and newlines before responding")
+            parser.add_argument(
+                "read_until",
+                default=None,
+                help="What character the string should read until",
+            )
+            parser.add_argument(
+                "strip",
+                type=bool,
+                default=False,
+                help="If the string should be stripped of whitespaces and newlines before responding",
+            )
 
             def get(self) -> dict:
                 all_rcv = self.conn.get_all_rcv_str()
@@ -250,33 +293,35 @@ class Builtins:
                 return {
                     "message": "OK",
                     "timestamps": [ts for ts, _ in all_rcv],
-                    "data": [data for _, data in all_rcv]
+                    "data": [data for _, data in all_rcv],
                 }
 
             def post(self) -> dict:
                 args = self.parser.parse_args(strict=True)
 
-                if (_self._verbose):
+                if _self._verbose:
                     print("Arguments for /receive/all:", args)
 
-                all_rcv = self.conn.get_all_rcv_str(read_until=args["read_until"], strip=args["strip"])
+                all_rcv = self.conn.get_all_rcv_str(
+                    read_until=args["read_until"], strip=args["strip"]
+                )
 
                 return {
                     "message": "OK",
                     "timestamps": [ts for ts, _ in all_rcv],
-                    "data": [data for _, data in all_rcv]
+                    "data": [data for _, data in all_rcv],
                 }
 
         return _ReceiveAll
-    
+
     def _get(_self) -> t.Type[ConnectionResource]:
         """
         Waits for the first string from the serial port after request.
         If no string after timeout (specified on server side), then responds with 502.
         Calls `Connection.get(str, ...)`.
-        If POST then uses arguments in request. 
+        If POST then uses arguments in request.
         If GET then uses default arguments (except strip=True), which means that
-        that it responds with the latest received string with everything included after 
+        that it responds with the latest received string with everything included after
         being stripped of whitespaces and newlines.
 
         Method: GET, POST
@@ -287,56 +332,61 @@ class Builtins:
         if the bytes was `b'123456'` and "read_until" was 6, then it will return
         `'12345'`. If ommitted, then returns the entire string. By default returns entire string.
         - "strip" (bool) (optional): If true, then strips received and processed string of
-        whitespaces and newlines and responds with result. Otherwise, returns raw string. 
+        whitespaces and newlines and responds with result. Otherwise, returns raw string.
         Note that using {"strip": False} may not work; it is better to omit it.
         By default False.
 
         Response:
         - `200 OK`:
             - `{"message": "OK", "data": "..."}` where "data" is received data
-        - `502 Bad Gateway`: 
+        - `502 Bad Gateway`:
             - `{"message": "Nothing received"}` if nothing was received from the serial port
-            within the timeout specified on the server side.   
+            within the timeout specified on the server side.
         """
 
         class _Get(ConnectionResource):
-        
+
             parser = reqparse.RequestParser()
-            parser.add_argument("read_until", default=None, help="What character the string should read until")
-            parser.add_argument("strip", type=bool, default=False, help="If the string should be stripped of whitespaces and newlines before responding")
+            parser.add_argument(
+                "read_until",
+                default=None,
+                help="What character the string should read until",
+            )
+            parser.add_argument(
+                "strip",
+                type=bool,
+                default=False,
+                help="If the string should be stripped of whitespaces and newlines before responding",
+            )
 
             def get(self) -> dict:
                 got = self.conn.get(str)
 
-                if (got is None):
+                if got is None:
                     flask_restful.abort(502, message="Nothing received")
 
-                return {
-                    "message": "OK",
-                    "data": got
-                }
+                return {"message": "OK", "data": got}
 
             def post(self) -> dict:
                 args = self.parser.parse_args(strict=True)
 
-                if (_self._verbose):
+                if _self._verbose:
                     print("Arguments for /get:", args)
 
-                got = self.conn.get(str, read_until=args["read_until"], strip=args["strip"])
+                got = self.conn.get(
+                    str, read_until=args["read_until"], strip=args["strip"]
+                )
 
-                if (got is None):
+                if got is None:
                     flask_restful.abort(502, message="Nothing received")
 
-                return {
-                    "message": "OK",
-                    "data": got
-                }
+                return {"message": "OK", "data": got}
 
         return _Get
 
     def _get_first_response(_self) -> t.Type[ConnectionResource]:
         """
-        Respond with the first string received from the 
+        Respond with the first string received from the
         serial port after sending something given in request.
         Calls `Connection.get_first_response(is_bytes=False, ...)`.
 
@@ -346,51 +396,77 @@ class Builtins:
         - "data" (str, list): Everything that is to be sent, each as a separate parameter. Must have at least one parameter.
         - "ending" (str) (optional): The ending of the bytes object to be sent through the Serial port. By default a carraige return ("\\r\\n")
         - "concatenate" (str) (optional): What the strings in args should be concatenated by
-        - "read_until" (str, None) (optional): Will return a string that terminates with `read_until`, excluding `read_until`. 
+        - "read_until" (str, None) (optional): Will return a string that terminates with `read_until`, excluding `read_until`.
         For example, if the string was `"abcdefg123456\\n"`, and `read_until` was `\\n`, then it will return `"abcdefg123456"`.
         If `read_until` is None, the it will return the entire string. By default None.
         - "strip" (bool) (optional): If true, then strips received and processed string of
-        whitespaces and newlines and responds with result. Otherwise, returns raw string. 
+        whitespaces and newlines and responds with result. Otherwise, returns raw string.
         Note that using {"strip": False} may not work; it is better to omit it.
         By default False.
 
         Response:
         - `200 OK`:
             - `{"message": "OK", "data": "..."}` where "data" is the
-            data that was processed. 
-        - `502 Bad Gateway`: 
+            data that was processed.
+        - `502 Bad Gateway`:
             - `{"message": "Nothing received"}` if nothing was received from the serial port
-            within the timeout specified on the server side.   
-        """ 
+            within the timeout specified on the server side.
+        """
 
         class _GetFirst(ConnectionResource):
 
             parser = reqparse.RequestParser()
-            
-            parser.add_argument("data", required=True, action='append', help="Data the serial port should send; is required")
-            parser.add_argument("ending", default="\r\n", help="Ending that will be appended to the end of data before sending over serial port; default carriage return + newline")
-            parser.add_argument("concatenate", default=' ', help="What the strings in data should be concatenated by if list; by default a space")
-            parser.add_argument("read_until", default=None, help="What character the string should read until")
-            parser.add_argument("strip", type=bool, default=False, help="If the string should be stripped of whitespaces and newlines before responding")
+
+            parser.add_argument(
+                "data",
+                required=True,
+                action="append",
+                help="Data the serial port should send; is required",
+            )
+            parser.add_argument(
+                "ending",
+                default="\r\n",
+                help="Ending that will be appended to the end of data before sending over serial port; default carriage return + newline",
+            )
+            parser.add_argument(
+                "concatenate",
+                default=" ",
+                help="What the strings in data should be concatenated by if list; by default a space",
+            )
+            parser.add_argument(
+                "read_until",
+                default=None,
+                help="What character the string should read until",
+            )
+            parser.add_argument(
+                "strip",
+                type=bool,
+                default=False,
+                help="If the string should be stripped of whitespaces and newlines before responding",
+            )
 
             def post(self) -> dict:
                 args = self.parser.parse_args(strict=True)
 
-                if (_self._verbose):
+                if _self._verbose:
                     print("Arguments for /send/get_first:", args)
 
-                res = self.conn.get_first_response(*args["data"], is_bytes=False, ending=args["ending"], concatenate=args["concatenate"], read_until=args["read_until"], strip=args["strip"])
+                res = self.conn.get_first_response(
+                    *args["data"],
+                    is_bytes=False,
+                    ending=args["ending"],
+                    concatenate=args["concatenate"],
+                    read_until=args["read_until"],
+                    strip=args["strip"]
+                )
 
-                if (res is None):
+                if res is None:
                     flask_restful.abort(502, message="Nothing received")
-                
-                return {
-                    "message": "OK",
-                    "data": res
-                }
+
+                return {"message": "OK", "data": res}
 
         return _GetFirst
-    
+
     def _wait_for_response(_self) -> t.Type[ConnectionResource]:
         """
         Waits until connection receives string data given in request.
@@ -401,45 +477,62 @@ class Builtins:
         Arguments:
         - "response" (str): The string the program is waiting to receive.
         Compares to response to `Connection.receive_str()`.
-        - "read_until" (str, None) (optional): Will return a string that terminates with `read_until`, excluding `read_until`. 
+        - "read_until" (str, None) (optional): Will return a string that terminates with `read_until`, excluding `read_until`.
         For example, if the string was `"abcdefg123456\\n"`, and `read_until` was `\\n`, then it will return `"abcdefg123456"`.
         If `read_until` is None, the it will return the entire string. By default None.
         - "strip" (bool) (optional): If true, then strips received and processed string of
-        whitespaces and newlines and responds with result. Otherwise, returns raw string. 
+        whitespaces and newlines and responds with result. Otherwise, returns raw string.
         Note that using {"strip": False} may not work; it is better to omit it.
         By default False.
 
         Response:
         - `200 OK`:
             - `{"message": "OK"}` if everything was able to send through
-        - `502 Bad Gateway`: 
+        - `502 Bad Gateway`:
             - `{"message": "Nothing received"}` if nothing was received from the serial port
-            within the timeout specified on the server side.   
+            within the timeout specified on the server side.
         """
 
         class _WaitResponse(ConnectionResource):
 
             parser = reqparse.RequestParser()
-            
-            parser.add_argument("response", required=True, help="Which response the program should wait for; is required")
-            parser.add_argument("read_until", default=None, help="What character the string should read until")
-            parser.add_argument("strip", type=bool, default=False, help="If the string should be stripped of whitespaces and newlines before responding")
+
+            parser.add_argument(
+                "response",
+                required=True,
+                help="Which response the program should wait for; is required",
+            )
+            parser.add_argument(
+                "read_until",
+                default=None,
+                help="What character the string should read until",
+            )
+            parser.add_argument(
+                "strip",
+                type=bool,
+                default=False,
+                help="If the string should be stripped of whitespaces and newlines before responding",
+            )
 
             def post(self) -> dict:
                 args = self.parser.parse_args(strict=True)
 
-                if (_self._verbose):
+                if _self._verbose:
                     print("Arguments for /get/wait:", args)
-                
-                res = self.conn.wait_for_response(response=args["response"], read_until=args["read_until"], strip=args["strip"])
 
-                if (not res):
+                res = self.conn.wait_for_response(
+                    response=args["response"],
+                    read_until=args["read_until"],
+                    strip=args["strip"],
+                )
+
+                if not res:
                     flask_restful.abort(502, message="Nothing received")
-                
+
                 return {"message": "OK"}
-        
+
         return _WaitResponse
-    
+
     def _send_for_response(_self) -> t.Type[ConnectionResource]:
         """
         Continues sending something until connection receives data given in request.
@@ -453,58 +546,91 @@ class Builtins:
         - "data" (str, list): Everything that is to be sent, each as a separate parameter. Must have at least one parameter.
         - "ending" (str) (optional): The ending of the bytes object to be sent through the Serial port. By default a carraige return ("\\r\\n")
         - "concatenate" (str) (optional): What the strings in args should be concatenated by
-        - "read_until" (str, None) (optional): Will return a string that terminates with `read_until`, excluding `read_until`. 
+        - "read_until" (str, None) (optional): Will return a string that terminates with `read_until`, excluding `read_until`.
         For example, if the string was `"abcdefg123456\\n"`, and `read_until` was `\\n`, then it will return `"abcdefg123456"`.
         If `read_until` is None, the it will return the entire string. By default None.
         - "strip" (bool) (optional): If true, then strips received and processed string of
-        whitespaces and newlines and responds with result. Otherwise, returns raw string. 
+        whitespaces and newlines and responds with result. Otherwise, returns raw string.
         Note that using {"strip": False} may not work; it is better to omit it.
         By default False.
 
         Response:
         - `200 OK`:
             - `{"message": "OK"}` if everything was able to send through
-        - `502 Bad Gateway`: 
+        - `502 Bad Gateway`:
             - `{"message": "Nothing received"}` if nothing was received from the serial port
-            within the timeout specified on the server side.   
+            within the timeout specified on the server side.
         """
 
         class _SendResponse(ConnectionResource):
 
             parser = reqparse.RequestParser()
-            
-            parser.add_argument("response", required=True, help="Which response the program should wait for; is required")
-            parser.add_argument("data", required=True, action='append', help="Data the serial port should send; is required")
-            parser.add_argument("ending", default="\r\n", help="Ending that will be appended to the end of data before sending over serial port; default carriage return + newline")
-            parser.add_argument("concatenate", default=' ', help="What the strings in data should be concatenated by if list; by default a space")
-            parser.add_argument("read_until", default=None, help="What character the string should read until")
-            parser.add_argument("strip", type=bool, default=False, help="If the string should be stripped of whitespaces and newlines before responding")
+
+            parser.add_argument(
+                "response",
+                required=True,
+                help="Which response the program should wait for; is required",
+            )
+            parser.add_argument(
+                "data",
+                required=True,
+                action="append",
+                help="Data the serial port should send; is required",
+            )
+            parser.add_argument(
+                "ending",
+                default="\r\n",
+                help="Ending that will be appended to the end of data before sending over serial port; default carriage return + newline",
+            )
+            parser.add_argument(
+                "concatenate",
+                default=" ",
+                help="What the strings in data should be concatenated by if list; by default a space",
+            )
+            parser.add_argument(
+                "read_until",
+                default=None,
+                help="What character the string should read until",
+            )
+            parser.add_argument(
+                "strip",
+                type=bool,
+                default=False,
+                help="If the string should be stripped of whitespaces and newlines before responding",
+            )
 
             def post(self) -> dict:
                 args = self.parser.parse_args(strict=True)
 
-                if (_self._verbose):
+                if _self._verbose:
                     print("Arguments for /send/get:", args)
 
-                res = self.conn.send_for_response(args["response"], *args["data"], ending=args["ending"], concatenate=args["concatenate"], read_until=args["read_until"], strip=args["strip"])
+                res = self.conn.send_for_response(
+                    args["response"],
+                    *args["data"],
+                    ending=args["ending"],
+                    concatenate=args["concatenate"],
+                    read_until=args["read_until"],
+                    strip=args["strip"]
+                )
 
-                if (not res):
+                if not res:
                     flask_restful.abort(502, message="Nothing received")
 
                 return {"message": "OK"}
 
         return _SendResponse
-    
+
     def _connected(_self) -> t.Type[Connection]:
         """
         Indicates if the serial port is currently connected or not.
-        Returns the `Connection.connected` property. 
+        Returns the `Connection.connected` property.
 
         Method: GET
 
         Arguments:
             None
-        
+
         Response:
         - `200 OK`:
             - `{"message": "OK", "connected": ...}`: where connected is the connected state: `true` if connected, `false` if not.
@@ -512,13 +638,10 @@ class Builtins:
 
         class _GetConnectedState(ConnectionResource):
             def get(self) -> dict:
-                return {
-                    "message": "OK",
-                    "connected": self.conn.connected
-                }
-        
+                return {"message": "OK", "connected": self.conn.connected}
+
         return _GetConnectedState
-    
+
     # both throwaway as connection not needed
     def _list_all(_self) -> t.Type[ConnectionResource]:
         """
@@ -529,7 +652,7 @@ class Builtins:
 
         Arguments:
             None
-        
+
         Response:
         - `200 OK`:
             - `{"message": "OK", ports = [["...", "...", "..."], "..."]}` where "ports"
@@ -543,8 +666,7 @@ class Builtins:
 
                 return {
                     "message": "OK",
-                    "ports": [[port, desc, tech] for port, desc, tech in res]
+                    "ports": [[port, desc, tech] for port, desc, tech in res],
                 }
-            
-        return _ListAll
 
+        return _ListAll

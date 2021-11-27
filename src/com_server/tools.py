@@ -26,11 +26,11 @@ def all_ports(**kwargs) -> t.Any:
 class SendQueue:
     """The send queue object
 
-    This object is like a queue but cannot be iterated through. 
+    This object is like a queue but cannot be iterated through.
     It contains methods such as `front()` and `pop()`, just like
     the `queue` data structure in C++. However, objects cannot
     be added to it because objects should only be added through
-    the `send()` method. 
+    the `send()` method.
 
     Makes sure the user only reads and pops from send queue
     and does not directly add or delete anything from the queue.
@@ -40,7 +40,7 @@ class SendQueue:
         """Constructor for send queue object.
 
         Parameters:
-        - `send_queue` (list): The list that will act as the send queue 
+        - `send_queue` (list): The list that will act as the send queue
 
         Returns:
         - Nothing
@@ -71,7 +71,7 @@ class SendQueue:
         - None
 
         Returns:
-        - The bytes object to send 
+        - The bytes object to send
         """
 
         return self._send_queue[0]
@@ -91,7 +91,7 @@ class SendQueue:
         self._send_queue.pop(0)
 
     def copy(self) -> list:
-        """Returns a shallow copy of the send queue list. 
+        """Returns a shallow copy of the send queue list.
 
         Using this to copy to a list may be dangerous, as
         altering elements in the list may alter the elements
@@ -127,11 +127,11 @@ class SendQueue:
 class ReceiveQueue:
     """The ReceiveQueue object.
 
-    This object is a queue, but the user can 
-    only add bytes object(s) to it. 
+    This object is a queue, but the user can
+    only add bytes object(s) to it.
 
     Makes sure the user does not directly add,
-    delete, or modify the queue. 
+    delete, or modify the queue.
     """
 
     def __init__(self, rcv_queue: list, queue_size: int) -> None:
@@ -142,7 +142,7 @@ class ReceiveQueue:
         - `queue_size` (int): The maximum size of the receive queue
 
         Returns:
-        - Nothing 
+        - Nothing
         """
 
         self._rcv_queue = rcv_queue
@@ -169,7 +169,7 @@ class ReceiveQueue:
         `TypeError` will be raised if not.
 
         If the size exceeds `queue_size` when adding, then
-        it will pop the front of the queue. 
+        it will pop the front of the queue.
 
         A tuple (timestamp, bytes) will be added. The timestamp
         will be regenerated for each iteration of the for loop
@@ -183,18 +183,18 @@ class ReceiveQueue:
         """
 
         for obj in args:
-            if (not isinstance(obj, bytes)):
+            if not isinstance(obj, bytes):
                 raise TypeError("Every argument must be a bytes object")
 
             # add timestamp, obj to queue
             self._rcv_queue.append((time.time(), obj))
 
-            if (len(self._rcv_queue) > self._queue_size):
+            if len(self._rcv_queue) > self._queue_size:
                 # if greater than queue size, then pop first element
                 self._rcv_queue.pop(0)
 
     def copy(self) -> list:
-        """Returns a shallow copy of the receive queue list. 
+        """Returns a shallow copy of the receive queue list.
 
         The receive queue list will be a list of tuples:
         - (timestamp, bytes data)

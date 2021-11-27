@@ -42,25 +42,29 @@ Options:
     --version       Show version.
 """
 
+
 def _display_version() -> None:
     _pyth_v = sys.version_info
 
-    p_o = f"COM_Server version: {__version__}\n" \
-        f"Flask version: {f_v}\n" \
-        f"Pyserial version: {s_v}\n" \
+    p_o = (
+        f"COM_Server version: {__version__}\n"
+        f"Flask version: {f_v}\n"
+        f"Pyserial version: {s_v}\n"
         f"Python version: {_pyth_v.major}.{_pyth_v.minor}.{_pyth_v.micro}"
+    )
 
     print(p_o)
     sys.exit()
 
+
 def main() -> None:
     args = docopt(PARSE)
 
-    if (args["--version"]):
+    if args["--version"]:
         # if asking for version
         _display_version()
-    
-    if (args["run"]):
+
+    if args["run"]:
         # if asking to run
 
         baud = args["<baud>"].strip()
@@ -73,13 +77,16 @@ def main() -> None:
         add_cors = args["--cors"]
         verbose = args["--verbose"]
 
-        if (env not in ('dev', 'prod')):
-            print("Value of <env> must be \"dev\" or \"prod\".")
+        if env not in ("dev", "prod"):
+            print('Value of <env> must be "dev" or "prod".')
             sys.exit(1)
-        
-        runner.run(baud, serport, env, host, port, timeout, send_interval, add_cors, verbose)
+
+        runner.run(
+            baud, serport, env, host, port, timeout, send_interval, add_cors, verbose
+        )
 
         print("Exited")
 
-if (__name__ == "__main__"):
+
+if __name__ == "__main__":
     main()
