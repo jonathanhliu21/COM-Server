@@ -108,7 +108,7 @@ Response:
     would be None/null.
 
 ```txt
-/receive_all
+/receive/all
 ```
 
 Returns the entire receive queue. Calls `Connection.get_all_rcv_str(...)`.
