@@ -67,7 +67,7 @@ class TestSendRcv:
         assert "message" in loaded and loaded["message"] == "Failed to send"
         assert r.status_code == 502
 
-        time.sleep(1) # ensures that the serial data will be received in time
+        time.sleep(1) # sleep for send interval for next tests
     
     def test_rcv(self) -> None:
         global send_time
@@ -111,6 +111,9 @@ class TestGet:
         # gets data from endpoint
         r = requests.get(SERVER + "/get")
         loaded = json.loads(r.text)
+
+        time.sleep(1) # for send interval; put before assertions so the program waits even if it fails
+
         assert r.status_code == 200
         assert loaded["message"] == "OK"
 
@@ -149,10 +152,10 @@ class TestGet:
             "concatenate": ";"
         }
 
-        # normal test (tests send with data)
-        r = requests.post(SERVER + "/send", data=data)
+        # sends a new piece of data
+        requests.post(SERVER + "/send", data=data)
 
-        time.sleep(1) # ensures that it is received
+        time.sleep(1) # For send interval
 
         # gets data
         r = requests.get(SERVER + "/receive/all")
@@ -167,3 +170,4 @@ class TestGet:
 def test_unregister() -> None:
     r = requests.get(SERVER + "/recall")
     assert r.status_code == 200
+    
