@@ -79,6 +79,34 @@ class TestAdvanced:
         time.sleep(1) # send interval; put before assertions to make sure the send interval passes
 
         assert r.status_code == 200
+    
+    def test_send_for_response(self):
+        """
+        /send/get
+        """
+
+        s = f"abcd{time.time()}"
+        data= {
+            "response": f"Got: \"{s}\"",
+            "data": s,
+            "ending": '\n',
+            "strip": True
+        }
+
+        data_fail = {
+            "response": f"something else",
+            "data": s,
+            "ending": '\n',
+            "strip": True
+        }
+
+        r = requests.post(SERVER+"/send/get", data=data)
+        r2 = requests.post(SERVER+"/send/get", data=data_fail)
+
+        time.sleep(1) # send interval; put before assertions to make sure the send interval passes
+
+        assert r.status_code == 200
+        assert r2.status_code == 502
 
 def test_unregister() -> None:
     r = requests.get(SERVER + "/recall")
