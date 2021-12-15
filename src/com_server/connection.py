@@ -669,8 +669,10 @@ class Connection(base_connection.BaseConnection):
         # keep on trying to poll data as long as connection is still alive
         if conn.in_waiting:
             # read everything from serial buffer
-            incoming = conn.read_all()
-
+            incoming = b''
+            while conn.in_waiting:
+                incoming += conn.read()
+            
             # add to queue
             rcv_queue.pushitems(incoming)
 
