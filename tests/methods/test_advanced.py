@@ -1,3 +1,6 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+
 """
 Tests more advanced methods in `Connection` object by using the API,
 which are `get_first_response()`, `wait_for_response()`, and `send_for_response()`
