@@ -9,3 +9,7 @@ Sending or reading anything longer than 50 characters may lead to partial data r
 This means that on Linux and Windows, sending/receiving large amounts of data will lead to wrong data readings, and on MacOS, sending/receiving large amounts of data may lead to slower IO (because of the way the IO thread is written).
 
 It is recommended that you write your **own** IO thread using `Connection.custom_io_thread()`.
+
+## Disconnecting when server is running
+
+If the serial port is disconnected while the server is running, visiting endpoints will likely result in a `500 Internal Server Error`. It will require connecting the serial port back, then restarting the server. I am planning to add disconnect handling in the server for a future release.
