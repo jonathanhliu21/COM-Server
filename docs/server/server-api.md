@@ -102,8 +102,8 @@ By default False.
 Response:
 
 - `200 OK`:
-    - `{"message": "OK", "timestamp": ..., "data": "..."}` where "timestamp"
-    is the Unix epoch time that the message was received and "data" is the
+    - `{"message": "OK", "timestamp": ..., "data": "..."}` where "timestamp" (float, null)
+    is the Unix epoch time that the message was received and "data" (string, null) is the
     data that was processed. If nothing was received, then "data" and "timestamp"
     would be None/null.
 
@@ -133,8 +133,8 @@ By default False.
 Response:
 
 - `200 OK`:
-    - `{"message": "OK", "timestamps": [...], "data": [...]}`: where "timestamps" 
-    contains the list of timestamps in the receive queue and "data" contains the 
+    - `{"message": "OK", "timestamps": [...], "data": [...]}`: where "timestamps" (list\[float\]) 
+    contains the list of timestamps in the receive queue and "data" (list\[string\]) contains the 
     list of data in the receive queue. The indices for "timestamps" and "data" match.
 
 ```txt
@@ -165,7 +165,7 @@ By default False.
 Response:
 
 - `200 OK`:
-    - `{"message": "OK", "data": "..."}` where "data" is received data
+    - `{"message": "OK", "data": "..."}` where "data" (string) is received data
 - `502 Bad Gateway`: 
     - `{"message": "Nothing received"}` if nothing was received from the serial port
     within the timeout specified on the server side.   
@@ -183,10 +183,10 @@ Method: POST
 Arguments:
 
 - "data" (str, list): Everything that is to be sent, each as a separate parameter. Must have at least one parameter.
-- "ending" (str) (optional): The ending of the bytes object to be sent through the Serial port. By default a carraige return ("\\r\\n")
+- "ending" (str) (optional): The ending of the bytes object to be sent through the Serial port. By default a carraige return ("\r\n")
 - "concatenate" (str) (optional): What the strings in args should be concatenated by
 - "read_until" (str, None) (optional): Will return a string that terminates with `read_until`, excluding `read_until`. 
-For example, if the string was `"abcdefg123456\\n"`, and `read_until` was `\\n`, then it will return `"abcdefg123456"`.
+For example, if the string was `"abcdefg123456\n"`, and `read_until` was `\n`, then it will return `"abcdefg123456"`.
 If `read_until` is None, the it will return the entire string. By default None.
 - "strip" (bool) (optional): If true, then strips received and processed string of
 whitespaces and newlines and responds with result. Otherwise, returns raw string. 
@@ -196,7 +196,7 @@ By default False.
 Response:
 
 - `200 OK`:
-    - `{"message": "OK", "data": "..."}` where "data" is the
+    - `{"message": "OK", "data": "..."}` where "data" (string) is the
     data that was processed. 
 - `502 Bad Gateway`: 
     - `{"message": "Nothing received"}` if nothing was received from the serial port
@@ -216,7 +216,7 @@ Arguments:
 - "response" (str): The string the program is waiting to receive.
 Compares to response to `Connection.receive_str()`.
 - "read_until" (str, None) (optional): Will return a string that terminates with `read_until`, excluding `read_until`. 
-For example, if the string was `"abcdefg123456\\n"`, and `read_until` was `\\n`, then it will return `"abcdefg123456"`.
+For example, if the string was `"abcdefg123456\n"`, and `read_until` was `\n`, then it will return `"abcdefg123456"`.
 If `read_until` is None, the it will return the entire string. By default None.
 - "strip" (bool) (optional): If true, then strips received and processed string of
 whitespaces and newlines and responds with result. Otherwise, returns raw string. 
@@ -245,10 +245,10 @@ Arguments:
 - "response" (str): The string the program is waiting to receive.
 Compares to response to `Connection.receive_str()`.
 - "data" (str, list): Everything that is to be sent, each as a separate parameter. Must have at least one parameter.
-- "ending" (str) (optional): The ending of the bytes object to be sent through the Serial port. By default a carraige return ("\\r\\n")
+- "ending" (str) (optional): The ending of the bytes object to be sent through the Serial port. By default a carraige return ("\r\n")
 - "concatenate" (str) (optional): What the strings in args should be concatenated by
 - "read_until" (str, None) (optional): Will return a string that terminates with `read_until`, excluding `read_until`. 
-For example, if the string was `"abcdefg123456\\n"`, and `read_until` was `\\n`, then it will return `"abcdefg123456"`.
+For example, if the string was `"abcdefg123456\n"`, and `read_until` was `\n`, then it will return `"abcdefg123456"`.
 If `read_until` is None, the it will return the entire string. By default None.
 - "strip" (bool) (optional): If true, then strips received and processed string of
 whitespaces and newlines and responds with result. Otherwise, returns raw string. 
@@ -278,7 +278,7 @@ Arguments:
 Response:
 
 - `200 OK`:
-    - `{"message": "OK", "connected": ...}`: where connected is the connected state: `true` if connected, `false` if not.
+    - `{"message": "OK", "connected": ...}`: where "connected" (bool) is the connected state: `true` if connected, `false` if not.
 
 ```txt
 /list_ports
@@ -295,13 +295,13 @@ Arguments:
 Response:
 
 - `200 OK`:
-    - `{"message": "OK", "ports": [["...", "...", "..."], "..."]}` where "ports"
+    - `{"message": "OK", "ports": [["...", "...", "..."], "..."]}` where "ports" (list\[list\[string\]\])
     is a list of lists of size 3, each one indicating the port, description, and
     technical description
 
 ## Escape characters
 
-When including escape characters (newlines, carriage returns, etc.) in a post request to one of the endpoints, the request might not interpret the character. For example, in some cases, if you send `ending="\n"` to the `/send` endpoint (other endpoints have this issue too; we're just using `/send` as an example), the server may interpret it as `\\n` (a backslash followed by `n`), rather than an actual newline. Below contains a list of ways to solve this for different programs:
+When including escape characters (newlines, carriage returns, etc.) in a post request to one of the endpoints, the request might not interpret the character. For example, in some cases, if you send `ending="\n"` to the `/send` endpoint (other endpoints have this issue too; we're just using `/send` as an example), the server may interpret it as `"\\n"` (a backslash followed by `n`), rather than an actual newline. Below contains a list of ways to solve this for different programs:
 
 ### Python requests library
 
