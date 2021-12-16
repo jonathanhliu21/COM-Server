@@ -20,7 +20,7 @@ Method: GET
 Arguments:
     None
 
-Responses:
+Response:
 
 - `200 OK`: `{"message": "OK"}` if successful
 - `400 Bad Request`: 
@@ -38,7 +38,7 @@ Method: GET
 Arguments:
     None
 
-Responses:
+Response:
 
 - `200 OK`: `{"message": "OK}` if successful
 - `400 Bad Request`:
@@ -66,12 +66,14 @@ By default a carraige return + newline.
 - "concatenate" (str) (optional): The character or string that elements of "data" should be concatenated by if its size is greater than 1;
 won't affect "data" if the size of the list is equal to 1. By default a space.
 
-Responses:
+Response:
 
 - `200 OK`: 
     - `{"message": "OK"}` if send through
 - `502 Bad Gateway`: 
     - `{"message": "Failed to send"}` if something went wrong with sending (i.e. `Connection.send()` returned false)
+- `400 Bad Request`:
+    - `{"message": "Not registered; only one connection at a time"}` if `has_register_recall` is True and the user has not registered by going to the /register endpoint
 
 ```txt
 /receive
@@ -106,6 +108,8 @@ Response:
     is the Unix epoch time that the message was received and "data" (string, null) is the
     data that was processed. If nothing was received, then "data" and "timestamp"
     would be None/null.
+- `400 Bad Request`:
+    - `{"message": "Not registered; only one connection at a time"}` if `has_register_recall` is True and the user has not registered by going to the /register endpoint
 
 ```txt
 /receive/all
@@ -136,6 +140,8 @@ Response:
     - `{"message": "OK", "timestamps": [...], "data": [...]}`: where "timestamps" (list\[float\]) 
     contains the list of timestamps in the receive queue and "data" (list\[string\]) contains the 
     list of data in the receive queue. The indices for "timestamps" and "data" match.
+- `400 Bad Request`:
+    - `{"message": "Not registered; only one connection at a time"}` if `has_register_recall` is True and the user has not registered by going to the /register endpoint
 
 ```txt
 /get
@@ -169,6 +175,8 @@ Response:
 - `502 Bad Gateway`: 
     - `{"message": "Nothing received"}` if nothing was received from the serial port
     within the timeout specified on the server side.   
+- `400 Bad Request`:
+    - `{"message": "Not registered; only one connection at a time"}` if `has_register_recall` is True and the user has not registered by going to the /register endpoint
 
 ```txt
 /send/get_first
@@ -201,6 +209,8 @@ Response:
 - `502 Bad Gateway`: 
     - `{"message": "Nothing received"}` if nothing was received from the serial port
     within the timeout specified on the server side.   
+- `400 Bad Request`:
+    - `{"message": "Not registered; only one connection at a time"}` if `has_register_recall` is True and the user has not registered by going to the /register endpoint
 
 ```txt
 /get/wait
@@ -230,6 +240,8 @@ Response:
 - `502 Bad Gateway`: 
     - `{"message": "Nothing received"}` if nothing was received from the serial port
     within the timeout specified on the server side.   
+- `400 Bad Request`:
+    - `{"message": "Not registered; only one connection at a time"}` if `has_register_recall` is True and the user has not registered by going to the /register endpoint
 
 ```txt
 /send/get
@@ -262,6 +274,8 @@ Response:
 - `502 Bad Gateway`: 
     - `{"message": "Nothing received"}` if nothing was received from the serial port
     within the timeout specified on the server side.   
+- `400 Bad Request`:
+    - `{"message": "Not registered; only one connection at a time"}` if `has_register_recall` is True and the user has not registered by going to the /register endpoint
 
 ```txt
 /connected
@@ -279,6 +293,8 @@ Response:
 
 - `200 OK`:
     - `{"message": "OK", "connected": ...}`: where "connected" (bool) is the connected state: `true` if connected, `false` if not.
+- `400 Bad Request`:
+    - `{"message": "Not registered; only one connection at a time"}` if `has_register_recall` is True and the user has not registered by going to the /register endpoint
 
 ```txt
 /list_ports
@@ -298,6 +314,8 @@ Response:
     - `{"message": "OK", "ports": [["...", "...", "..."], "..."]}` where "ports" (list\[list\[string\]\])
     is a list of lists of size 3, each one indicating the port, description, and
     technical description
+- `400 Bad Request`:
+    - `{"message": "Not registered; only one connection at a time"}` if `has_register_recall` is True and the user has not registered by going to the /register endpoint
 
 ## Escape characters
 
