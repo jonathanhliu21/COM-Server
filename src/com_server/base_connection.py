@@ -222,6 +222,11 @@ class BaseConnection:
             **self._pass_to_pyserial,
         )
 
+        # clear buffers
+        self._conn.flush()
+        self._conn.flushInput()
+        self._conn.flushOutput()
+
         time.sleep(2)  # wait for other end to start up properly
 
         # start receive thread

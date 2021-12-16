@@ -6,6 +6,7 @@ Contains implementation of connection object.
 """
 
 import os
+import sys
 import time
 import typing as t
 import serial
@@ -665,12 +666,22 @@ class Connection(base_connection.BaseConnection):
         3. Tries to send everything in the send queue; breaks when 0.5 seconds is reached (will continue if send queue is empty)
         4. Rest for 0.01 seconds to lessen processing power
         """
+        
+        # flush buffers
+        self._conn.flush()
 
         # keep on trying to poll data as long as connection is still alive
         if conn.in_waiting:
             # read everything from serial buffer
-            incoming = conn.read_all()
+            incoming = b''
+            while conn.in_waiting:
+                incoming += conn.read()
 
+                # a kinda scuffed solution to solve incomplete data
+                # issue on MacOS - may fix in later versions
+                if sys.platform.startswith("darwin"):
+                    time.sleep(0.0001)
+            
             # add to queue
             rcv_queue.pushitems(incoming)
 

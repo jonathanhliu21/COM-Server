@@ -108,7 +108,7 @@ Response:
     would be None/null.
 
 ```txt
-/receive_all
+/receive/all
 ```
 
 Returns the entire receive queue. Calls `Connection.get_all_rcv_str(...)`.
@@ -295,7 +295,7 @@ Arguments:
 Response:
 
 - `200 OK`:
-    - `{"message": "OK", ports = [["...", "...", "..."], "..."]}` where "ports"
+    - `{"message": "OK", "ports": [["...", "...", "..."], "..."]}` where "ports"
     is a list of lists of size 3, each one indicating the port, description, and
     technical description
 
