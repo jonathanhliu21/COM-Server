@@ -679,7 +679,7 @@ class Connection(base_connection.BaseConnection):
 
                 if sys.platform.startswith("darwin"):
                     # fix partial data for small strings on MacOS
-                    time.sleep(0.0001)
+                    time.sleep(0.001)
             
             # add to queue
             rcv_queue.pushitems(incoming)
