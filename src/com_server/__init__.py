@@ -21,4 +21,4 @@ from .tools import all_ports
 
 from .api_builtins import Builtins
 
-__version__ = "0.0.6"
+__version__ = "0.0.7"
