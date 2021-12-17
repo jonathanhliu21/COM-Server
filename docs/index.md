@@ -70,6 +70,7 @@ The server is recommended to be used like a socket, and it should be used as a w
 - Source code: [https://github.com/jonyboi396825/COM-Server](https://github.com/jonyboi396825/COM-Server)
 - Issue tracker: [https://github.com/jonyboi396825/COM-Server/issues](https://github.com/jonyboi396825/COM-Server/issues)
 - Contributing: [https://github.com/jonyboi396825/COM-Server/blob/master/CONTRIBUTING.md](https://github.com/jonyboi396825/COM-Server/blob/master/CONTRIBUTING.md)
+- Changelog: [https://github.com/jonyboi396825/COM-Server/blob/master/CHANGELOG.md](https://github.com/jonyboi396825/COM-Server/blob/master/CHANGELOG.md)
 
 ## Installation
 

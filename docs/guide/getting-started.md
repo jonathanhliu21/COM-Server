@@ -246,11 +246,9 @@ There is no need to assign a variable to `Builtins` as all it does is add the en
 
 To add custom endpoints, use the `add_endpoints` decorator above a function with a nested class in it. The nested class should extend `ConnectionResource` and have functions similar to the classes of `flask_restful`. See [here](https://flask-restful.readthedocs.io/en/latest/quickstart.html#a-minimal-api) for more info. The function needs to have a `conn` parameter indicating the connection object and lastly needs to return the nested class.
 
-The example below adds an endpoint at `/hello_world`, sends `"Hello world\n"` to the serial port, then returns `{"Hello": "world"}` when there is a GET request.
+The example below adds an endpoint at `/hello_world`, sends "`Hello world\n`" to the serial port, then returns `{"Hello": "world"}` when there is a GET request.
 
 ```py
-import flask
-import flask_restful
 from com_server import Connection, RestApiHandler, Builtins, ConnectionResource
 
 conn = Connection(port="/dev/ttyUSB0", baud=115200)
@@ -258,14 +256,11 @@ handler = RestApiHandler(conn)
 Builtins(handler)
 
 @handler.add_endpoint("/hello_world")
-def hello_world(conn):
-    class HelloWorldEndpoint(ConnectionResource):
-        def get(self):
-            conn.send("Hello", "world", ending='\n')
-            return {"Hello": "world"}
+class HelloWorldEndpoint(ConnectionResource):
+    def get(self):
+        self.conn.send("Hello", "world", ending='\n')
+        return {"Hello": "world"}
     
-    return HelloWorldEndpoint
-
 handler.run_dev(host="0.0.0.0", port=8080)
 
 conn.disconnect()

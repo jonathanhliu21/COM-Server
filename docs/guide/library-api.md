@@ -66,18 +66,19 @@ If this does not happen, then the IO thread will still be running for an object 
 #### BaseConnection.\_\_init\_\_()
 
 ```py
-def __init__(baud, port, exception=True, timeout=1, queue_size=256, exit_on_disconnect=True, **kwargs)
+def __init__(baud, port, *ports, exception=True, timeout=1, queue_size=256, exit_on_disconnect=True, **kwargs)
 ```
 
 Initializes the Base Connection class. 
 
-`baud`, `port`, `timeout`, and `kwargs` will be passed to pyserial.  
+`baud`, `port` (or a port within `ports`), `timeout`, and `kwargs` will be passed to pyserial.  
 For more information, see [here](https://pyserial.readthedocs.io/en/latest/pyserial_api.html#serial.Serial).
 
 Parameters:
 
 - `baud` (int): The baud rate of the serial connection 
 - `port` (str): The serial port
+- `*ports`: Alternative serial ports to choose if the first port does not work. The program will try the serial ports in order of arguments and will use the first one that works.
 - `timeout` (float) (optional): How long the program should wait, in seconds, for serial data before exiting. By default 1.
 - `exception` (bool) (optional): Raise an exception when there is a user error in the methods rather than just returning. By default True.
 - `send_interval` (int) (optional): Indicates how much time, in seconds, the program should wait before sending another message. 
@@ -139,7 +140,7 @@ Returns: None
 May raise:
 
 - `com_server.ConnectException` if the user calls this function while it is already connected and `exception` is True.
-- `serial.serialutil.SerialException` if the port given in `__init__` does not exist.
+- `serial.serialutil.SerialException` if the port(s) given in `__init__` does not exist.
 - `EnvironmentError` if `exit_on_disconnect` is True and the user is on Windows (_not tested_).
 
 #### BaseConnection.disconnect()
@@ -298,6 +299,14 @@ May raise:
 
 - `ConnectException` if serial port is not connected and `exception` is True.
 
+#### BaseConnection.port
+
+Returns the current port of the connection
+
+Getter:
+
+- Gets the current port of the connection 
+
 ---
 
 ### com_server.Connection
@@ -396,6 +405,9 @@ See [BaseConnection.conn_obj](#baseconnectionconn_obj)
 
 #### Connection.available
 See [BaseConnection.available](#baseconnectionavailable)
+
+#### Connection.port
+See [BaseConnection.port](#baseconnectionport)
 
 #### Connection.conv_bytes_to_str()
 
@@ -664,6 +676,59 @@ Parameters: See link above.
 
 Returns: A generator-like object (see link above)
 
+#### Connection.custom_io_thread()
+
+```py
+def custom_io_thread(func)
+```
+
+A decorator custom IO thread rather than using the default one.
+
+It is recommended to read `pyserial`'s documentation before creating a custom IO thread.
+
+What the IO thread executes every 0.01 seconds will be referred to as a "cycle".
+
+Note that this method should be called **before** `connect()` is called, or
+else the thread will use the default cycle.
+
+To see the default cycle, see the documentation of `BaseConnection`.
+
+What the IO thread will do now is:
+
+1. Check if anything is using (reading from/writing to) the variables
+2. If not, copy the variables into a `SendQueue` and `ReceiveQueue` object.
+3. Call the `custom_io_thread` function (if none, calls the default cycle)
+4. Copy the results from the function back into the send queue and receive queue.
+5. Rest for 0.01 seconds to rest the CPU
+
+The cycle should be in a function that this decorator will be on top of.
+The function should accept three parameters:
+
+- `conn` (a `serial.Serial` object)
+- `rcv_queue` (a `ReceiveQueue` object; see more on how to use it in its documentation)
+- `send_queue` (a `SendQueue` object; see more on how to use it in its documentation)
+
+To enable autocompletion on your text editor, you can add type hinting:
+
+```py
+from com_server import Connection, SendQueue, ReceiveQueue
+from serial import Serial
+
+conn = Connection(...)
+
+# some code
+
+@conn.custom_io_thread
+def custom_cycle(conn: Serial, rcv_queue: ReceiveQueue, send_queue: SendQueue):
+    # code here
+
+conn.connect() # call this AFTER custom_io_thread()
+
+# more code
+``` 
+
+The function below the decorator should not return anything.
+
 ---
 
 ### com_server.RestApiHandler
@@ -699,7 +764,7 @@ call `/register` to use the serial port
 #### RestApiHandler.\_\_init\_\_()
 
 ```py
-def __init__(conn, has_register_recall, **kwargs)
+def __init__(conn, has_register_recall=True, add_cors=False, **kwargs)
 ```
 
 Constructor for class
@@ -711,6 +776,7 @@ Parameters:
 so the user will not have to use them in order to access the other endpoints of the API.
 That is, visiting endpoints will not respond with a 400 status code even if `/register` was not
 accessed. By default True. 
+- `add_cors` (bool): If True, then the Flask app will have [cross origin resource sharing](https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS) enabled. By default False.
 - `**kwargs`, will be passed to `flask_restful.Api()`. See [here](https://flask-restful.readthedocs.io/en/latest/api.html#id1) for more info.
 
 May raise:
@@ -725,13 +791,12 @@ def add_endpoint(endpoint)
 
 Decorator that adds an endpoint
 
-This decorator needs to go above a function which
-contains a nested class that extends `ConnectionResource`.
-The function needs a parameter indicating the serial connection.
-The function needs to return that nested class.
-The class should contain implementations of request
-methods such as `get()`, `post()`, etc. similar to the 
-`Resource` class from `flask_restful`.
+This decorator should go above a class that
+extends `ConnectionResource`. The class should 
+contain implementations of request methods such as
+`get()`, `post()`, etc. similar to the `Resource`
+class from `flask_restful`. To use the connection
+object, use the `self.conn` attribute.
 
 For more information, see the `flask_restful` [documentation](https://flask-restful.readthedocs.io).
 
@@ -753,7 +818,8 @@ Parameters:
 May raise:
 
 - `com_server.EndpointExistsException`: If an endpoint already exists
-- `TypeError` if the function does not return a class that extends `com_server.ConnectionResource`
+- `TypeError` if the class does not extend `com_server.ConnectionResource`
+
 
 #### RestApiHandler.add_resource()
 
@@ -863,7 +929,7 @@ The above endpoints will not be available if the class is used.
 #### Builtins.\_\_init\_\_()
 
 ```py
-def __init__(handler)
+def __init__(handler, verbose=False)
 ```
 
 Constructor for class that contains builtin endpoints
@@ -884,6 +950,219 @@ handler.run() # runs the server
 Parameters:
 
 - `api`: The `RestApiHandler` class that this class should wrap around
+- `verbose`: Prints the arguments it receives to stdout. Should not be used in production.
+
+---
+
+### com_server.SendQueue
+
+The send queue object.
+
+This object is like a queue but cannot be iterated through. 
+It contains methods such as `front()` and `pop()`, just like
+the `queue` data structure in C++. However, objects cannot
+be added to it because objects should only be added through
+the `send()` method. 
+
+Makes sure the user only reads and pops from send queue
+and does not directly add or delete anything from the queue.
+
+#### SendQueue.\_\_init\_\_()
+
+```py
+def __init__(send_queue)
+```
+
+Constructor for the send queue object.
+
+Parameters:
+
+- `send_queue` (list): The list that will act as the send queue
+
+Returns:
+
+- Nothing
+
+#### SendQueue.front()
+
+```py
+def front()
+```
+
+Returns the first element of the send queue.
+
+Raises an `IndexError` if the length of the send queue is 0.
+
+Parameters:
+
+- None
+
+Returns:
+
+- The bytes object to send 
+
+#### SendQueue.pop()
+
+```py
+def pop()
+```
+
+Removes the first index from the queue.
+
+Raises an `IndexError` if the length of the send queue is 0.
+
+Parameters:
+
+- None
+
+Returns:
+
+- None
+
+#### SendQueue.copy()
+
+```py
+def copy()
+```
+
+Returns a shallow copy of the send queue list. 
+
+Using this to copy to a list may be dangerous, as
+altering elements in the list may alter the elements
+in the send queue itself. To prevent this, use the
+`deepcopy()` method.
+
+Parameters:
+
+- None
+
+Returns:
+
+- A shallow copy of the send queue
+
+#### com_server.deepcopy()
+
+```py
+def deepcopy()
+```
+
+Returns a deepcopy of the send queue list.
+
+By using this, you can modify the list without altering
+any elements of the actual send queue itself. However,
+it is a little more resource intensive.
+
+Parameters:
+
+- None
+
+Returns:
+
+- A deep copy of the send queue
+
+---
+
+### com_server.ReceiveQueue
+
+The ReceiveQueue object.
+
+This object is a queue, but the user can 
+only add bytes object(s) to it. 
+
+Makes sure the user does not directly add,
+delete, or modify the queue. 
+
+#### ReceiveQueue.\_\_init\_\_()
+
+```py
+def __init__(rcv_queue, queue_size)
+```
+
+Constructor for the send queue object.
+
+Parameters:
+
+- `rcv_queue` (list): The list that will act as the receive queue.
+- `queue_size` (int): The maximum size of the receive queue
+
+Returns:
+
+- Nothing 
+
+#### ReceiveQueue.pushitems()
+
+```py
+def pushitems(*args)
+```
+
+Adds a list of items to the receive queue.
+
+All items in `*args` must be a `bytes` object. A
+`TypeError` will be raised if not.
+
+If the size exceeds `queue_size` when adding, then
+it will pop the front of the queue. 
+
+A tuple (timestamp, bytes) will be added. The timestamp
+will be regenerated for each iteration of the for loop
+so they will be in order when binary searching.
+
+Parameters:
+
+- `*args`: The bytes objects to add
+
+Returns:
+
+- Nothing
+
+#### ReceiveQueue.copy()
+
+```py
+def copy()
+```
+
+Returns a shallow copy of the receive queue list. 
+
+The receive queue list will be a list of tuples:
+
+- (timestamp, bytes data)
+
+Using this to copy to a list may be dangerous, as
+altering elements in the list may alter the elements
+in the receive queue itself. To prevent this, use the
+`deepcopy()` method.
+
+Parameters:
+
+- None
+
+Returns:
+
+- A shallow copy of the receive queue
+
+#### ReceiveQueue.deepcopy()
+
+```py
+def deepcopy()
+```
+
+Returns a deepcopy of the receive queue.
+
+The receive queue list will be a list of tuples:
+
+- (timestamp, bytes data)
+
+By using this, you can modify the list without altering
+any elements of the actual send queue itself. However,
+it is a little more resource intensive.
+
+Parameters:
+
+- None
+
+Returns:
+
+- A deep copy of the receive queue
 
 ---
 
@@ -900,6 +1179,13 @@ NO_SEND_INTERVAL = 0
 ```
 
 Use this if you do not want a send interval. Not recommended.
+
+```py
+NORMAL_BAUD_RATE = 9600
+FAST_BAUD_RATE = 115200
+```
+
+Standard baud rates that are commonly used.
 
 ```py
 NO_RCV_QUEUE = 1 

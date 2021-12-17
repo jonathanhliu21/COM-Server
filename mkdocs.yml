@@ -5,6 +5,7 @@ edit_uri: ""
 
 nav:
   - Home: "index.md"
+  - Known issues: "issues.md"
   - "User Guide":
     - "Getting Started": "guide/getting-started.md"
     - "Library API": "guide/library-api.md"
