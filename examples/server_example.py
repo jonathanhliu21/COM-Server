@@ -39,24 +39,19 @@ Builtins(handler)
 
 # adding a custom endpoint:
 @handler.add_endpoint("/hello_world")
-def hello_world(conn: Connection):
-    # create a function with a class within it, then return the class
+class Hello_World_Endpoint(ConnectionResource):
+    # classes are implemented like flask_restful classes
+    # each method defines a request method (i.e. get() defines what happens when there is a GET request, post() defines what happens when there is a POST request, etc.)
+    # to access request parameters, import reqparse from flask_restful (i.e. "from flask_restful import reqparse")
+    # to abort a request, import abort from flask_restful (i.e. "from flask_restful import abort")
+    # for more information on flask_restful, see https://flask-restful.readthedocs.io/en/latest/
+    # for more information on Flask, see https://flask.palletsprojects.com/en/2.0.x/
 
-    class Hello_World_Endpoint(ConnectionResource):
-        # classes are implemented like flask_restful classes
-        # each method defines a request method (i.e. get() defines what happens when there is a GET request, post() defines what happens when there is a POST request, etc.)
-        # to access request parameters, import reqparse from flask_restful (i.e. "from flask_restful import reqparse")
-        # to abort a request, import abort from flask_restful (i.e. "from flask_restful import abort")
-        # for more information on flask_restful, see https://flask-restful.readthedocs.io/en/latest/
-        # for more information on Flask, see https://flask.palletsprojects.com/en/2.0.x/
-
-        def get(self):
-            return {
-                "Hello": "World!",
-                "Received": conn.receive_str()
-            }
-    
-    return Hello_World_Endpoint
+    def get(self):
+        return {
+            "Hello": "World!",
+            "Received": conn.receive_str()
+        }    
 
 # start the Flask development server on http://0.0.0.0:8080
 handler.run_dev(host="0.0.0.0", port=8080)
