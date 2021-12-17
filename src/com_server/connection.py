@@ -677,9 +677,8 @@ class Connection(base_connection.BaseConnection):
             while conn.in_waiting:
                 incoming += conn.read()
 
-                # a kinda scuffed solution to solve incomplete data
-                # issue on MacOS - may fix in later versions
                 if sys.platform.startswith("darwin"):
+                    # fix partial data for small strings on MacOS
                     time.sleep(0.0001)
             
             # add to queue

@@ -499,6 +499,8 @@ class BaseConnection:
 
         Will continuously read data and add bytes to queue (`rcv_queue`).
         Will also take send queue (`to_send`) and send contents one at a time.
+
+        NOT recommended to use this. Use the `Connection` IO thread instead.
         """
 
         while self._conn is not None:
