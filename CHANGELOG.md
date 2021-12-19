@@ -2,6 +2,10 @@
 
 Previous version: 0.1b0
 
+## IMPORTANT: BREAKING changes from previous version:
+
+- Updated CLI - see [CLI docs](https://com-server.readthedocs.io/en/latest/guide/cli/) to view how the CLI now works. Previous commands may not work.
+
 ## Changes from previous version:
 
 - Fixed [#63](https://github.com/jonyboi396825/COM-Server/issues/63) by making 404 handling default behavior
