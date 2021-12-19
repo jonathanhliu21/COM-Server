@@ -666,21 +666,21 @@ class Connection(base_connection.BaseConnection):
         3. Tries to send everything in the send queue; breaks when 0.5 seconds is reached (will continue if send queue is empty)
         4. Rest for 0.01 seconds to lessen processing power
         """
-        
+
         # flush buffers
         self._conn.flush()
 
         # keep on trying to poll data as long as connection is still alive
         if conn.in_waiting:
             # read everything from serial buffer
-            incoming = b''
+            incoming = b""
             while conn.in_waiting:
                 incoming += conn.read()
 
                 if sys.platform.startswith("darwin"):
                     # fix partial data for small strings on MacOS
                     time.sleep(0.001)
-            
+
             # add to queue
             rcv_queue.pushitems(incoming)
 
@@ -731,9 +731,12 @@ class Connection(base_connection.BaseConnection):
                     _send_queue = tools.SendQueue(self._to_send.copy())
 
                 # find number of objects to send; important for pruning send queue later
-                _num_to_send = len(_send_queue)
+                _num_to_send_i = len(_send_queue)
 
                 self._cyc_func(self._conn, _rcv_queue, _send_queue)
+
+                # find length of send queue after
+                _num_to_send_f = len(_send_queue)
 
                 # make sure other threads cannot read/write variables
                 with self._lock:
@@ -742,7 +745,7 @@ class Connection(base_connection.BaseConnection):
 
                     # delete the first element of send queue attribute for every object that was sent
                     # as those elements were the ones that were sent and are not needed anymore
-                    for _ in range(_num_to_send):
+                    for _ in range(_num_to_send_i - _num_to_send_f):
                         self._to_send.pop(0)
 
                 time.sleep(0.01)  # rest CPU
