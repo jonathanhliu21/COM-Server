@@ -50,7 +50,7 @@ class Hello_World_Endpoint(ConnectionResource):
     def get(self):
         return {
             "Hello": "World!",
-            "Received": conn.receive_str()
+            "Received": self.conn.receive_str()
         }    
 
 # start the Flask development server on http://0.0.0.0:8080
