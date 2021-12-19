@@ -52,7 +52,7 @@ Using [pip](https://pip.pypa.io/en/stable/getting-started/):
 
 import com_server
 
-conn = com_server.Connection("<port>", <baud>) 
+conn = com_server.Connection(<baud>, "<serport>") 
 handler = com_server.RestApiHandler(conn) 
 com_server.Builtins(handler) 
 
@@ -60,13 +60,13 @@ handler.run_dev(host="0.0.0.0", port=8080)
 
 conn.disconnect()
 ```
-Replace "&lt;port&gt;" and "&lt;baud&gt;" with the serial port and baud rate.
+Replace "&lt;serport&gt;" and "&lt;baud&gt;" with the serial port and baud rate.
 
 Alternatively, you can use the command line:
+```sh
+> com_server run <baud> <serport>
 ```
-> com_server -p <port> -b <baud> run
-```
-Again, replace "&lt;port&gt;" and "&lt;baud&gt;" with the serial port and baud rate.
+Again, replace "&lt;serport&gt;" and "&lt;baud&gt;" with the serial port and baud rate.
 
 ## Links:  
 - Documentation: [https://com-server.readthedocs.io/en/latest/](https://com-server.readthedocs.io/en/latest/)

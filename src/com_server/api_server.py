@@ -95,7 +95,9 @@ class RestApiHandler:
 
         # flask, flask_restful
         self._app = flask.Flask(__name__)
-        self._api = flask_restful.Api(self._app, catch_all_404s=catch_all_404s, **kwargs)
+        self._api = flask_restful.Api(
+            self._app, catch_all_404s=catch_all_404s, **kwargs
+        )
 
         if add_cors:
             CORS(self._app)
