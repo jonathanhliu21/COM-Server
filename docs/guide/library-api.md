@@ -764,7 +764,7 @@ call `/register` to use the serial port
 #### RestApiHandler.\_\_init\_\_()
 
 ```py
-def __init__(conn, has_register_recall=True, add_cors=False, **kwargs)
+def __init__(conn, has_register_recall=True, add_cors=False, catch_all_404s=True, **kwargs)
 ```
 
 Constructor for class
@@ -777,6 +777,7 @@ so the user will not have to use them in order to access the other endpoints of 
 That is, visiting endpoints will not respond with a 400 status code even if `/register` was not
 accessed. By default True. 
 - `add_cors` (bool): If True, then the Flask app will have [cross origin resource sharing](https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS) enabled. By default False.
+- `catch_all_404s` (bool): If True, then there will be JSON response for 404 errors. Otherwise, there will be a normal HTML response on 404. By default True.
 - `**kwargs`, will be passed to `flask_restful.Api()`. See [here](https://flask-restful.readthedocs.io/en/latest/api.html#id1) for more info.
 
 May raise:

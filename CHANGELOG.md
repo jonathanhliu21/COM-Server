@@ -2,9 +2,9 @@
 
 Previous version: 0.1b0
 
-# Changes from previous version:
+## Changes from previous version:
 
-- None yet
+- Fixed [#63](https://github.com/jonyboi396825/COM-Server/issues/63) by making 404 handling default behavior
 
 # 0.1 Beta Release 0
 

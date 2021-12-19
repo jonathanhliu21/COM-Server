@@ -73,6 +73,7 @@ class RestApiHandler:
         ],
         has_register_recall: bool = True,
         add_cors: bool = False,
+        catch_all_404s: bool = True,
         **kwargs,
     ) -> None:
         """Constructor for class
@@ -84,6 +85,7 @@ class RestApiHandler:
         That is, visiting endpoints will not respond with a 400 status code even if `/register` was not
         accessed. By default True.
         - `add_cors` (bool): If True, then the Flask app will have [cross origin resource sharing](https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS) enabled. By default False.
+        - `catch_all_404s` (bool): If True, then there will be JSON response for 404 errors. Otherwise, there will be a normal HTML response on 404. By default True.
         - `**kwargs`, will be passed to `flask_restful.Api()`. See [here](https://flask-restful.readthedocs.io/en/latest/api.html#id1) for more info.
         """
 
@@ -93,7 +95,7 @@ class RestApiHandler:
 
         # flask, flask_restful
         self._app = flask.Flask(__name__)
-        self._api = flask_restful.Api(self._app, **kwargs)
+        self._api = flask_restful.Api(self._app, catch_all_404s=catch_all_404s, **kwargs)
 
         if add_cors:
             CORS(self._app)
