@@ -17,6 +17,8 @@ import serial
 
 from . import constants, tools
 
+SEND_QUEUE_MAX_SIZE = 65536
+
 
 class ConnectException(Exception):
     """
@@ -111,6 +113,7 @@ class BaseConnection:
         self._baud = int(baud)
         self._port = str(port)
         self._ports = ports
+        self._ports_list = tuple([self._port] + list(self._ports))
         self._exception = bool(exception)
         self._timeout = abs(float(timeout))  # make sure positive
         self._pass_to_pyserial = kwargs
@@ -328,7 +331,7 @@ class BaseConnection:
         # make sure nothing is reading/writing to the receive queue
         # while reading/assigning the variable
         with self._lock:
-            if len(self._to_send) < 65536:
+            if len(self._to_send) < SEND_QUEUE_MAX_SIZE:
                 # only append if limit has not been reached
                 self._to_send.append(send_data)
 
