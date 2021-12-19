@@ -1041,7 +1041,7 @@ Returns:
 
 - A shallow copy of the send queue
 
-#### com_server.deepcopy()
+#### SendQueue.deepcopy()
 
 ```py
 def deepcopy()
