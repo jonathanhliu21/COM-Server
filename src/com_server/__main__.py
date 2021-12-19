@@ -82,7 +82,16 @@ def main() -> None:
             sys.exit(1)
 
         runner.run(
-            baud, serport, env, host, port, timeout, send_interval, add_cors, has_rr, verbose
+            baud,
+            serport,
+            env,
+            host,
+            port,
+            timeout,
+            send_interval,
+            add_cors,
+            has_rr,
+            verbose,
         )
 
         print("Exited")
