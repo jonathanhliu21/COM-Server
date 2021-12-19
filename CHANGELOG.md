@@ -1,3 +1,11 @@
+# 0.1 Beta Release 1
+
+Previous version: 0.1b0
+
+# Changes from previous version:
+
+- None yet
+
 # 0.1 Beta Release 0
 
 Previous version: 0.0.*
