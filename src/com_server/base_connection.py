@@ -111,6 +111,7 @@ class BaseConnection:
         self._baud = int(baud)
         self._port = str(port)
         self._ports = ports
+        self._ports_list = tuple([self._port] + list(self._ports))
         self._exception = bool(exception)
         self._timeout = abs(float(timeout))  # make sure positive
         self._pass_to_pyserial = kwargs
