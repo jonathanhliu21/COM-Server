@@ -30,3 +30,12 @@ Options:
     --version       Show version.
 >
 ```
+
+Notes:
+
+1. The CLI now supports adding multiple ports. The program will try the ports in the order they are given and use the first port that works.
+
+```sh
+> com_server run 115200 /dev/ttyACM0 /dev/ttyUSB0 /dev/ttyUSB1
+```
+The program will first try `/dev/ttyACM0`, then `/dev/ttyUSB0`, then `/dev/ttyUSB1`, and it will use the first serial port that works.

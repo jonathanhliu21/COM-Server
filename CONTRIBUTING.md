@@ -72,6 +72,13 @@ I will change the merge branch if needed.
 
 ### Testing:
 
+Launch the server:
+```sh
+> com_server run <baud> <serport>
+```
+
+Replace "&lt;baud&gt;" and "&lt;serport&gt;" with the baud and serial port of your serial device.
+
 Use pytest:
 ```sh
 > pytest -vv 
