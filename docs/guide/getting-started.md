@@ -68,7 +68,7 @@ If you want to try multiple ports, then you can put them as arguments like this:
 ```py
 import com_server
 
-conn = com_server.Connection(115200, "/dev/ttyUSB0", "/dev/ttyUSB1", "/dev/ttyACM0", "/dev/ttyACM1")
+conn = com_server.Connection(115200, "/dev/ttyUSB0", "/dev/ttyUSB1", "/dev/ttyACM0", "/dev/ttyACM1", timeout=1, send_interval=1)
 ```
 
 In this example, the program will try to connect to `/dev/ttyUSB0` with baud rate 115200. If that fails, then it will try to connect to `/dev/ttyUSB1`, and so on. It will establish a connection with the **first** port that succeeds.
@@ -110,11 +110,26 @@ print(conn.connected)
 
 ### Reconnecting
 
-On the event of a disconnect, you can call the `reconnect()` function to try to reconnect to a new port. However, it will raise a `ConnectException` if the port is already connected and this is called.
+On the event of a disconnect, you can call the `reconnect()` method to try to reconnect to a port provided in `__init__()`. However, it will raise a `ConnectException` if the port is already connected and this is called.
 
 ```py
-conn.reconnect() # will connect to previous port
-conn.reconnect(port="/dev/ttyUSB1") # will change port to /dev/ttyUSB1 and reconnect there
+with Connection(...) as conn:
+    while True:
+        # It is recommeded to put operations in try-except because
+        # methods may raise ConnectionException if the device disconnects
+        # while in the middle of the loop.
+        try:
+            # -------------------------------
+            # do things with connection here
+            # -------------------------------
+
+            time.sleep(0.01) # recommeded to delay in main thread if in loop
+        except ConnectionException:
+            # If timeout is given, then it will try to reconnect within that timeout
+            # and if it is not reconnected, then it will exit and return False.
+            # 
+            # If no timeout is given, then it will try to reconnect indefinitely.
+            conn.reconnect(timeout=None)
 ```
 
 ### Sending 
