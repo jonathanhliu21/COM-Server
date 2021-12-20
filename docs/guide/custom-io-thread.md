@@ -42,7 +42,7 @@ This is how the program will execute the IO thread now:
 1. Since the receive queue and send queue are shared between the main thread and IO thread, the IO thread will wait for the thread lock to be freed (i.e. for those variables to not be used by the main thread), then copy the shared receive queue and send queue (which are native Python lists) to temporary `ReceiveQueue` and `SendQueue` objects. Then, it will release the thread lock.
 2. The IO thread will execute the function declared by the user from the `custom_io_thread` decorator, passing in the three arguments. The temporary `ReceiveQueue` and `SendQueue` objects should be altered afterwords.
 3. Again, the thread will wait for the send queue and receive queue to stop being used. When they are, it will copy the temporary `ReceiveQueue` back to the original receive queue. Then, it will pop all the elements that were used in the temporary `SendQueue` in the original send queue. It does this by comparing the initial size of the temporary `SendQueue` before running the function with the final size of the queue after running the function. The number of elements removed from the queue is the difference between the final size and initial size.
-4. Sleep for 0.01 seconds to rest the CPU
+4. Sleep for 0.01 seconds to rest the CPU if `rest_cpu` is True (which it is by default)
 
 The IO thread will continue doing these 4 things until the program is stopped or until the device disconnects.
 
