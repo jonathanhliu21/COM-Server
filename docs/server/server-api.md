@@ -278,6 +278,32 @@ Response:
     - `{"message": "Not registered; only one connection at a time"}` if `has_register_recall` is True and the user has not registered by going to the /register endpoint
 
 ```txt
+/connection_state
+```
+
+Responds with an object of the properties of the connection state.
+
+- `timeout` (float): The timeout of the object, or how much time it will try doing 
+something, such as sending data, before breaking out of the program
+- `send_interval` (float): The time the program will wait before allowing something
+to be sent to the serial port again
+- `available` (int): The number of new data available since the last time data
+was received by the user.
+- `port` (str): The serial port it is connected to
+
+Method: GET
+
+Arguments:
+    None
+
+Response:
+
+- `200 OK`:
+    - `{"message": "OK", "state": {...}}`: where "state" represents an object with items above
+- `400 Bad Request`:
+    - `{"message": "Not registered; only one connection at a time"}` if `has_register_recall` is True and the user has not registered by going to the /register endpoint
+
+```txt
 /connected
 ```
 
