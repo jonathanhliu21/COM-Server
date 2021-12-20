@@ -26,7 +26,7 @@ def run(
     with Connection(
         baud, ser_port[0], *ser_port[1:], timeout=timeout, send_interval=send_interval
     ) as conn:
-        print("Connection with serial port established")
+        print("Connection with serial port established at", conn.port)
 
         handler = RestApiHandler(conn, add_cors=cors, has_register_recall=has_rr)
         Builtins(handler, verbose=verbose)
