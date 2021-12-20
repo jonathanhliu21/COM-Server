@@ -119,12 +119,19 @@ with Connection(...) as conn:
         # methods may raise ConnectException if the device disconnects
         # while in the middle of the loop.
         try:
-            # -------------------------------
-            # do things with connection here
-            # -------------------------------
+            while conn.connected:
+                # -------------------------------
+                # do things with connection here
+                # -------------------------------
 
-            time.sleep(0.01) # recommeded to delay in main thread if in loop
+                time.sleep(0.01) # recommeded to delay in main thread if in loop
+
+            # in case it exits without errors
+            conn.reconnect(timeout=None)
         except ConnectException:
+            # ConnectException could be thrown if it is disconnected in the middle
+            # of the loop, right before a send() or receive() method call.
+
             # If timeout is given, then it will try to reconnect within that timeout
             # and if it is not reconnected, then it will exit and return False.
             # 
