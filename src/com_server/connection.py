@@ -425,27 +425,17 @@ class Connection(base_connection.BaseConnection):
 
             time.sleep(0.01)
 
-    def reconnect(
-        self, port: t.Union[str, None] = None, timeout: t.Union[float, None] = None
-    ) -> bool:
+    def reconnect(self, timeout: t.Union[float, None] = None) -> bool:
         """Attempts to reconnect the serial port.
 
-        This will change the `port` attribute then call `self.connect()`.
-        Will raise `ConnectException` if already connected, regardless
-        of if `exception` if True or not.
-
-        Note that `reconnect()` can be used instead of `connect()`, but
-        it will connect to the `port` parameter, not the `port` attribute
-        when the class was initialized.
-
-        This method will continuously try to connect to the port provided
-        (unless `port` is None, in which case it will connect to the previous port)
+        This method will continuously try to connect to the ports provided in `__init__()`
         until it reaches given `timeout` seconds. If `timeout` is None, then it will
         continuously try to reconnect indefinitely.
 
+        Will raise `ConnectException` if already connected, regardless
+        of if `exception` is True or not.
+
         Parameters:
-        - `port` (str, None) (optional): Program will reconnect to this port.
-        If None, then will reconnect to previous port. By default None.
         - `timeout` (float, None) (optional): Will try to reconnect for
         `timeout` seconds before returning. If None, then will try to reconnect
         indefinitely. By default None.
@@ -458,14 +448,11 @@ class Connection(base_connection.BaseConnection):
         if self.connected:
             raise base_connection.ConnectException("Connection already established")
 
-        if port is not None:
-            # set port to new port
-            self.port = port
-
         st_t = time.time()
 
         while True:
             if timeout is not None and time.time() - st_t > timeout:
+                # break if timeout reached
                 return False
 
             try:
@@ -750,7 +737,7 @@ class Connection(base_connection.BaseConnection):
 
                 time.sleep(0.01)  # rest CPU
 
-            except (base_connection.ConnectException, OSError, serial.SerialException):
+            except Exception:
                 # Disconnected, as all of the self.conn (pyserial) operations will raise
                 # an exception if the port is not connected.
 

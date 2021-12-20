@@ -203,7 +203,7 @@ class BaseConnection:
         pyser_timeout = None if self._timeout == constants.NO_TIMEOUT else self._timeout
 
         # user-given ports
-        _all_ports = [self._port] + list(self._ports)
+        _all_ports = self._ports_list
         # available ports
         _all_avail_ports = [port for port, _, _ in tools.all_ports()]
 
