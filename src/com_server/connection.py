@@ -16,7 +16,7 @@ from serial.serialutil import SerialException
 
 from . import base_connection, tools
 
-if os.name == 'posix':
+if os.name == "posix":
     import termios
 
 
@@ -457,8 +457,8 @@ class Connection(base_connection.BaseConnection):
             if timeout is not None and time.time() - st_t > timeout:
                 # break if timeout reached
                 return False
-            
-            if os.name == 'posix':
+
+            if os.name == "posix":
                 # may raise termios.error
                 try:
                     self.connect()
@@ -696,7 +696,7 @@ class Connection(base_connection.BaseConnection):
                 # break out if all sent
                 break
             time.sleep(0.01)
-    
+
     def _cyc(self) -> None:
         """
         Each cycle of the IO thread
@@ -704,9 +704,7 @@ class Connection(base_connection.BaseConnection):
         # make sure other threads cannot read/write variables
         # copy the variables to temporary ones so the locks don't block for so long
         with self._lock:
-            _rcv_queue = tools.ReceiveQueue(
-                self._rcv_queue.copy(), self._queue_size
-            )
+            _rcv_queue = tools.ReceiveQueue(self._rcv_queue.copy(), self._queue_size)
             _send_queue = tools.SendQueue(self._to_send.copy())
 
         # find number of objects to send; important for pruning send queue later
@@ -754,12 +752,17 @@ class Connection(base_connection.BaseConnection):
             self._cyc_func = self._default_cycle
 
         while self._conn is not None:
-            if os.name == 'posix':
+            if os.name == "posix":
                 # may raise termios.error, not on Windows
 
                 try:
                     self._cyc()
-                except (base_connection.ConnectException, OSError, serial.SerialException, termios.error):
+                except (
+                    base_connection.ConnectException,
+                    OSError,
+                    serial.SerialException,
+                    termios.error,
+                ):
                     # Disconnected, as all of the self.conn (pyserial) operations will raise
                     # an exception if the port is not connected.
 
@@ -775,7 +778,11 @@ class Connection(base_connection.BaseConnection):
             else:
                 try:
                     self._cyc()
-                except (base_connection.ConnectException, OSError, serial.SerialException):
+                except (
+                    base_connection.ConnectException,
+                    OSError,
+                    serial.SerialException,
+                ):
                     # Disconnected, as all of the self.conn (pyserial) operations will raise
                     # an exception if the port is not connected.
 
