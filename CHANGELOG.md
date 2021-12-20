@@ -9,6 +9,7 @@ Previous version: 0.1b0
 ## Changes from previous version:
 
 - Fixed [#63](https://github.com/jonyboi396825/COM-Server/issues/63) by making 404 handling default behavior
+- Made IO thread in `BaseConnection` abstract
 
 # 0.1 Beta Release 0
 
