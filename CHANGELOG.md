@@ -11,6 +11,7 @@ Previous version: 0.1b0
 
 - Fixed [#63](https://github.com/jonyboi396825/COM-Server/issues/63) by making 404 handling default behavior
 - Made IO thread in `BaseConnection` abstract
+- Added new endpoint `/connection_state`, getting some properties of the `Connection` object
 
 # 0.1 Beta Release 0
 
