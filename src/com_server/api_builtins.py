@@ -12,6 +12,7 @@ Endpoints include:
     - `/send/get_first` (POST): Responds with the first string response from the serial port after sending data, with data and parameters in request; equivalent to `Connection.get_first_response(is_bytes=False, ...)`
     - `/get/wait` (POST): Waits until connection receives string data given in request; different response for success and failure; equivalent to `Connection.wait_for_response(...)`
     - `/send/get` (POST): Continues sending something until connection receives data given in request; different response for success and failure; equivalent to `Connection.send_for_response(...)`
+    - `/connection_state` (GET): Get the properties of the `Connection` object: timeout, send_interval, available, port 
     - `/connected` (GET): Indicates if the serial port is currently connected or not
     - `/list_ports` (GET): Lists all available Serial ports
 
@@ -37,6 +38,7 @@ class Builtins:
         - `/send/get_first` (POST): Responds with the first string response from the serial port after sending data, with data and parameters in request; equivalent to `Connection.get_first_response(is_bytes=False, ...)`
         - `/get/wait` (POST): Waits until connection receives string data given in request; different response for success and failure; equivalent to `Connection.wait_for_response(...)`
         - `/send/get` (POST): Continues sending something until connection receives data given in request; different response for success and failure; equivalent to `Connection.send_for_response(...)`
+        - `/connection_state` (GET): Get the properties of the `Connection` object: connected, timeout, send_interval, conn_obj, available, port 
         - `/connected` (GET): Indicates if the serial port is currently connected or not
         - `/list_ports` (GET): Lists all available Serial ports
 
@@ -98,6 +100,9 @@ class Builtins:
 
         # /send/get
         self._handler.add_endpoint("/send/get")(self._send_for_response())
+
+        # /connection_state
+        self._handler.add_endpoint("/connection_state")(self._connection_state())
 
         # /connected
         self._handler.add_endpoint("/connected")(self._connected())
@@ -620,6 +625,43 @@ class Builtins:
                 return {"message": "OK"}
 
         return _SendResponse
+    
+    def _connection_state(_self) -> t.Type[Connection]:
+        """
+        Responds with an object of the properties of the connection state.
+
+        - `timeout` (float): The timeout of the object, or how much time it will try doing 
+        something, such as sending data, before breaking out of the program
+        - `send_interval` (float): The time the program will wait before allowing something
+        to be sent to the serial port again
+        - `available` (int): The number of new data available since the last time data
+        was received by the user.
+        - `port` (str): The serial port it is connected to
+
+        Method: GET
+
+        Arguments:
+            None
+        
+        Response:
+
+        - `200 OK`:
+            - `{"message": "OK", "state": {...}}`: where "state" represents an object with items above
+        """
+
+        class _ConnectionState(ConnectionResource):
+            def get(self) -> dict:
+                return {
+                    "message": "OK",
+                    "state": {
+                        "timeout": self.conn.timeout,
+                        "send_interval": self.conn.send_interval,
+                        "available": self.conn.available,
+                        "port": self.conn.port
+                    }
+                }
+            
+        return _ConnectionState
 
     def _connected(_self) -> t.Type[Connection]:
         """
