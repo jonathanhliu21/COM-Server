@@ -724,7 +724,8 @@ class Connection(base_connection.BaseConnection):
             for _ in range(_num_to_send_i - _num_to_send_f):
                 self._to_send.pop(0)
 
-        time.sleep(0.01)  # rest CPU
+        if self._rest_cpu:
+            time.sleep(0.01)  # rest CPU
 
     def _io_thread(self) -> None:
         """Thread that interacts with the serial port.
