@@ -61,6 +61,18 @@ import com_server
 conn = com_server.Connection(port="/dev/ttyUSB0", baud=115200, timeout=2)
 ```
 
+#### Multiple ports
+
+If you want to try multiple ports, then you can put them as arguments like this:
+
+```py
+import com_server
+
+conn = com_server.Connection(115200, "/dev/ttyUSB0", "/dev/ttyUSB1", "/dev/ttyACM0", "/dev/ttyACM1")
+```
+
+In this example, the program will try to connect to `/dev/ttyUSB0` with baud rate 115200. If that fails, then it will try to connect to `/dev/ttyUSB1`, and so on. It will establish a connection with the **first** port that succeeds.
+
 ### Connecting and disconnecting
 
 This is when the object actually connects to the serial port. When this happens, it spawns a thread called the IO thread which handles sending and receiving data to and from the serial port.
