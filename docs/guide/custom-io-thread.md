@@ -46,6 +46,12 @@ This is how the program will execute the IO thread now:
 
 The IO thread will continue doing these 4 things until the program is stopped or until the device disconnects.
 
+The default function, or the default IO thread, does these things each time the function is called:
+
+1. Checks if there is any data to be received
+2. If there is, reads **all** the data and puts the `bytes` received into the receive queue
+3. Tries to send everything in the send queue; breaks when 0.5 seconds is reached (will continue if send queue is empty)
+
 ### In the custom function
 
 You could do anything you want, really. However, there are some things to note:

@@ -651,7 +651,6 @@ class Connection(base_connection.BaseConnection):
         1. Checks if there is any data to be received
         2. If there is, reads all the data and puts the `bytes` received into the receive queue
         3. Tries to send everything in the send queue; breaks when 0.5 seconds is reached (will continue if send queue is empty)
-        4. Rest for 0.01 seconds to lessen processing power
         """
 
         # flush buffers
