@@ -16,6 +16,9 @@ from serial.serialutil import SerialException
 
 from . import base_connection, tools
 
+if os.name == 'posix':
+    import termios
+
 
 class Connection(base_connection.BaseConnection):
     """A more user-friendly interface with the serial port.
@@ -454,15 +457,27 @@ class Connection(base_connection.BaseConnection):
             if timeout is not None and time.time() - st_t > timeout:
                 # break if timeout reached
                 return False
+            
+            if os.name == 'posix':
+                # may raise termios.error
+                try:
+                    self.connect()
 
-            try:
-                self.connect()
+                    # able to connect
+                    return True
+                except (SerialException, termios.error):
+                    # port not found
+                    print("here", time.time())
+                    time.sleep(0.1)  # rest CPU
+            else:
+                try:
+                    self.connect()
 
-                # able to connect
-                return True
-            except SerialException as e:
-                # port not found
-                time.sleep(0.01)  # rest CPU
+                    # able to connect
+                    return True
+                except SerialException:
+                    # port not found
+                    time.sleep(0.01)  # rest CPU
 
     def all_ports(self, **kwargs) -> t.Any:
         """Lists all available serial ports.
@@ -681,6 +696,38 @@ class Connection(base_connection.BaseConnection):
                 # break out if all sent
                 break
             time.sleep(0.01)
+    
+    def _cyc(self) -> None:
+        """
+        Each cycle of the IO thread
+        """
+        # make sure other threads cannot read/write variables
+        # copy the variables to temporary ones so the locks don't block for so long
+        with self._lock:
+            _rcv_queue = tools.ReceiveQueue(
+                self._rcv_queue.copy(), self._queue_size
+            )
+            _send_queue = tools.SendQueue(self._to_send.copy())
+
+        # find number of objects to send; important for pruning send queue later
+        _num_to_send_i = len(_send_queue)
+
+        self._cyc_func(self._conn, _rcv_queue, _send_queue)
+
+        # find length of send queue after
+        _num_to_send_f = len(_send_queue)
+
+        # make sure other threads cannot read/write variables
+        with self._lock:
+            # copy the variables back
+            self._rcv_queue = _rcv_queue.copy()
+
+            # delete the first element of send queue attribute for every object that was sent
+            # as those elements were the ones that were sent and are not needed anymore
+            for _ in range(_num_to_send_i - _num_to_send_f):
+                self._to_send.pop(0)
+
+        time.sleep(0.01)  # rest CPU
 
     def _io_thread(self) -> None:
         """Thread that interacts with the serial port.
@@ -707,45 +754,37 @@ class Connection(base_connection.BaseConnection):
             self._cyc_func = self._default_cycle
 
         while self._conn is not None:
-            try:
-                # make sure other threads cannot read/write variables
-                # copy the variables to temporary ones so the locks don't block for so long
-                with self._lock:
-                    _rcv_queue = tools.ReceiveQueue(
-                        self._rcv_queue.copy(), self._queue_size
-                    )
-                    _send_queue = tools.SendQueue(self._to_send.copy())
+            if os.name == 'posix':
+                # may raise termios.error, not on Windows
 
-                # find number of objects to send; important for pruning send queue later
-                _num_to_send_i = len(_send_queue)
+                try:
+                    self._cyc()
+                except (base_connection.ConnectException, OSError, serial.SerialException, termios.error):
+                    # Disconnected, as all of the self.conn (pyserial) operations will raise
+                    # an exception if the port is not connected.
 
-                self._cyc_func(self._conn, _rcv_queue, _send_queue)
+                    # reset connection and IO variables
+                    self._conn = None
+                    self._reset()
 
-                # find length of send queue after
-                _num_to_send_f = len(_send_queue)
+                    if self._exit_on_disconnect:
+                        os.kill(os.getpid(), signal.SIGTERM)
 
-                # make sure other threads cannot read/write variables
-                with self._lock:
-                    # copy the variables back
-                    self._rcv_queue = _rcv_queue.copy()
+                    # exit thread
+                    return
+            else:
+                try:
+                    self._cyc()
+                except (base_connection.ConnectException, OSError, serial.SerialException):
+                    # Disconnected, as all of the self.conn (pyserial) operations will raise
+                    # an exception if the port is not connected.
 
-                    # delete the first element of send queue attribute for every object that was sent
-                    # as those elements were the ones that were sent and are not needed anymore
-                    for _ in range(_num_to_send_i - _num_to_send_f):
-                        self._to_send.pop(0)
+                    # reset connection and IO variables
+                    self._conn = None
+                    self._reset()
 
-                time.sleep(0.01)  # rest CPU
+                    if self._exit_on_disconnect:
+                        os.kill(os.getpid(), signal.SIGTERM)
 
-            except (base_connection.ConnectException, OSError, serial.SerialException):
-                # Disconnected, as all of the self.conn (pyserial) operations will raise
-                # an exception if the port is not connected.
-
-                # reset connection and IO variables
-                self._conn = None
-                self._reset()
-
-                if self._exit_on_disconnect:
-                    os.kill(os.getpid(), signal.SIGTERM)
-
-                # exit thread
-                return
+                    # exit thread
+                    return
