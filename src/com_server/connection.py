@@ -737,7 +737,7 @@ class Connection(base_connection.BaseConnection):
 
                 time.sleep(0.01)  # rest CPU
 
-            except Exception:
+            except (base_connection.ConnectException, OSError, serial.SerialException):
                 # Disconnected, as all of the self.conn (pyserial) operations will raise
                 # an exception if the port is not connected.
 
