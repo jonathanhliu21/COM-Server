@@ -5,6 +5,7 @@
 Contains implementation of Connection object.
 """
 
+import abc
 import json
 import os
 import signal
@@ -29,7 +30,7 @@ class ConnectException(Exception):
         super().__init__(msg)
 
 
-class BaseConnection:
+class BaseConnection(abc.ABC):
     """A base connection object with a serial or COM port.
 
     If you want to communicate via serial, it is recommended to
@@ -475,74 +476,6 @@ class BaseConnection:
 
         return ret
 
-    def _io_thread(self) -> None:
-        """Thread that interacts with serial port.
-
-        Will continuously read data and add bytes to queue (`rcv_queue`).
-        Will also take send queue (`to_send`) and send contents one at a time.
-
-        NOT recommended to use this. Use the `Connection` IO thread instead.
-        """
-
-        while self._conn is not None:
-            try:
-                # make sure other threads cannot read/write variables
-                # copy the variables to temporary ones so the locks don't block for so long
-                with self._lock:
-                    _rcv_queue = self._rcv_queue.copy()
-                    _send_queue = self._to_send.copy()
-
-                # find number of objects to send; important for pruning send queue later
-                _num_to_send = len(_send_queue)
-
-                # keep on trying to poll data as long as connection is still alive
-                if self._conn.in_waiting:
-                    # read everything from serial buffer
-                    incoming = self._conn.read_all()
-
-                    # add to queue
-                    _rcv_queue.append((time.time(), incoming))  # tuple (timestamp, str)
-                    if len(_rcv_queue) > self._queue_size:
-                        # if greater than queue size, then pop first element
-                        _rcv_queue.pop(0)
-
-                # sending data (send one at a time in queue for 0.5 seconds)
-                st_t = time.time()  # start time
-                while time.time() - st_t < 0.5:
-                    if len(_send_queue) > 0:
-                        self._conn.write(_send_queue.pop(0))
-                        self._conn.flush()
-                    else:
-                        # break out if all sent
-                        break
-                    time.sleep(0.01)
-
-                # make sure other threads cannot read/write variables
-                with self._lock:
-                    # copy the variables back
-                    self._rcv_queue = _rcv_queue.copy()
-
-                    # delete the first element of send queue attribute for every object that was sent
-                    # as those elements were the ones that were sent
-                    for _ in range(_num_to_send):
-                        self._to_send.pop(0)
-
-                time.sleep(0.01)  # rest CPU
-
-            except (ConnectException, OSError, serial.SerialException):
-                # Disconnected, as all of the self.conn (pyserial) operations will raise
-                # an exception if the port is not connected.
-
-                # reset connection and IO variables
-                self._conn = None
-                self._reset()
-
-                if self._exit_on_disconnect:
-                    os.kill(os.getpid(), signal.SIGTERM)
-
-                # exit thread
-                return
-
     def _reset(self) -> None:
         """
         Resets all IO variables
@@ -585,3 +518,10 @@ class BaseConnection:
 
         # return -1 if not found
         return -1
+
+    @abc.abstractmethod
+    def _io_thread(self) -> None:
+        """Thread that interacts with serial port.
+
+        Implemented in `Connection` class.
+        """
