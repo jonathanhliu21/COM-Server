@@ -467,7 +467,6 @@ class Connection(base_connection.BaseConnection):
                     return True
                 except (SerialException, termios.error):
                     # port not found
-                    print("here", time.time())
                     time.sleep(0.1)  # rest CPU
             else:
                 try:
