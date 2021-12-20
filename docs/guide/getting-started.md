@@ -116,7 +116,7 @@ On the event of a disconnect, you can call the `reconnect()` method to try to re
 with Connection(...) as conn:
     while True:
         # It is recommeded to put operations in try-except because
-        # methods may raise ConnectionException if the device disconnects
+        # methods may raise ConnectException if the device disconnects
         # while in the middle of the loop.
         try:
             # -------------------------------
@@ -124,7 +124,7 @@ with Connection(...) as conn:
             # -------------------------------
 
             time.sleep(0.01) # recommeded to delay in main thread if in loop
-        except ConnectionException:
+        except ConnectException:
             # If timeout is given, then it will try to reconnect within that timeout
             # and if it is not reconnected, then it will exit and return False.
             # 
