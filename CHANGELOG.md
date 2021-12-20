@@ -11,7 +11,9 @@ Previous version: 0.1b0
 
 - Fixed [#63](https://github.com/jonyboi396825/COM-Server/issues/63) by making 404 handling default behavior
 - Made IO thread in `BaseConnection` abstract
-- Added new endpoint `/connection_state`, getting some properties of the `Connection` object
+- Added new endpoint `/connection_state`, getting some properties of the `Connection` object, addressing [#60](https://github.com/jonyboi396825/COM-Server/issues/60)
+- Added option to remove 0.01 second delay at end of IO thread, addressing [#68](https://github.com/jonyboi396825/COM-Server/issues/68)
+- `exception` in `BaseConnection` and `Connection` objects is now **DEPRECATED**
 
 # 0.1 Beta Release 0
 

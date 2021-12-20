@@ -62,9 +62,10 @@ class BaseConnection(abc.ABC):
         *ports,
         exception: bool = True,
         timeout: float = 1,
-        send_interval: int = 1,
+        send_interval: float = 1,
         queue_size: int = constants.RCV_QUEUE_SIZE_NORMAL,
         exit_on_disconnect: bool = False,
+        rest_cpu: bool = True,
         **kwargs,
     ) -> None:
         """Initializes the Base Connection class.
@@ -77,12 +78,14 @@ class BaseConnection(abc.ABC):
             - `port` (str): The serial port
             - `*ports`: Alternative serial ports to choose if the first port does not work. The program will try the serial ports in order of arguments and will use the first one that works.
             - `timeout` (float) (optional): How long the program should wait, in seconds, for serial data before exiting. By default 1.
-            - `exception` (bool) (optional): Raise an exception when there is a user error in the methods rather than just returning. By default True.
-            - `send_interval` (int) (optional): Indicates how much time, in seconds, the program should wait before sending another message.
+            - `exception` (bool) (optional): (**DEPRECATED**) Raise an exception when there is a user error in the methods rather than just returning. By default True.
+            - `send_interval` (float) (optional): Indicates how much time, in seconds, the program should wait before sending another message.
             Note that this does NOT mean that it will be able to send every `send_interval` seconds. It means that the `send()` method will
             exit if the interval has not reached `send_interval` seconds. NOT recommended to set to small values. By default 1.
             - `queue_size` (int) (optional): The number of previous data that was received that the program should keep. Must be nonnegative. By default 256.
             - `exit_on_disconnect` (bool) (optional): If True, sends `SIGTERM` signal to the main thread if the serial port is disconnected. Does NOT work on Windows. By default False.
+            - `rest_cpu` (bool) (optional): If True, will add 0.01 second delay to end of IO thread. Otherwise, removes those delays but will result in increased CPU usage.
+            Not recommended to set to False with the default IO thread. By default True.
             - `kwargs`: Will be passed to pyserial.
 
         Returns: nothing
@@ -99,6 +102,7 @@ class BaseConnection(abc.ABC):
         self._queue_size = abs(int(queue_size))  # make sure positive
         self._send_interval = abs(float(send_interval))  # make sure positive
         self._exit_on_disconnect = exit_on_disconnect
+        self._rest_cpu = rest_cpu
 
         if os.name == "nt" and self._exit_on_disconnect:
             raise EnvironmentError("exit_on_fail is not supported on Windows")
