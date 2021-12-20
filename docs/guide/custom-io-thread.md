@@ -89,7 +89,7 @@ def my_io_thread(conn, rcv_queue, send_queue):
         time.sleep(0.01)
     
     # push "Hello world" into receive queue
-    rcv_queue.push_items(b"Hello world!")
+    rcv_queue.pushitems(b"Hello world!")
 
 with conn:
     # rest of code
@@ -97,7 +97,8 @@ with conn:
     while conn.connected:
         conn.send("Hello at", time.time(), ending='\n')
         r = conn.receive_str()
-        print(r[1]) # should be "Hello world!"
+        if (r is not None):
+            print(r[1]) # should be "Hello world!"
         
         time.sleep(0.01)
 ```
