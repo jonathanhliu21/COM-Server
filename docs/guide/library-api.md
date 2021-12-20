@@ -57,7 +57,7 @@ Parameters:
 - `port` (str): The serial port
 - `*ports`: Alternative serial ports to choose if the first port does not work. The program will try the serial ports in order of arguments and will use the first one that works.
 - `timeout` (float) (optional): How long the program should wait, in seconds, for serial data before exiting. By default 1.
-- `exception` (bool) (optional): Raise an exception when there is a user error in the methods rather than just returning. By default True.
+- `exception` (bool) (optional): (**DEPRECATED**) Raise an exception when there is a user error in the methods rather than just returning. By default True.
 - `send_interval` (float) (optional): Indicates how much time, in seconds, the program should wait before sending another message. 
 Note that this does NOT mean that it will be able to send every `send_interval` seconds. It means that the `send()` method will 
 exit if the interval has not reached `send_interval` seconds. NOT recommended to set to small values. By default 1.
