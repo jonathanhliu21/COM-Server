@@ -14,6 +14,7 @@ import waitress
 from flask_cors import CORS
 
 from . import base_connection, connection  # for typing
+from . import disconnect
 
 
 class EndpointExistsException(Exception):
@@ -104,8 +105,8 @@ class RestApiHandler:
 
         # other
         self._all_endpoints = (
-            []
-        )  # list of all endpoints in tuple (endpoint str, resource class)
+            []  # list of all endpoints in tuple (endpoint str, resource class)
+        )  
         self._registered = (
             None  # keeps track of who is registered; None if not registered
         )
@@ -306,6 +307,10 @@ class RestApiHandler:
         # register all endpoints to flask_restful
         for endpoint, resource in self._all_endpoints:
             self._api.add_resource(resource, endpoint)
+        
+        # add disconnect handler, verbose is True
+        _disconnect_handler = disconnect.Reconnector(self._conn, True)
+        _disconnect_handler.start()
 
         self._app.run(**kwargs)
 
@@ -327,6 +332,10 @@ class RestApiHandler:
         # register all endpoints to flask_restful
         for endpoint, resource in self._all_endpoints:
             self._api.add_resource(resource, endpoint)
+
+        # add disconnect handler, verbose is False
+        _disconnect_handler = disconnect.Reconnector(self._conn, True)
+        _disconnect_handler.start()
 
         waitress.serve(self._app, **kwargs)
 
