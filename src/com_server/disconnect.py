@@ -10,6 +10,7 @@ import time
 
 from . import connection  # for typing
 
+
 class Reconnector(threading.Thread):
     """
     Object that detects whenever a connection is disconnected and reconnects
@@ -31,9 +32,9 @@ class Reconnector(threading.Thread):
         self._v = v
 
         super().__init__(daemon=True)
-    
+
     def run(self) -> None:
-        """What to run in thread        
+        """What to run in thread
 
         In this case, checks if the serial port every 0.01 seconds.
         """
@@ -49,4 +50,3 @@ class Reconnector(threading.Thread):
                     print("Device reconnected")
 
             time.sleep(0.01)
-    
