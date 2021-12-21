@@ -4,7 +4,7 @@ Previous version: 0.1b0
 
 ## IMPORTANT: BREAKING changes from previous version:
 
-- Updated CLI - see [CLI docs](https://com-server.readthedocs.io/en/latest/guide/cli/) to view how the CLI now works. Previous commands may not work.
+- Updated CLI - see [CLI docs](https://com-server.readthedocs.io/en/pre-0.1/guide/cli/) to view how the CLI now works. Previous commands may not work.
 - Updated `reconnect()` method; reconnects using ports provided in `__init__()` method rather than providing a port.
 
 ## Changes from previous version:
