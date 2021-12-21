@@ -347,7 +347,7 @@ Response:
 
 When the server is started, there will be a thread checking the connection state of the serial device every 0.01 seconds, and if it disconnects, the thread will attempt to reconnect the device.
 
-Any request made to any endpoint the requires use of the serial port will have a response of `500 Internal Server ERror` when the device is disconnected and will behave normally once reconnected.
+Any request made to any endpoint the requires use of the serial port will have a response of `500 Internal Server Error` when the device is disconnected and will behave normally once reconnected.
 
 Notes:
 
