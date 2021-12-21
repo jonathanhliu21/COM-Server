@@ -514,6 +514,9 @@ If True, then returns raw `bytes` data. By default True.
 - `check_type` (bool) (optional): If types in *args should be checked. By default True.
 - `ending` (str) (optional): The ending of the bytes object to be sent through the serial port. By default a carraige return ("\\r\\n")
 - `concatenate` (str) (optional): What the strings in args should be concatenated by. By default a space `' '`.
+
+These parameters only apply is `is_bytes` is False:
+
 - `read_until` (str, None) (optional): Will return a string that terminates with `read_until`, excluding `read_until`. 
 For example, if the string was `"abcdefg123456\\n"`, and `read_until` was `\\n`, then it will return `"abcdefg123456"`.
 If `read_until` is None, the it will return the entire string. By default None.
