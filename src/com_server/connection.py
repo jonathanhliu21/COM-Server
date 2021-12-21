@@ -141,6 +141,9 @@ class Connection(base_connection.BaseConnection):
         - A list of tuples indicating the timestamp received and the bytes object received
         """
 
+        if not self.connected:
+            raise base_connection.ConnectException("No connection established")
+
         return self._rcv_queue
 
     def get_all_rcv_str(
@@ -163,6 +166,9 @@ class Connection(base_connection.BaseConnection):
         Returns:
         - A list of tuples indicating the timestamp received and the converted string from bytes
         """
+
+        if not self.connected:
+            raise base_connection.ConnectException("No connection established")
 
         return [
             (ts, self.conv_bytes_to_str(rcv, read_until=read_until, strip=strip))
