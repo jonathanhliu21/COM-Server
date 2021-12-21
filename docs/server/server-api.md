@@ -343,6 +343,17 @@ Response:
 - `400 Bad Request`:
     - `{"message": "Not registered; only one connection at a time"}` if `has_register_recall` is True and the user has not registered by going to the /register endpoint
 
+## What happens if the serial device disconnects?
+
+When the server is started, there will be a thread checking the connection state of the serial device every 0.01 seconds, and if it disconnects, the thread will attempt to reconnect the device.
+
+Any request made to any endpoint the requires use of the serial port will have a response of `500 Internal Server ERror` when the device is disconnected and will behave normally once reconnected.
+
+Notes:
+
+- When it reconnects, it calls the `reconnect()` method in the `Connection` object. It will try to reconnect to the ports given in `__init__()`, which means that if the port was changed somehow between disconnecting and reconnecting, it will not reconnect and will require restarting the server.
+- When running a development server, it will print out the disconnect and reconnect events to stdout. It will not when running a production server.
+
 ## Escape characters
 
 When including escape characters (newlines, carriage returns, etc.) in a post request to one of the endpoints, the request might not interpret the character. For example, in some cases, if you send `ending="\n"` to the `/send` endpoint (other endpoints have this issue too; we're just using `/send` as an example), the server may interpret it as `"\\n"` (a backslash followed by `n`), rather than an actual newline. Below contains a list of ways to solve this for different programs:
