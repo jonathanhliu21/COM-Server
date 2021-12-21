@@ -8,7 +8,6 @@ Contains implementation of Connection object.
 import abc
 import json
 import os
-import signal
 import threading
 import time
 import typing as t
@@ -59,14 +58,14 @@ class BaseConnection(abc.ABC):
         self,
         baud: int,
         port: str,
-        *ports,
+        *ports: t.Tuple[str],
         exception: bool = True,
         timeout: float = 1,
         send_interval: float = 1,
         queue_size: int = constants.RCV_QUEUE_SIZE_NORMAL,
         exit_on_disconnect: bool = False,
         rest_cpu: bool = True,
-        **kwargs,
+        **kwargs: t.Dict[str, t.Any],
     ) -> None:
         """Initializes the Base Connection class.
 
@@ -155,7 +154,7 @@ class BaseConnection(abc.ABC):
         self,
         exc_type: type,
         exc_value: BaseException,
-        exc_tb: t.Union[None, TracebackType],
+        exc_tb: t.Optional[TracebackType],
     ) -> None:
         """Context manager
 
@@ -246,7 +245,7 @@ class BaseConnection(abc.ABC):
 
     def send(
         self,
-        *args: "tuple[t.Any]",
+        *args: t.Tuple[t.Any],
         check_type: bool = True,
         ending: str = "\r\n",
         concatenate: str = " ",
@@ -320,7 +319,7 @@ class BaseConnection(abc.ABC):
 
         return True
 
-    def receive(self, num_before: int = 0) -> "t.Union[tuple[float, bytes], None]":
+    def receive(self, num_before: int = 0) -> t.Optional[t.Tuple[float, bytes]]:
         """Returns the most recent receive object
 
         The IO thread will continuously detect receive data and put the `bytes` objects in the `rcv_queue`.

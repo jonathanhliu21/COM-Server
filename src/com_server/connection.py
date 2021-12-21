@@ -55,8 +55,8 @@ class Connection(base_connection.BaseConnection):
         return self
 
     def conv_bytes_to_str(
-        self, rcv: bytes, read_until: t.Union[str, None] = None, strip: bool = True
-    ) -> t.Union[str, None]:
+        self, rcv: bytes, read_until: t.Optional[str] = None, strip: bool = True
+    ) -> t.Optional[str]:
         """Convert bytes receive object to a string.
 
         Parameters:
@@ -95,9 +95,9 @@ class Connection(base_connection.BaseConnection):
     def get(
         self,
         given_type: t.Type,
-        read_until: t.Union[str, None] = None,
+        read_until: t.Optional[str] = None,
         strip: bool = True,
-    ) -> t.Union[None, bytes, str]:
+    ) -> t.Optional[t.Union[bytes, str]]:
         """Gets first response after this method is called.
 
         This method differs from `receive()` because `receive()` returns
@@ -131,7 +131,7 @@ class Connection(base_connection.BaseConnection):
         else:
             return self._get_bytes(call_time)
 
-    def get_all_rcv(self) -> "list[tuple[float, bytes]]":
+    def get_all_rcv(self) -> t.List[t.Tuple[float, bytes]]:
         """Returns the entire receive queue
 
         The queue will be a `queue_size`-sized list that contains
@@ -147,8 +147,8 @@ class Connection(base_connection.BaseConnection):
         return self._rcv_queue
 
     def get_all_rcv_str(
-        self, read_until: t.Union[str, None] = None, strip: bool = True
-    ) -> "list[tuple[float, str]]":
+        self, read_until: t.Optional[str] = None, strip: bool = True
+    ) -> t.List[t.Tuple[float, str]]:
         """Returns entire receive queue as string.
 
         Each bytes object will be passed into `conv_bytes_to_str()`.
@@ -178,9 +178,9 @@ class Connection(base_connection.BaseConnection):
     def receive_str(
         self,
         num_before: int = 0,
-        read_until: t.Union[str, None] = None,
+        read_until: t.Optional[str] = None,
         strip: bool = True,
-    ) -> "t.Union[None, tuple[float, str]]":
+    ) -> t.Optional[t.Tuple[float, str]]:
         """Returns the most recent receive object as a string.
 
         The receive thread will continuously detect receive data and put the `bytes` objects in the `rcv_queue`.
@@ -229,14 +229,14 @@ class Connection(base_connection.BaseConnection):
 
     def get_first_response(
         self,
-        *args: "tuple[t.Any]",
+        *args: t.Tuple[t.Any],
         is_bytes: bool = True,
         check_type: bool = True,
         ending: str = "\r\n",
         concatenate: str = " ",
-        read_until: t.Union[str, None] = None,
+        read_until: t.Optional[str] = None,
         strip: bool = True
-    ) -> t.Union[bytes, str, None]:
+    ) -> t.Optional[t.Union[str, bytes]]:
         """Gets the first response from the serial port after sending something.
 
         This method works almost the same as `send()` (see `self.send()`).
@@ -253,6 +253,8 @@ class Connection(base_connection.BaseConnection):
         - `check_type` (bool) (optional): If types in *args should be checked. By default True.
         - `ending` (str) (optional): The ending of the bytes object to be sent through the serial port. By default a carraige return ("\\r\\n")
         - `concatenate` (str) (optional): What the strings in args should be concatenated by. By default a space `' '`.
+
+        These parameters only apply if `is_bytes` is False:
         - `read_until` (str, None) (optional): Will return a string that terminates with `read_until`, excluding `read_until`.
         For example, if the string was `"abcdefg123456\\n"`, and `read_until` was `\\n`, then it will return `"abcdefg123456"`.
         If `read_until` is None, the it will return the entire string. By default None.
@@ -308,7 +310,7 @@ class Connection(base_connection.BaseConnection):
         self,
         response: t.Union[str, bytes],
         after_timestamp: float = -1.0,
-        read_until: t.Union[str, None] = None,
+        read_until: t.Optional[str] = None,
         strip: bool = True,
     ) -> bool:
         """Waits until the connection receives a given response.
@@ -359,8 +361,8 @@ class Connection(base_connection.BaseConnection):
     def send_for_response(
         self,
         response: t.Union[str, bytes],
-        *args: "tuple[t.any]",
-        read_until: t.Union[str, None] = None,
+        *args: t.Tuple[t.Any],
+        read_until: t.Optional[str] = None,
         strip: bool = True,
         check_type: bool = True,
         ending: str = "\r\n",
@@ -434,7 +436,7 @@ class Connection(base_connection.BaseConnection):
 
             time.sleep(0.01)
 
-    def reconnect(self, timeout: t.Union[float, None] = None) -> bool:
+    def reconnect(self, timeout: t.Optional[float] = None) -> bool:
         """Attempts to reconnect the serial port.
 
         This method will continuously try to connect to the ports provided in `__init__()`
@@ -566,8 +568,8 @@ class Connection(base_connection.BaseConnection):
         return True
 
     def _get_str(
-        self, _call_time: float, read_until: t.Union[None, str], strip: bool = True
-    ) -> t.Union[str, None]:
+        self, _call_time: float, read_until: t.Optional[str], strip: bool = True
+    ) -> t.Optional[str]:
         """
         `get()` but for strings
         """
@@ -588,7 +590,7 @@ class Connection(base_connection.BaseConnection):
         # r received
         return r[1]
 
-    def _get_bytes(self, _call_time: float) -> t.Union[bytes, None]:
+    def _get_bytes(self, _call_time: float) -> t.Optional[bytes]:
         """
         `get()` but for bytes
         """
@@ -613,7 +615,7 @@ class Connection(base_connection.BaseConnection):
         self,
         response: str,
         timestamp: float,
-        read_until: t.Union[str, None],
+        read_until: t.Optional[str],
         strip: bool,
     ) -> bool:
         """

@@ -75,7 +75,7 @@ class RestApiHandler:
         has_register_recall: bool = True,
         add_cors: bool = False,
         catch_all_404s: bool = True,
-        **kwargs,
+        **kwargs: t.Dict[str, t.Any],
     ) -> None:
         """Constructor for class
 
@@ -189,7 +189,7 @@ class RestApiHandler:
             resource.conn = self._conn
 
             # req methods; _self is needed as these will be part of class functions
-            def _get(_self, *args, **kwargs):
+            def _get(_self, *args: t.Tuple[t.Any], **kwargs: t.Dict[str, t.Any]) -> t.Any:
                 ip = flask.request.remote_addr
                 if self._has_register_recall and (
                     not self._registered or self._registered != ip
@@ -203,7 +203,7 @@ class RestApiHandler:
                         _self, *args, **kwargs
                     )  # resource.[METHOD]() will be replaced with resource._[METHOD] below
 
-            def _post(_self, *args, **kwargs):
+            def _post(_self, *args: t.Tuple[t.Any], **kwargs: t.Dict[str, t.Any]) -> t.Any:
                 ip = flask.request.remote_addr
                 if self._has_register_recall and (
                     not self._registered or self._registered != ip
@@ -215,7 +215,7 @@ class RestApiHandler:
                 else:
                     return resource._post(_self, *args, **kwargs)
 
-            def _head(_self, *args, **kwargs):
+            def _head(_self, *args: t.Tuple[t.Any], **kwargs: t.Dict[str, t.Any]) -> t.Any:
                 ip = flask.request.remote_addr
                 if self._has_register_recall and (
                     not self._registered or self._registered != ip
@@ -227,7 +227,7 @@ class RestApiHandler:
                 else:
                     return resource._head(_self, *args, **kwargs)
 
-            def _put(_self, *args, **kwargs):
+            def _put(_self, *args: t.Tuple[t.Any], **kwargs: t.Dict[str, t.Any]) -> t.Any:
                 ip = flask.request.remote_addr
                 if self._has_register_recall and (
                     not self._registered or self._registered != ip
@@ -239,7 +239,7 @@ class RestApiHandler:
                 else:
                     return resource._put(_self, *args, **kwargs)
 
-            def _delete(_self, *args, **kwargs):
+            def _delete(_self, *args: t.Tuple[t.Any], **kwargs: t.Dict[str, t.Any]) -> t.Any:
                 ip = flask.request.remote_addr
                 if self._has_register_recall and (
                     not self._registered or self._registered != ip
@@ -274,7 +274,7 @@ class RestApiHandler:
 
         return _outer
 
-    def add_resource(self, *args, **kwargs) -> None:
+    def add_resource(self, *args: t.Tuple[t.Any], **kwargs: t.Dict[str, t.Any]) -> None:
         """Calls `flask_restful.add_resource`. Allows adding endpoints
         without needing a connection.
 
@@ -285,7 +285,7 @@ class RestApiHandler:
 
         return self._api.add_resource(*args, **kwargs)
 
-    def run_dev(self, **kwargs) -> None:
+    def run_dev(self, **kwargs: t.Dict[str, t.Any]) -> None:
         """Launches the Flask app as a development server.
 
         All arguments in `**kwargs` will be passed to `Flask.run()`.
@@ -316,7 +316,7 @@ class RestApiHandler:
 
         self._conn.disconnect()  # disconnect if stop running
 
-    def run_prod(self, **kwargs) -> None:
+    def run_prod(self, **kwargs: t.Dict[str, t.Any]) -> None:
         """Launches the Flask app as a Waitress production server.
 
         All arguments in `**kwargs` will be passed to `waitress.serve()`.
