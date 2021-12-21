@@ -35,7 +35,8 @@ def test_connected():
     r = requests.get(SERVER+"/connected")
     loaded = json.loads(r.text)
 
-    assert r.status_code == 200 and loaded["connected"] == True
+    assert r.status_code == 200
+    assert loaded["connected"] == True
 
 
 def test_list_ports():
@@ -70,6 +71,9 @@ def test_available():
     time.sleep(1) # for send interval
 
     r = requests.get(SERVER+"/connection_state")
+
+    assert r.status_code == 200
+
     loaded = json.loads(r.text)
     state = loaded["state"]
 
@@ -81,6 +85,9 @@ def test_timeout_sendint():
     """
 
     r = requests.get(SERVER+"/connection_state")
+
+    assert r.status_code == 200
+
     loaded = json.loads(r.text)
     state = loaded["state"]
 
