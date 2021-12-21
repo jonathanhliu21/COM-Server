@@ -84,6 +84,11 @@ Using [pip](https://pip.pypa.io/en/stable/getting-started/):
 > pip install -U com-server
 ```
 
+For beta releases, use the `--pre` option:
+```sh
+> pip install --pre com-server
+```
+
 Alternatively, you can install from source by running:
 ```sh
 > python setup.py install

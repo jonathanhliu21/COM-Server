@@ -41,8 +41,13 @@ The server is recommended to be used like a socket, and it should be used as a w
 **NOTE**: COM-Server only works on Python >= 3.6.
 
 Using [pip](https://pip.pypa.io/en/stable/getting-started/):
-```
+```sh
 > pip install -U com-server
+```
+
+For beta releases, use the `--pre` option:
+```sh
+> pip install --pre com-server
 ```
 
 ## Quickstart
