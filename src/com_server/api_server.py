@@ -344,7 +344,7 @@ class RestApiHandler:
             self._api.add_resource(resource, endpoint)
 
         # add disconnect handler, verbose is False
-        _disconnect_handler = disconnect.Reconnector(self._conn, True)
+        _disconnect_handler = disconnect.Reconnector(self._conn, False)
         _disconnect_handler.start()
 
         waitress.serve(self._app, **kwargs)
