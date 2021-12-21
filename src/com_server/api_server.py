@@ -189,7 +189,9 @@ class RestApiHandler:
             resource.conn = self._conn
 
             # req methods; _self is needed as these will be part of class functions
-            def _get(_self, *args: t.Tuple[t.Any], **kwargs: t.Dict[str, t.Any]) -> t.Any:
+            def _get(
+                _self, *args: t.Tuple[t.Any], **kwargs: t.Dict[str, t.Any]
+            ) -> t.Any:
                 ip = flask.request.remote_addr
                 if self._has_register_recall and (
                     not self._registered or self._registered != ip
@@ -203,7 +205,9 @@ class RestApiHandler:
                         _self, *args, **kwargs
                     )  # resource.[METHOD]() will be replaced with resource._[METHOD] below
 
-            def _post(_self, *args: t.Tuple[t.Any], **kwargs: t.Dict[str, t.Any]) -> t.Any:
+            def _post(
+                _self, *args: t.Tuple[t.Any], **kwargs: t.Dict[str, t.Any]
+            ) -> t.Any:
                 ip = flask.request.remote_addr
                 if self._has_register_recall and (
                     not self._registered or self._registered != ip
@@ -215,7 +219,9 @@ class RestApiHandler:
                 else:
                     return resource._post(_self, *args, **kwargs)
 
-            def _head(_self, *args: t.Tuple[t.Any], **kwargs: t.Dict[str, t.Any]) -> t.Any:
+            def _head(
+                _self, *args: t.Tuple[t.Any], **kwargs: t.Dict[str, t.Any]
+            ) -> t.Any:
                 ip = flask.request.remote_addr
                 if self._has_register_recall and (
                     not self._registered or self._registered != ip
@@ -227,7 +233,9 @@ class RestApiHandler:
                 else:
                     return resource._head(_self, *args, **kwargs)
 
-            def _put(_self, *args: t.Tuple[t.Any], **kwargs: t.Dict[str, t.Any]) -> t.Any:
+            def _put(
+                _self, *args: t.Tuple[t.Any], **kwargs: t.Dict[str, t.Any]
+            ) -> t.Any:
                 ip = flask.request.remote_addr
                 if self._has_register_recall and (
                     not self._registered or self._registered != ip
@@ -239,7 +247,9 @@ class RestApiHandler:
                 else:
                     return resource._put(_self, *args, **kwargs)
 
-            def _delete(_self, *args: t.Tuple[t.Any], **kwargs: t.Dict[str, t.Any]) -> t.Any:
+            def _delete(
+                _self, *args: t.Tuple[t.Any], **kwargs: t.Dict[str, t.Any]
+            ) -> t.Any:
                 ip = flask.request.remote_addr
                 if self._has_register_recall and (
                     not self._registered or self._registered != ip
