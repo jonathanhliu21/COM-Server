@@ -15,6 +15,7 @@ Previous version: 0.1b0
 - Added option to remove 0.01 second delay at end of IO thread, addressing [#68](https://github.com/jonyboi396825/COM-Server/issues/68)
 - `exception` in `BaseConnection` and `Connection` objects is now **DEPRECATED**
 - Added disconnect handling in server (reconnects automatically, responds with `500` when disconnected)
+- Cleaned up typing in source code
 
 # 0.1 Beta Release 0
 
