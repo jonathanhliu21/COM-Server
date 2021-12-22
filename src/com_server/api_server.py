@@ -50,10 +50,10 @@ class RestApiHandler:
     Finally, resource classes have to extend the custom `ConnectionResource` class
     from this library, not the `Resource` from `flask_restful`.
 
-    `500 Internal Server Error`s may occur with endpoints dealing with the connection
-    if the serial port is disconnected. Disconnections while the server is running
-    require restarts of the server and may change the port of the device that was
-    previously connected.
+    `500 Internal Server Error`s will occur with endpoints dealing with the connection
+    if the serial port is disconnected. The server will spawn another thread that will
+    immediately try to reconnect the serial port if it is disconnected. However, note
+    that the receive and send queues will **reset** when the serial port is disconnected.
 
     More information on [Flask](https://flask.palletsprojects.com/en/2.0.x/) and [flask-restful](https://flask-restful.readthedocs.io/en/latest/).
 

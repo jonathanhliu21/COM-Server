@@ -112,6 +112,8 @@ print(conn.connected)
 
 On the event of a disconnect, you can call the `reconnect()` method to try to reconnect to a port provided in `__init__()`. However, it will raise a `ConnectException` if the port is already connected and this is called.
 
+Note that disconnecting the serial device will **reset** the receive and send queues.
+
 ```py
 with Connection(...) as conn:
     while True:

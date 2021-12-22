@@ -446,6 +446,8 @@ class Connection(base_connection.BaseConnection):
         Will raise `ConnectException` if already connected, regardless
         of if `exception` is True or not.
 
+        Note that disconnecting the serial device will **reset** the receive and send queues.
+
         Parameters:
         - `timeout` (float, None) (optional): Will try to reconnect for
         `timeout` seconds before returning. If None, then will try to reconnect

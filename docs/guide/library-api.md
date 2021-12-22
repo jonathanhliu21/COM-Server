@@ -624,6 +624,8 @@ continuously try to reconnect indefinitely.
 Will raise `ConnectException` if already connected, regardless
 of if `exception` is True or not.
 
+Note that disconnecting the serial device will **reset** the receive and send queues.
+
 Parameters:
 
 - `timeout` (float, None) (optional): Will try to reconnect for
@@ -719,9 +721,10 @@ will be used to ensure that there is only one connection at a time. Note that un
 resource classes have to extend the custom `ConnectionResource` class
 from this library, not the `Resource` from `flask_restful`.
 
-`500 Internal Server Error`s may occur with endpoints dealing with the connection
-if the serial port is disconnected. Disconnections while the server is running
-require restarts of the server and may change the port of the device that was previously connected.
+`500 Internal Server Error`s will occur with endpoints dealing with the connection
+if the serial port is disconnected. The server will spawn another thread that will
+immediately try to reconnect the serial port if it is disconnected. However, note
+that the receive and send queues will **reset** when the serial port is disconnected.
 
 More information on [Flask](https://flask.palletsprojects.com/en/2.0.x/) and 
 [flask-restful](https://flask-restful.readthedocs.io/en/latest/)
