@@ -11,9 +11,9 @@ your own endpoints.
 from com_server import Builtins, Connection, ConnectionResource, RestApiHandler
 
 # make the Connection object
-conn = Connection(baud=115200, port="/dev/ttyUSB0")
+conn = Connection(baud=115200, port="/dev/ttyUSB0") # if Linux
 # conn = Connection(baud=115200, port="/dev/ttyUSB...") # if Linux; can be "/dev/ttyACM..."
-# conn = Connection(baud=115200, port="/dev/cu.usbserial...") 
+# conn = Connection(baud=115200, port="/dev/cu.usbserial...") # if Mac
 # conn = Connection(baud=115200, port="COM...") # if Windows
 
 # make the API Handler object; initialize it with the connection object

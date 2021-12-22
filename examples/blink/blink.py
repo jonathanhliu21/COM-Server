@@ -17,9 +17,9 @@ import time
 from com_server import Connection
 
 # make the Connection object; make send_interval 0.1 seconds because not sending large data
-conn = Connection(baud=115200, port="/dev/ttyUSB0", send_interval=0.1)
+conn = Connection(baud=115200, port="/dev/ttyUSB0", send_interval=0.1) # if Linux
 # conn = Connection(baud=115200, port="/dev/ttyUSB...", send_interval=0.1) # if Linux; can be "/dev/ttyACM..."
-# conn = Connection(baud=115200, port="/dev/cu.usbserial...", send_interval=0.1) 
+# conn = Connection(baud=115200, port="/dev/cu.usbserial...", send_interval=0.1) # if Mac
 # conn = Connection(baud=115200, port="COM...", send_interval=0.1) # if Windows
 
 with conn:
