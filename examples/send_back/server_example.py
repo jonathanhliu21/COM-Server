@@ -48,6 +48,21 @@ class Hello_World_Endpoint(ConnectionResource):
     # for more information on Flask, see https://flask.palletsprojects.com/en/2.0.x/
 
     def get(self):
+        """
+        When there is a GET request, this endpoint will respond with
+
+        {
+            "Hello": "World!",
+            "Received": [timestamp, data]
+        }
+
+        The "Received" key is mapped to a value that is a list: [timestamp, data]
+        where timestamp is the time that the data was received from the serial port and
+        data is the data that came from the serial port.
+
+        However, if there was no data received, then "Received" should be null.
+        """
+
         return {
             "Hello": "World!",
             "Received": self.conn.receive_str()
