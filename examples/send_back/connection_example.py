@@ -5,7 +5,7 @@
 An example of how to use the Connection object.
 
 NOTE: the sketch located in examples/send_back needs
-to be uploaded to the Arduino before running this script.
+to be uploaded to an Arduino before running this script.
 """
 
 import time
