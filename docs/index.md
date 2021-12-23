@@ -1,5 +1,7 @@
 # COM-Server Documentation
 
+![PyPI](https://img.shields.io/pypi/v/com_server?label=Latest%20Version)
+
 Welcome to the COM-Server documentation.
 
 COM-Server is a Python library and a local web server that hosts an API locally and interacts with serial or COM ports. The Python library provides a different way of sending and receiving data from the serial port using a thread, and it also gives a set of tools that simplifies the task of manipulating data to and from the port. Additionally, the server makes it easier for other processes to communicate with the serial port.
@@ -51,6 +53,9 @@ It is likely that this library will not work for non-USB ports.
         - [com_server.RestApiHandler](guide/library-api/#com_serverrestapihandler)
         - [com_server.ConnectionResource](guide/library-api/#com_serverconnectionresource)
         - [com_server.Builtins](guide/library-api/#com_serverbuiltins)
+        - [com_server.SendQueue](guide/library-api/#com_serversendqueue)
+        - [com_server.ReceiveQueue](guide/library-api/#com_serverreceivequeue)
+    - [Constants](guide/library-api/#constants)
     - [Exceptions](guide/library-api/#exceptions)
         - [com_server.ConnectException](guide/library-api/#com_serverconnectexception)
         - [com_server.EndpointExistsException](guide/library-api/#com_serverendpointexistsexception)
@@ -81,6 +86,11 @@ Using [pip](https://pip.pypa.io/en/stable/getting-started/):
 > pip install -U com-server
 ```
 
+For beta releases, use the `--pre` option:
+```sh
+> pip install --pre com-server
+```
+
 Alternatively, you can install from source by running:
 ```sh
 > python setup.py install
@@ -95,7 +105,7 @@ You can use `python3` depending on what command you are using for python 3.
 
 import com_server
 
-conn = com_server.Connection("<port>", <baud>) 
+conn = com_server.Connection(<baud>, "<serport>") 
 handler = com_server.RestApiHandler(conn) 
 com_server.Builtins(handler) 
 
@@ -103,13 +113,13 @@ handler.run_dev(host="0.0.0.0", port=8080)
 
 conn.disconnect()
 ```
-Replace "&lt;port&gt;" and "&lt;baud&gt;" with the serial port and baud rate.
+Replace "&lt;serport&gt;" and "&lt;baud&gt;" with the serial port and baud rate.
 
 Alternatively, you can use the command line:
 ```sh
-> com_server -p <port> -b <baud> run
+> com_server run <baud> <serport>
 ```
-Again, replace "&lt;port&gt;" and "&lt;baud&gt;" with the serial port and baud rate.
+Again, replace "&lt;serport&gt;" and "&lt;baud&gt;" with the serial port and baud rate.
 
 ## License
 This library is open source and licensed under the [MIT License](https://github.com/jonyboi396825/COM-Server/blob/master/LICENSE).

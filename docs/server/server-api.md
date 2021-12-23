@@ -278,6 +278,32 @@ Response:
     - `{"message": "Not registered; only one connection at a time"}` if `has_register_recall` is True and the user has not registered by going to the /register endpoint
 
 ```txt
+/connection_state
+```
+
+Responds with an object of the properties of the connection state.
+
+- `timeout` (float): The timeout of the object, or how much time it will try doing 
+something, such as sending data, before breaking out of the program
+- `send_interval` (float): The time the program will wait before allowing something
+to be sent to the serial port again
+- `available` (int): The number of new data available since the last time data
+was received by the user.
+- `port` (str): The serial port it is connected to
+
+Method: GET
+
+Arguments:
+    None
+
+Response:
+
+- `200 OK`:
+    - `{"message": "OK", "state": {...}}`: where "state" represents an object with items above
+- `400 Bad Request`:
+    - `{"message": "Not registered; only one connection at a time"}` if `has_register_recall` is True and the user has not registered by going to the /register endpoint
+
+```txt
 /connected
 ```
 
@@ -316,6 +342,18 @@ Response:
     technical description
 - `400 Bad Request`:
     - `{"message": "Not registered; only one connection at a time"}` if `has_register_recall` is True and the user has not registered by going to the /register endpoint
+
+## What happens if the serial device disconnects?
+
+When the server is started, there will be a thread checking the connection state of the serial device every 0.01 seconds, and if it disconnects, the thread will attempt to reconnect the device.
+
+Any request made to any endpoint the requires use of the serial port will have a response of `500 Internal Server Error` when the device is disconnected and will behave normally once reconnected.
+
+Notes:
+
+- When it reconnects, it calls the `reconnect()` method in the `Connection` object. It will try to reconnect to the ports given in `__init__()`, which means that if the port was changed somehow between disconnecting and reconnecting, it will not reconnect and will require restarting the server.
+- When running a development server, it will print out the disconnect and reconnect events to stdout. It will not when running a production server.
+- Disconnecting the serial device will **reset** the receive and send queues.
 
 ## Escape characters
 

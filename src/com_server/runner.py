@@ -10,24 +10,25 @@ from . import Connection, RestApiHandler, Builtins
 
 def run(
     baud: int,
-    ser_port: int,
+    ser_port: list,
     env: str,
     host: str,
     port: str,
     timeout: int,
     send_interval: int,
     cors: bool,
+    has_rr: bool,
     verbose: bool,
 ) -> None:
     # init connection
 
     print("Starting up connection with serial port...")
     with Connection(
-        baud, ser_port, timeout=timeout, send_interval=send_interval
+        baud, ser_port[0], *ser_port[1:], timeout=timeout, send_interval=send_interval
     ) as conn:
-        print("Connection with serial port established")
+        print("Connection with serial port established at", conn.port)
 
-        handler = RestApiHandler(conn, add_cors=cors)
+        handler = RestApiHandler(conn, add_cors=cors, has_register_recall=has_rr)
         Builtins(handler, verbose=verbose)
 
         if env == "dev":

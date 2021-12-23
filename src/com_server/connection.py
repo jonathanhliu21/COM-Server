@@ -5,6 +5,7 @@
 Contains implementation of connection object.
 """
 
+import copy
 import os
 import sys
 import time
@@ -15,6 +16,9 @@ import signal
 from serial.serialutil import SerialException
 
 from . import base_connection, tools
+
+if os.name == "posix":
+    import termios
 
 
 class Connection(base_connection.BaseConnection):
@@ -52,8 +56,8 @@ class Connection(base_connection.BaseConnection):
         return self
 
     def conv_bytes_to_str(
-        self, rcv: bytes, read_until: t.Union[str, None] = None, strip: bool = True
-    ) -> t.Union[str, None]:
+        self, rcv: bytes, read_until: t.Optional[str] = None, strip: bool = True
+    ) -> t.Optional[str]:
         """Convert bytes receive object to a string.
 
         Parameters:
@@ -92,9 +96,9 @@ class Connection(base_connection.BaseConnection):
     def get(
         self,
         given_type: t.Type,
-        read_until: t.Union[str, None] = None,
+        read_until: t.Optional[str] = None,
         strip: bool = True,
-    ) -> t.Union[None, bytes, str]:
+    ) -> t.Optional[t.Union[bytes, str]]:
         """Gets first response after this method is called.
 
         This method differs from `receive()` because `receive()` returns
@@ -128,7 +132,7 @@ class Connection(base_connection.BaseConnection):
         else:
             return self._get_bytes(call_time)
 
-    def get_all_rcv(self) -> "list[tuple[float, bytes]]":
+    def get_all_rcv(self) -> t.List[t.Tuple[float, bytes]]:
         """Returns the entire receive queue
 
         The queue will be a `queue_size`-sized list that contains
@@ -138,11 +142,17 @@ class Connection(base_connection.BaseConnection):
         - A list of tuples indicating the timestamp received and the bytes object received
         """
 
-        return self._rcv_queue
+        if not self.connected:
+            raise base_connection.ConnectException("No connection established")
+
+        with self._lock:
+            _rq = copy.deepcopy(self._rcv_queue)
+
+        return _rq
 
     def get_all_rcv_str(
-        self, read_until: t.Union[str, None] = None, strip: bool = True
-    ) -> "list[tuple[float, str]]":
+        self, read_until: t.Optional[str] = None, strip: bool = True
+    ) -> t.List[t.Tuple[float, str]]:
         """Returns entire receive queue as string.
 
         Each bytes object will be passed into `conv_bytes_to_str()`.
@@ -161,17 +171,20 @@ class Connection(base_connection.BaseConnection):
         - A list of tuples indicating the timestamp received and the converted string from bytes
         """
 
+        if not self.connected:
+            raise base_connection.ConnectException("No connection established")
+
         return [
             (ts, self.conv_bytes_to_str(rcv, read_until=read_until, strip=strip))
-            for ts, rcv in self._rcv_queue
+            for ts, rcv in self.get_all_rcv()
         ]
 
     def receive_str(
         self,
         num_before: int = 0,
-        read_until: t.Union[str, None] = None,
+        read_until: t.Optional[str] = None,
         strip: bool = True,
-    ) -> "t.Union[None, tuple[float, str]]":
+    ) -> t.Optional[t.Tuple[float, str]]:
         """Returns the most recent receive object as a string.
 
         The receive thread will continuously detect receive data and put the `bytes` objects in the `rcv_queue`.
@@ -220,14 +233,14 @@ class Connection(base_connection.BaseConnection):
 
     def get_first_response(
         self,
-        *args: "tuple[t.Any]",
+        *args: t.Tuple[t.Any],
         is_bytes: bool = True,
         check_type: bool = True,
         ending: str = "\r\n",
         concatenate: str = " ",
-        read_until: t.Union[str, None] = None,
+        read_until: t.Optional[str] = None,
         strip: bool = True
-    ) -> t.Union[bytes, str, None]:
+    ) -> t.Optional[t.Union[str, bytes]]:
         """Gets the first response from the serial port after sending something.
 
         This method works almost the same as `send()` (see `self.send()`).
@@ -244,6 +257,8 @@ class Connection(base_connection.BaseConnection):
         - `check_type` (bool) (optional): If types in *args should be checked. By default True.
         - `ending` (str) (optional): The ending of the bytes object to be sent through the serial port. By default a carraige return ("\\r\\n")
         - `concatenate` (str) (optional): What the strings in args should be concatenated by. By default a space `' '`.
+
+        These parameters only apply if `is_bytes` is False:
         - `read_until` (str, None) (optional): Will return a string that terminates with `read_until`, excluding `read_until`.
         For example, if the string was `"abcdefg123456\\n"`, and `read_until` was `\\n`, then it will return `"abcdefg123456"`.
         If `read_until` is None, the it will return the entire string. By default None.
@@ -299,7 +314,7 @@ class Connection(base_connection.BaseConnection):
         self,
         response: t.Union[str, bytes],
         after_timestamp: float = -1.0,
-        read_until: t.Union[str, None] = None,
+        read_until: t.Optional[str] = None,
         strip: bool = True,
     ) -> bool:
         """Waits until the connection receives a given response.
@@ -350,8 +365,8 @@ class Connection(base_connection.BaseConnection):
     def send_for_response(
         self,
         response: t.Union[str, bytes],
-        *args: "tuple[t.any]",
-        read_until: t.Union[str, None] = None,
+        *args: t.Tuple[t.Any],
+        read_until: t.Optional[str] = None,
         strip: bool = True,
         check_type: bool = True,
         ending: str = "\r\n",
@@ -425,27 +440,19 @@ class Connection(base_connection.BaseConnection):
 
             time.sleep(0.01)
 
-    def reconnect(
-        self, port: t.Union[str, None] = None, timeout: t.Union[float, None] = None
-    ) -> bool:
+    def reconnect(self, timeout: t.Optional[float] = None) -> bool:
         """Attempts to reconnect the serial port.
 
-        This will change the `port` attribute then call `self.connect()`.
-        Will raise `ConnectException` if already connected, regardless
-        of if `exception` if True or not.
-
-        Note that `reconnect()` can be used instead of `connect()`, but
-        it will connect to the `port` parameter, not the `port` attribute
-        when the class was initialized.
-
-        This method will continuously try to connect to the port provided
-        (unless `port` is None, in which case it will connect to the previous port)
+        This method will continuously try to connect to the ports provided in `__init__()`
         until it reaches given `timeout` seconds. If `timeout` is None, then it will
         continuously try to reconnect indefinitely.
 
+        Will raise `ConnectException` if already connected, regardless
+        of if `exception` is True or not.
+
+        Note that disconnecting the serial device will **reset** the receive and send queues.
+
         Parameters:
-        - `port` (str, None) (optional): Program will reconnect to this port.
-        If None, then will reconnect to previous port. By default None.
         - `timeout` (float, None) (optional): Will try to reconnect for
         `timeout` seconds before returning. If None, then will try to reconnect
         indefinitely. By default None.
@@ -458,24 +465,32 @@ class Connection(base_connection.BaseConnection):
         if self.connected:
             raise base_connection.ConnectException("Connection already established")
 
-        if port is not None:
-            # set port to new port
-            self.port = port
-
         st_t = time.time()
 
         while True:
             if timeout is not None and time.time() - st_t > timeout:
+                # break if timeout reached
                 return False
 
-            try:
-                self.connect()
+            if os.name == "posix":
+                # may raise termios.error
+                try:
+                    self.connect()
 
-                # able to connect
-                return True
-            except SerialException as e:
-                # port not found
-                time.sleep(0.01)  # rest CPU
+                    # able to connect
+                    return True
+                except (SerialException, termios.error):
+                    # port not found
+                    time.sleep(0.1)  # rest CPU
+            else:
+                try:
+                    self.connect()
+
+                    # able to connect
+                    return True
+                except SerialException:
+                    # port not found
+                    time.sleep(0.01)  # rest CPU
 
     def all_ports(self, **kwargs) -> t.Any:
         """Lists all available serial ports.
@@ -559,8 +574,8 @@ class Connection(base_connection.BaseConnection):
         return True
 
     def _get_str(
-        self, _call_time: float, read_until: t.Union[None, str], strip: bool = True
-    ) -> t.Union[str, None]:
+        self, _call_time: float, read_until: t.Optional[str], strip: bool = True
+    ) -> t.Optional[str]:
         """
         `get()` but for strings
         """
@@ -581,7 +596,7 @@ class Connection(base_connection.BaseConnection):
         # r received
         return r[1]
 
-    def _get_bytes(self, _call_time: float) -> t.Union[bytes, None]:
+    def _get_bytes(self, _call_time: float) -> t.Optional[bytes]:
         """
         `get()` but for bytes
         """
@@ -606,7 +621,7 @@ class Connection(base_connection.BaseConnection):
         self,
         response: str,
         timestamp: float,
-        read_until: t.Union[str, None],
+        read_until: t.Optional[str],
         strip: bool,
     ) -> bool:
         """
@@ -664,23 +679,22 @@ class Connection(base_connection.BaseConnection):
         1. Checks if there is any data to be received
         2. If there is, reads all the data and puts the `bytes` received into the receive queue
         3. Tries to send everything in the send queue; breaks when 0.5 seconds is reached (will continue if send queue is empty)
-        4. Rest for 0.01 seconds to lessen processing power
         """
-        
+
         # flush buffers
         self._conn.flush()
 
         # keep on trying to poll data as long as connection is still alive
         if conn.in_waiting:
             # read everything from serial buffer
-            incoming = b''
+            incoming = b""
             while conn.in_waiting:
                 incoming += conn.read()
 
                 if sys.platform.startswith("darwin"):
                     # fix partial data for small strings on MacOS
                     time.sleep(0.001)
-            
+
             # add to queue
             rcv_queue.pushitems(incoming)
 
@@ -695,6 +709,37 @@ class Connection(base_connection.BaseConnection):
                 # break out if all sent
                 break
             time.sleep(0.01)
+
+    def _cyc(self) -> None:
+        """
+        Each cycle of the IO thread
+        """
+        # make sure other threads cannot read/write variables
+        # copy the variables to temporary ones so the locks don't block for so long
+        with self._lock:
+            _rcv_queue = tools.ReceiveQueue(self._rcv_queue.copy(), self._queue_size)
+            _send_queue = tools.SendQueue(self._to_send.copy())
+
+        # find number of objects to send; important for pruning send queue later
+        _num_to_send_i = len(_send_queue)
+
+        self._cyc_func(self._conn, _rcv_queue, _send_queue)
+
+        # find length of send queue after
+        _num_to_send_f = len(_send_queue)
+
+        # make sure other threads cannot read/write variables
+        with self._lock:
+            # copy the variables back
+            self._rcv_queue = _rcv_queue.copy()
+
+            # delete the first element of send queue attribute for every object that was sent
+            # as those elements were the ones that were sent and are not needed anymore
+            for _ in range(_num_to_send_i - _num_to_send_f):
+                self._to_send.pop(0)
+
+        if self._rest_cpu:
+            time.sleep(0.01)  # rest CPU
 
     def _io_thread(self) -> None:
         """Thread that interacts with the serial port.
@@ -721,42 +766,46 @@ class Connection(base_connection.BaseConnection):
             self._cyc_func = self._default_cycle
 
         while self._conn is not None:
-            try:
-                # make sure other threads cannot read/write variables
-                # copy the variables to temporary ones so the locks don't block for so long
-                with self._lock:
-                    _rcv_queue = tools.ReceiveQueue(
-                        self._rcv_queue.copy(), self._queue_size
-                    )
-                    _send_queue = tools.SendQueue(self._to_send.copy())
+            if os.name == "posix":
+                # may raise termios.error, not on Windows
 
-                # find number of objects to send; important for pruning send queue later
-                _num_to_send = len(_send_queue)
+                try:
+                    self._cyc()
+                except (
+                    base_connection.ConnectException,
+                    OSError,
+                    serial.SerialException,
+                    termios.error,
+                ):
+                    # Disconnected, as all of the self.conn (pyserial) operations will raise
+                    # an exception if the port is not connected.
 
-                self._cyc_func(self._conn, _rcv_queue, _send_queue)
+                    # reset connection and IO variables
+                    self._conn = None
+                    self._reset()
 
-                # make sure other threads cannot read/write variables
-                with self._lock:
-                    # copy the variables back
-                    self._rcv_queue = _rcv_queue.copy()
+                    if self._exit_on_disconnect:
+                        os.kill(os.getpid(), signal.SIGTERM)
 
-                    # delete the first element of send queue attribute for every object that was sent
-                    # as those elements were the ones that were sent and are not needed anymore
-                    for _ in range(_num_to_send):
-                        self._to_send.pop(0)
+                    # exit thread
+                    return
+            else:
+                try:
+                    self._cyc()
+                except (
+                    base_connection.ConnectException,
+                    OSError,
+                    serial.SerialException,
+                ):
+                    # Disconnected, as all of the self.conn (pyserial) operations will raise
+                    # an exception if the port is not connected.
 
-                time.sleep(0.01)  # rest CPU
+                    # reset connection and IO variables
+                    self._conn = None
+                    self._reset()
 
-            except (base_connection.ConnectException, OSError, serial.SerialException):
-                # Disconnected, as all of the self.conn (pyserial) operations will raise
-                # an exception if the port is not connected.
+                    if self._exit_on_disconnect:
+                        os.kill(os.getpid(), signal.SIGTERM)
 
-                # reset connection and IO variables
-                self._conn = None
-                self._reset()
-
-                if self._exit_on_disconnect:
-                    os.kill(os.getpid(), signal.SIGTERM)
-
-                # exit thread
-                return
+                    # exit thread
+                    return

@@ -14,6 +14,7 @@ import waitress
 from flask_cors import CORS
 
 from . import base_connection, connection  # for typing
+from . import disconnect
 
 
 class EndpointExistsException(Exception):
@@ -49,10 +50,10 @@ class RestApiHandler:
     Finally, resource classes have to extend the custom `ConnectionResource` class
     from this library, not the `Resource` from `flask_restful`.
 
-    `500 Internal Server Error`s may occur with endpoints dealing with the connection
-    if the serial port is disconnected. Disconnections while the server is running
-    require restarts of the server and may change the port of the device that was
-    previously connected.
+    `500 Internal Server Error`s will occur with endpoints dealing with the connection
+    if the serial port is disconnected. The server will spawn another thread that will
+    immediately try to reconnect the serial port if it is disconnected. However, note
+    that the receive and send queues will **reset** when the serial port is disconnected.
 
     More information on [Flask](https://flask.palletsprojects.com/en/2.0.x/) and [flask-restful](https://flask-restful.readthedocs.io/en/latest/).
 
@@ -73,7 +74,8 @@ class RestApiHandler:
         ],
         has_register_recall: bool = True,
         add_cors: bool = False,
-        **kwargs,
+        catch_all_404s: bool = True,
+        **kwargs: t.Dict[str, t.Any],
     ) -> None:
         """Constructor for class
 
@@ -84,6 +86,7 @@ class RestApiHandler:
         That is, visiting endpoints will not respond with a 400 status code even if `/register` was not
         accessed. By default True.
         - `add_cors` (bool): If True, then the Flask app will have [cross origin resource sharing](https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS) enabled. By default False.
+        - `catch_all_404s` (bool): If True, then there will be JSON response for 404 errors. Otherwise, there will be a normal HTML response on 404. By default True.
         - `**kwargs`, will be passed to `flask_restful.Api()`. See [here](https://flask-restful.readthedocs.io/en/latest/api.html#id1) for more info.
         """
 
@@ -93,15 +96,17 @@ class RestApiHandler:
 
         # flask, flask_restful
         self._app = flask.Flask(__name__)
-        self._api = flask_restful.Api(self._app, **kwargs)
+        self._api = flask_restful.Api(
+            self._app, catch_all_404s=catch_all_404s, **kwargs
+        )
 
         if add_cors:
             CORS(self._app)
 
         # other
         self._all_endpoints = (
-            []
-        )  # list of all endpoints in tuple (endpoint str, resource class)
+            []  # list of all endpoints in tuple (endpoint str, resource class)
+        )
         self._registered = (
             None  # keeps track of who is registered; None if not registered
         )
@@ -184,7 +189,9 @@ class RestApiHandler:
             resource.conn = self._conn
 
             # req methods; _self is needed as these will be part of class functions
-            def _get(_self, *args, **kwargs):
+            def _get(
+                _self, *args: t.Tuple[t.Any], **kwargs: t.Dict[str, t.Any]
+            ) -> t.Any:
                 ip = flask.request.remote_addr
                 if self._has_register_recall and (
                     not self._registered or self._registered != ip
@@ -198,7 +205,9 @@ class RestApiHandler:
                         _self, *args, **kwargs
                     )  # resource.[METHOD]() will be replaced with resource._[METHOD] below
 
-            def _post(_self, *args, **kwargs):
+            def _post(
+                _self, *args: t.Tuple[t.Any], **kwargs: t.Dict[str, t.Any]
+            ) -> t.Any:
                 ip = flask.request.remote_addr
                 if self._has_register_recall and (
                     not self._registered or self._registered != ip
@@ -210,7 +219,9 @@ class RestApiHandler:
                 else:
                     return resource._post(_self, *args, **kwargs)
 
-            def _head(_self, *args, **kwargs):
+            def _head(
+                _self, *args: t.Tuple[t.Any], **kwargs: t.Dict[str, t.Any]
+            ) -> t.Any:
                 ip = flask.request.remote_addr
                 if self._has_register_recall and (
                     not self._registered or self._registered != ip
@@ -222,7 +233,9 @@ class RestApiHandler:
                 else:
                     return resource._head(_self, *args, **kwargs)
 
-            def _put(_self, *args, **kwargs):
+            def _put(
+                _self, *args: t.Tuple[t.Any], **kwargs: t.Dict[str, t.Any]
+            ) -> t.Any:
                 ip = flask.request.remote_addr
                 if self._has_register_recall and (
                     not self._registered or self._registered != ip
@@ -234,7 +247,9 @@ class RestApiHandler:
                 else:
                     return resource._put(_self, *args, **kwargs)
 
-            def _delete(_self, *args, **kwargs):
+            def _delete(
+                _self, *args: t.Tuple[t.Any], **kwargs: t.Dict[str, t.Any]
+            ) -> t.Any:
                 ip = flask.request.remote_addr
                 if self._has_register_recall and (
                     not self._registered or self._registered != ip
@@ -269,7 +284,7 @@ class RestApiHandler:
 
         return _outer
 
-    def add_resource(self, *args, **kwargs) -> None:
+    def add_resource(self, *args: t.Tuple[t.Any], **kwargs: t.Dict[str, t.Any]) -> None:
         """Calls `flask_restful.add_resource`. Allows adding endpoints
         without needing a connection.
 
@@ -280,7 +295,7 @@ class RestApiHandler:
 
         return self._api.add_resource(*args, **kwargs)
 
-    def run_dev(self, **kwargs) -> None:
+    def run_dev(self, **kwargs: t.Dict[str, t.Any]) -> None:
         """Launches the Flask app as a development server.
 
         All arguments in `**kwargs` will be passed to `Flask.run()`.
@@ -303,11 +318,15 @@ class RestApiHandler:
         for endpoint, resource in self._all_endpoints:
             self._api.add_resource(resource, endpoint)
 
+        # add disconnect handler, verbose is True
+        _disconnect_handler = disconnect.Reconnector(self._conn, True)
+        _disconnect_handler.start()
+
         self._app.run(**kwargs)
 
         self._conn.disconnect()  # disconnect if stop running
 
-    def run_prod(self, **kwargs) -> None:
+    def run_prod(self, **kwargs: t.Dict[str, t.Any]) -> None:
         """Launches the Flask app as a Waitress production server.
 
         All arguments in `**kwargs` will be passed to `waitress.serve()`.
@@ -323,6 +342,10 @@ class RestApiHandler:
         # register all endpoints to flask_restful
         for endpoint, resource in self._all_endpoints:
             self._api.add_resource(resource, endpoint)
+
+        # add disconnect handler, verbose is False
+        _disconnect_handler = disconnect.Reconnector(self._conn, False)
+        _disconnect_handler.start()
 
         waitress.serve(self._app, **kwargs)
 

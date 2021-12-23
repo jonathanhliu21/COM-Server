@@ -3,6 +3,7 @@
 ![GitHub Workflow Status](https://img.shields.io/github/workflow/status/jonyboi396825/COM-Server/Run%20Pytest%20(Push%20to%20master))
 [![Documentation Status](https://readthedocs.org/projects/com-server/badge/?version=latest)](https://com-server.readthedocs.io/en/latest/?badge=latest)
 ![GitHub Workflow Status](https://img.shields.io/github/workflow/status/jonyboi396825/COM-Server/Upload%20Python%20Package?label=PyPI%20upload)
+![PyPI](https://img.shields.io/pypi/v/com_server?label=Version)
 
 COM-Server is a Python library and a local web server that hosts an API locally and interacts with serial or COM ports. The Python library provides a different way of sending and receiving data from the serial port using a thread, and it also gives a set of tools that simplifies the task of manipulating data to and from the port. Additionally, the server makes it easier for other processes to communicate with the serial port.
 
@@ -41,8 +42,13 @@ The server is recommended to be used like a socket, and it should be used as a w
 **NOTE**: COM-Server only works on Python >= 3.6.
 
 Using [pip](https://pip.pypa.io/en/stable/getting-started/):
-```
+```sh
 > pip install -U com-server
+```
+
+For beta releases, use the `--pre` option:
+```sh
+> pip install --pre com-server
 ```
 
 ## Quickstart
@@ -52,7 +58,7 @@ Using [pip](https://pip.pypa.io/en/stable/getting-started/):
 
 import com_server
 
-conn = com_server.Connection("<port>", <baud>) 
+conn = com_server.Connection(<baud>, "<serport>") 
 handler = com_server.RestApiHandler(conn) 
 com_server.Builtins(handler) 
 
@@ -60,13 +66,13 @@ handler.run_dev(host="0.0.0.0", port=8080)
 
 conn.disconnect()
 ```
-Replace "&lt;port&gt;" and "&lt;baud&gt;" with the serial port and baud rate.
+Replace "&lt;serport&gt;" and "&lt;baud&gt;" with the serial port and baud rate.
 
 Alternatively, you can use the command line:
+```sh
+> com_server run <baud> <serport>
 ```
-> com_server -p <port> -b <baud> run
-```
-Again, replace "&lt;port&gt;" and "&lt;baud&gt;" with the serial port and baud rate.
+Again, replace "&lt;serport&gt;" and "&lt;baud&gt;" with the serial port and baud rate.
 
 ## Links:  
 - Documentation: [https://com-server.readthedocs.io/en/latest/](https://com-server.readthedocs.io/en/latest/)

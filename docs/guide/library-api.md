@@ -23,30 +23,7 @@ A base connection object with a serial or COM port.
 If you want to communicate via serial, it is recommended to
 either directly use `pyserial` directly or use the `Connection` class.
 
-How this works is that it creates a pyserial object given the parameters, which opens the connection. 
-The user can manually open and close the connection. It is closed by default when the initializer is called.
-It spawns a thread that continuously looks for serial data and puts it in a buffer. 
-When the user wants to send something, it will pass the send data to a queue,
-and the thread will process the queue and will continuously send the contents in the queue
-until it is empty, or it has reached 0.5 seconds. This thread is referred as the "IO thread".
-
-IO thread order:
-
-1. Checks if there is any data to be received
-2. If there is, reads all the data and puts the `bytes` received into the receive queue
-3. Tries to send everything in the send queue; breaks when 0.5 seconds is reached (will continue if send queue is empty)
-4. Rest for 0.01 seconds to lessen processing power
-
-If any of the steps above raises an exception (`OSError` or `SerialException`), 
-then the program will assume that the serial port has disconnected.
-
-All data will be encoded and decoded using `utf-8`.
-
-If used in a `while(true)` loop, it is highly recommended to put a `time.sleep()` within the loop,
-so the main thread won't use up so many resources and slow down the IO thread.
-
 This class contains the four basic methods needed to talk with the serial port:
-
 - `connect()`: opens a connection with the serial port
 - `disconnect()`: closes the connection with the serial port
 - `send()`: sends data to the serial port
@@ -66,7 +43,7 @@ If this does not happen, then the IO thread will still be running for an object 
 #### BaseConnection.\_\_init\_\_()
 
 ```py
-def __init__(baud, port, *ports, exception=True, timeout=1, queue_size=256, exit_on_disconnect=True, **kwargs)
+def __init__(baud, port, *ports, exception=True, timeout=1, send_interval=1, queue_size=256, exit_on_disconnect=True, rest_cpu=True, **kwargs)
 ```
 
 Initializes the Base Connection class. 
@@ -80,12 +57,14 @@ Parameters:
 - `port` (str): The serial port
 - `*ports`: Alternative serial ports to choose if the first port does not work. The program will try the serial ports in order of arguments and will use the first one that works.
 - `timeout` (float) (optional): How long the program should wait, in seconds, for serial data before exiting. By default 1.
-- `exception` (bool) (optional): Raise an exception when there is a user error in the methods rather than just returning. By default True.
-- `send_interval` (int) (optional): Indicates how much time, in seconds, the program should wait before sending another message. 
+- `exception` (bool) (optional): (**DEPRECATED**) Raise an exception when there is a user error in the methods rather than just returning. By default True.
+- `send_interval` (float) (optional): Indicates how much time, in seconds, the program should wait before sending another message. 
 Note that this does NOT mean that it will be able to send every `send_interval` seconds. It means that the `send()` method will 
 exit if the interval has not reached `send_interval` seconds. NOT recommended to set to small values. By default 1.
 - `queue_size` (int) (optional): The number of previous data that was received that the program should keep. Must be nonnegative. By default 256.
 - `exit_on_disconnect` (bool) (optional): If True, sends `SIGTERM` signal to the main thread if the serial port is disconnected. Does NOT work on Windows. By default False.
+- `rest_cpu` (bool) (optional): If True, will add 0.01 second delay to end of IO thread. Otherwise, removes those delays but will result in increased CPU usage.
+Not recommended to set False with the default IO thread. By default True.
 - `kwargs`: Will be passed to pyserial.
 
 Returns: nothing
@@ -535,6 +514,9 @@ If True, then returns raw `bytes` data. By default True.
 - `check_type` (bool) (optional): If types in *args should be checked. By default True.
 - `ending` (str) (optional): The ending of the bytes object to be sent through the serial port. By default a carraige return ("\\r\\n")
 - `concatenate` (str) (optional): What the strings in args should be concatenated by. By default a space `' '`.
+
+These parameters only apply is `is_bytes` is False:
+
 - `read_until` (str, None) (optional): Will return a string that terminates with `read_until`, excluding `read_until`. 
 For example, if the string was `"abcdefg123456\\n"`, and `read_until` was `\\n`, then it will return `"abcdefg123456"`.
 If `read_until` is None, the it will return the entire string. By default None.
@@ -630,28 +612,22 @@ May raise:
 #### Connection.reconnect()
 
 ```py
-def reconnect(port=None)
+def reconnect(timeout=None)
 ```
 
 Attempts to reconnect the serial port.
 
-This will change the `port` attribute then call `self.connect()`.
-Will raise `ConnectException` if already connected, regardless
-of if `exception` if True or not.
-
-Note that `reconnect()` can be used instead of `connect()`, but
-it will connect to the `port` parameter, not the `port` attribute
-when the class was initialized.
-
-This method will continuously try to connect to the port provided
-(unless `port` is None, in which case it will connect to the previous port)
+This method will continuously try to connect to the ports provided in `__init__()`
 until it reaches given `timeout` seconds. If `timeout` is None, then it will
 continuously try to reconnect indefinitely.
 
+Will raise `ConnectException` if already connected, regardless
+of if `exception` is True or not.
+
+Note that disconnecting the serial device will **reset** the receive and send queues.
+
 Parameters:
 
-- `port` (str, None) (optional): Program will reconnect to this port. 
-If None, then will reconnect to previous port. By default None.
 - `timeout` (float, None) (optional): Will try to reconnect for
 `timeout` seconds before returning. If None, then will try to reconnect
 indefinitely. By default None.
@@ -745,9 +721,10 @@ will be used to ensure that there is only one connection at a time. Note that un
 resource classes have to extend the custom `ConnectionResource` class
 from this library, not the `Resource` from `flask_restful`.
 
-`500 Internal Server Error`s may occur with endpoints dealing with the connection
-if the serial port is disconnected. Disconnections while the server is running
-require restarts of the server and may change the port of the device that was previously connected.
+`500 Internal Server Error`s will occur with endpoints dealing with the connection
+if the serial port is disconnected. The server will spawn another thread that will
+immediately try to reconnect the serial port if it is disconnected. However, note
+that the receive and send queues will **reset** when the serial port is disconnected.
 
 More information on [Flask](https://flask.palletsprojects.com/en/2.0.x/) and 
 [flask-restful](https://flask-restful.readthedocs.io/en/latest/)
@@ -764,7 +741,7 @@ call `/register` to use the serial port
 #### RestApiHandler.\_\_init\_\_()
 
 ```py
-def __init__(conn, has_register_recall=True, add_cors=False, **kwargs)
+def __init__(conn, has_register_recall=True, add_cors=False, catch_all_404s=True, **kwargs)
 ```
 
 Constructor for class
@@ -777,6 +754,7 @@ so the user will not have to use them in order to access the other endpoints of 
 That is, visiting endpoints will not respond with a 400 status code even if `/register` was not
 accessed. By default True. 
 - `add_cors` (bool): If True, then the Flask app will have [cross origin resource sharing](https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS) enabled. By default False.
+- `catch_all_404s` (bool): If True, then there will be JSON response for 404 errors. Otherwise, there will be a normal HTML response on 404. By default True.
 - `**kwargs`, will be passed to `flask_restful.Api()`. See [here](https://flask-restful.readthedocs.io/en/latest/api.html#id1) for more info.
 
 May raise:
@@ -1040,7 +1018,7 @@ Returns:
 
 - A shallow copy of the send queue
 
-#### com_server.deepcopy()
+#### SendQueue.deepcopy()
 
 ```py
 def deepcopy()

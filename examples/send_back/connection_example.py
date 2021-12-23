@@ -5,7 +5,7 @@
 An example of how to use the Connection object.
 
 NOTE: the sketch located in examples/send_back needs
-to be uploaded to the Arduino before running this script.
+to be uploaded to an Arduino before running this script.
 """
 
 import time
@@ -13,9 +13,9 @@ import time
 from com_server import Connection
 
 # make the Connection object
-conn = Connection(baud=115200, port="/dev/ttyUSB0")
+conn = Connection(baud=115200, port="/dev/ttyUSB0") # if Linux
 # conn = Connection(baud=115200, port="/dev/ttyUSB...") # if Linux; can be "/dev/ttyACM..."
-# conn = Connection(baud=115200, port="/dev/cu.usbserial...") 
+# conn = Connection(baud=115200, port="/dev/cu.usbserial...") # if Mac
 # conn = Connection(baud=115200, port="COM...") # if Windows
 
 conn.connect() # connect to serial port

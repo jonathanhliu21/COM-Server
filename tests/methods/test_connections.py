@@ -6,6 +6,7 @@ Tests the connection endpoints such as connected() and list_ports()
 """
 
 import json
+import time
 
 from com_server import all_ports
 import pytest
@@ -18,7 +19,7 @@ try:
     requests.get(SERVER+"/recall")
 except requests.exceptions.ConnectionError:
     pytestmark = pytest.mark.skip(
-        reason="Server not launched. Make sure it is running on 0.0.0.0 with port 8080, or run \"com_server -p <port> -b <baud> run\".")
+        reason="Server not launched. Make sure it is running on 0.0.0.0 with port 8080, or run \"com_server run <baud> <serport>\".")
 
 
 def test_register() -> None:
@@ -34,7 +35,8 @@ def test_connected():
     r = requests.get(SERVER+"/connected")
     loaded = json.loads(r.text)
 
-    assert r.status_code == 200 and loaded["connected"] == True
+    assert r.status_code == 200
+    assert loaded["connected"] == True
 
 
 def test_list_ports():
@@ -52,6 +54,44 @@ def test_list_ports():
 
     assert r.status_code == 200
 
+def test_available():
+    """
+    Tests available property
+    """
+
+    requests.get(SERVER+"/receive")
+
+    data = {
+        "data": [1, 2, 3, 4],
+        "ending": "\n",
+        "concatenate": ";"
+    } 
+    requests.post(SERVER+"/send", data=data)
+
+    time.sleep(1) # for send interval
+
+    r = requests.get(SERVER+"/connection_state")
+
+    assert r.status_code == 200
+
+    loaded = json.loads(r.text)
+    state = loaded["state"]
+
+    assert state["available"] == 1
+
+def test_timeout_sendint():
+    """
+    Tests that timeout and send interval are 1.0
+    """
+
+    r = requests.get(SERVER+"/connection_state")
+
+    assert r.status_code == 200
+
+    loaded = json.loads(r.text)
+    state = loaded["state"]
+
+    assert state["send_interval"] == 1.0 and state["timeout"] == 1.0
 
 def test_unregister() -> None:
     r = requests.get(SERVER + "/recall")

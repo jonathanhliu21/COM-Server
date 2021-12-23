@@ -1,3 +1,32 @@
+# 0.1
+
+Previous version: 0.1b1
+
+## Changes from previous version:
+
+- Added some more examples in the examples directory, addressing [#74](https://github.com/jonyboi396825/COM-Server/issues/74).
+- Fixed [#78](https://github.com/jonyboi396825/COM-Server/issues/78) by adding thread lock to binary search method for checking availability, and also a lock to the `Connection.get_all_rcv()` and `Connection.get_all_rcv_str()` methods to **deep copy** the receive queue instead of directly returning the receive queue. 
+- Added more verbose output to the disconnect handler, including that port that it reconnected to.
+
+# 0.1 Beta Release 1
+
+Previous version: 0.1b0
+
+## IMPORTANT: BREAKING changes from previous version:
+
+- Updated CLI - see [CLI docs](https://com-server.readthedocs.io/en/pre-0.1/guide/cli/) to view how the CLI now works. Previous commands may not work.
+- Updated `reconnect()` method; reconnects using ports provided in `__init__()` method rather than providing a port.
+
+## Changes from previous version:
+
+- Fixed [#63](https://github.com/jonyboi396825/COM-Server/issues/63) by making 404 handling default behavior
+- Made IO thread in `BaseConnection` abstract
+- Added new endpoint `/connection_state`, getting some properties of the `Connection` object, addressing [#60](https://github.com/jonyboi396825/COM-Server/issues/60)
+- Added option to remove 0.01 second delay at end of IO thread, addressing [#68](https://github.com/jonyboi396825/COM-Server/issues/68)
+- `exception` in `BaseConnection` and `Connection` objects is now **DEPRECATED**
+- Added disconnect handling in server (reconnects automatically, responds with `500` when disconnected)
+- Cleaned up typing in source code
+
 # 0.1 Beta Release 0
 
 Previous version: 0.0.*

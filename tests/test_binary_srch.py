@@ -6,10 +6,10 @@ Tests binary search of BaseConnection and exception thrown when available is cal
 """
 
 import pytest
-from com_server import BaseConnection, ConnectException
+from com_server import Connection, ConnectException
 
 def test_bin_srch() -> None:
-    b = BaseConnection(port="test", baud=123)
+    b = Connection(port="test", baud=123)
 
     b._rcv_queue = [
         (1636911273.8617003, b""),
@@ -23,6 +23,6 @@ def test_available_exception() -> None:
     Tests that calling available while not connected will raise exception
     """
 
-    b = BaseConnection(port="test", baud=123)
+    b = Connection(port="test", baud=123)
     with pytest.raises(ConnectException):
         b.available

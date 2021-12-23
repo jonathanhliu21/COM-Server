@@ -18,7 +18,7 @@ try:
     requests.get(SERVER+"/recall")
 except requests.exceptions.ConnectionError:
     pytestmark = pytest.mark.skip(
-        reason="Server not launched. Make sure it is running on 0.0.0.0 with port 8080, or run \"com_server -p <port> -b <baud> run\".")
+        reason="Server not launched. Make sure it is running on 0.0.0.0 with port 8080, or run \"com_server run <baud> <serport>\".")
 
 def test_rcv_before_register() -> None:
     r = requests.get(SERVER + "/receive")
@@ -50,22 +50,22 @@ class TestSendRcv:
         # normal test (tests send with data)
         r = requests.post(SERVER + "/send", data=data)
         loaded = json.loads(r.text)
-        assert "message" in loaded and loaded["message"] == "OK"
         assert r.status_code == 200
+        assert "message" in loaded and loaded["message"] == "OK"
 
         # tests parses correctly
         data["notanarg"] = "notanarg"
         r = requests.post(SERVER + "/send", data=data)
         loaded = json.loads(r.text)
-        assert "message" in loaded
         assert r.status_code == 400
+        assert "message" in loaded
 
         # tests that send interval is working
         del data["notanarg"]
         r = requests.post(SERVER + "/send", data=data)
         loaded = json.loads(r.text)
-        assert "message" in loaded and loaded["message"] == "Failed to send"
         assert r.status_code == 502
+        assert "message" in loaded and loaded["message"] == "Failed to send"
 
         time.sleep(1) # sleep for send interval for next tests
     
@@ -81,8 +81,8 @@ class TestSendRcv:
         # tests getting to the endpoint works
         r = requests.post(SERVER + "/receive", data=data)
         loaded = json.loads(r.text)
-        assert "message" in loaded and loaded["message"] == "OK" and "timestamp" in loaded and "data" in loaded
         assert r.status_code == 200
+        assert "message" in loaded and loaded["message"] == "OK" and "timestamp" in loaded and "data" in loaded
 
         # tests that the data received is correct
         s = f"Got: \"1;2;3;4;{send_time}\""
@@ -165,6 +165,7 @@ class TestGet:
         s1 = f"Got: \"1;2;3;4;{send_time}\""
         s2 = f"Got: \"1;2;3;4;{send_time_2}\""
 
+        assert r.status_code == 200
         assert loaded["data"].index(s2) - loaded["data"].index(s1) == 2
 
 def test_unregister() -> None:
