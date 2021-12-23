@@ -4,8 +4,9 @@ Previous version: 0.1b1
 
 ## Changes from previous version:
 
-- Added some more examples in the examples directory, addressing [#74](https://github.com/jonyboi396825/COM-Server/issues/74)
+- Added some more examples in the examples directory, addressing [#74](https://github.com/jonyboi396825/COM-Server/issues/74).
 - Fixed [#78](https://github.com/jonyboi396825/COM-Server/issues/78) by adding thread lock to binary search method for checking availability, and also a lock to the `Connection.get_all_rcv()` and `Connection.get_all_rcv_str()` methods to **deep copy** the receive queue instead of directly returning the receive queue. 
+- Added more verbose output to the disconnect handler, including that port that it reconnected to.
 
 # 0.1 Beta Release 1
 
