@@ -47,6 +47,6 @@ class Reconnector(threading.Thread):
                 self._conn.reconnect()
 
                 if self._v:
-                    print("Device reconnected")
+                    print(f"Device reconnected at {self._conn.port}")
 
             time.sleep(0.01)
