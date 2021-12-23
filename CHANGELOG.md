@@ -1,3 +1,11 @@
+# 0.1
+
+Previous version: 0.1b1
+
+## Changes from previous version:
+
+- Added some more examples in the examples directory, addressing [#74](https://github.com/jonyboi396825/COM-Server/issues/74)
+
 # 0.1 Beta Release 1
 
 Previous version: 0.1b0
