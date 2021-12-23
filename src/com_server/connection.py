@@ -144,7 +144,7 @@ class Connection(base_connection.BaseConnection):
 
         if not self.connected:
             raise base_connection.ConnectException("No connection established")
-        
+
         with self._lock:
             _rq = copy.deepcopy(self._rcv_queue)
 
