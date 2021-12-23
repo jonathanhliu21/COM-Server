@@ -5,6 +5,7 @@
 Contains implementation of connection object.
 """
 
+import copy
 import os
 import sys
 import time
@@ -143,8 +144,11 @@ class Connection(base_connection.BaseConnection):
 
         if not self.connected:
             raise base_connection.ConnectException("No connection established")
+        
+        with self._lock:
+            _rq = copy.deepcopy(self._rcv_queue)
 
-        return self._rcv_queue
+        return _rq
 
     def get_all_rcv_str(
         self, read_until: t.Optional[str] = None, strip: bool = True
@@ -172,7 +176,7 @@ class Connection(base_connection.BaseConnection):
 
         return [
             (ts, self.conv_bytes_to_str(rcv, read_until=read_until, strip=strip))
-            for ts, rcv in self._rcv_queue
+            for ts, rcv in self.get_all_rcv()
         ]
 
     def receive_str(
