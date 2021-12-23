@@ -21,4 +21,4 @@ from .tools import all_ports, SendQueue, ReceiveQueue
 
 from .api_builtins import Builtins
 
-__version__ = "0.1b1"
+__version__ = "0.1"

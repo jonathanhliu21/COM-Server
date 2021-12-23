@@ -353,6 +353,7 @@ Notes:
 
 - When it reconnects, it calls the `reconnect()` method in the `Connection` object. It will try to reconnect to the ports given in `__init__()`, which means that if the port was changed somehow between disconnecting and reconnecting, it will not reconnect and will require restarting the server.
 - When running a development server, it will print out the disconnect and reconnect events to stdout. It will not when running a production server.
+- Disconnecting the serial device will **reset** the receive and send queues.
 
 ## Escape characters
 

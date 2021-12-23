@@ -498,18 +498,21 @@ class BaseConnection(abc.ABC):
         When comparing, rounds to 4 digits.
         """
 
-        if len(self._rcv_queue) <= 0:
+        with self._lock:
+            _tmp_q = self._rcv_queue.copy()
+
+        if len(_tmp_q) <= 0:
             # not found if no size
             return -1
 
         low = 0
-        high = len(self._rcv_queue)
+        high = len(_tmp_q)
 
         while low <= high:
             mid = (low + high) // 2  # integer division
 
             # comparing rounding to two digits
-            cmp1 = round(self._rcv_queue[mid][0], 4)
+            cmp1 = round(_tmp_q[mid][0], 4)
             cmp2 = round(target, 4)
 
             if cmp1 == cmp2:

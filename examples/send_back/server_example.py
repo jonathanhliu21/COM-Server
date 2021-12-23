@@ -11,9 +11,9 @@ your own endpoints.
 from com_server import Builtins, Connection, ConnectionResource, RestApiHandler
 
 # make the Connection object
-conn = Connection(baud=115200, port="/dev/ttyUSB0")
+conn = Connection(baud=115200, port="/dev/ttyUSB0") # if Linux
 # conn = Connection(baud=115200, port="/dev/ttyUSB...") # if Linux; can be "/dev/ttyACM..."
-# conn = Connection(baud=115200, port="/dev/cu.usbserial...") 
+# conn = Connection(baud=115200, port="/dev/cu.usbserial...") # if Mac
 # conn = Connection(baud=115200, port="COM...") # if Windows
 
 # make the API Handler object; initialize it with the connection object
@@ -48,6 +48,21 @@ class Hello_World_Endpoint(ConnectionResource):
     # for more information on Flask, see https://flask.palletsprojects.com/en/2.0.x/
 
     def get(self):
+        """
+        When there is a GET request, this endpoint will respond with
+
+        {
+            "Hello": "World!",
+            "Received": [timestamp, data]
+        }
+
+        The "Received" key is mapped to a value that is a list: [timestamp, data]
+        where timestamp is the time that the data was received from the serial port and
+        data is the data that came from the serial port.
+
+        However, if there was no data received, then "Received" should be null.
+        """
+
         return {
             "Hello": "World!",
             "Received": self.conn.receive_str()

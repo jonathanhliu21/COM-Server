@@ -5,6 +5,7 @@
 Contains implementation of connection object.
 """
 
+import copy
 import os
 import sys
 import time
@@ -144,7 +145,10 @@ class Connection(base_connection.BaseConnection):
         if not self.connected:
             raise base_connection.ConnectException("No connection established")
 
-        return self._rcv_queue
+        with self._lock:
+            _rq = copy.deepcopy(self._rcv_queue)
+
+        return _rq
 
     def get_all_rcv_str(
         self, read_until: t.Optional[str] = None, strip: bool = True
@@ -172,7 +176,7 @@ class Connection(base_connection.BaseConnection):
 
         return [
             (ts, self.conv_bytes_to_str(rcv, read_until=read_until, strip=strip))
-            for ts, rcv in self._rcv_queue
+            for ts, rcv in self.get_all_rcv()
         ]
 
     def receive_str(
@@ -445,6 +449,8 @@ class Connection(base_connection.BaseConnection):
 
         Will raise `ConnectException` if already connected, regardless
         of if `exception` is True or not.
+
+        Note that disconnecting the serial device will **reset** the receive and send queues.
 
         Parameters:
         - `timeout` (float, None) (optional): Will try to reconnect for
