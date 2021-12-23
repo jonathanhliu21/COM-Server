@@ -1,6 +1,6 @@
 # COM-Server Documentation
 
-![PyPI](https://img.shields.io/pypi/v/com_server?label=Version)
+![PyPI](https://img.shields.io/pypi/v/com_server?label=Latest%20Version)
 
 Welcome to the COM-Server documentation.
 
