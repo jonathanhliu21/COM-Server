@@ -202,7 +202,9 @@ class RestApiHandler:
 
             # req methods; _self is needed as these will be part of class functions
             def _dec(func: t.Callable) -> t.Callable:
-                def _inner(_self, *args: t.Tuple[t.Any], **kwargs: t.Dict[str, t.Any]) -> t.Callable:
+                def _inner(
+                    _self, *args: t.Tuple[t.Any], **kwargs: t.Dict[str, t.Any]
+                ) -> t.Callable:
                     ip = flask.request.remote_addr
 
                     if self._has_register_recall and (
@@ -221,11 +223,10 @@ class RestApiHandler:
                     else:
                         with self._lock:
                             val = func(_self, *args, **kwargs)
-                    
+
                     return val
-                    
+
                 return _inner
-                
 
             # replace functions in class with new functions that check if registered
             if hasattr(resource, "get"):
