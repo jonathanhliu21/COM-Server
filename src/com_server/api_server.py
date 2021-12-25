@@ -201,17 +201,10 @@ class RestApiHandler:
             resource.conn = self._conn
 
             # req methods; _self is needed as these will be part of class functions
-            def _get(
-                _self, *args: t.Tuple[t.Any], **kwargs: t.Dict[str, t.Any]
-            ) -> t.Any:
-                if self._lock.locked():
-                    flask_restful.abort(
-                        503,
-                        message="An endpoint is currently in use by another process.",
-                    )
-
-                with self._lock:
+            def _dec(func: t.Callable) -> t.Callable:
+                def _inner(_self, *args: t.Tuple[t.Any], **kwargs: t.Dict[str, t.Any]) -> t.Callable:
                     ip = flask.request.remote_addr
+
                     if self._has_register_recall and (
                         not self._registered or self._registered != ip
                     ):
@@ -219,113 +212,32 @@ class RestApiHandler:
                         flask_restful.abort(
                             400, message="Not registered; only one connection at a time"
                         )
-                    else:
-                        return resource._get(
-                            _self, *args, **kwargs
-                        )  # resource.[METHOD]() will be replaced with resource._[METHOD] below
-
-            def _post(
-                _self, *args: t.Tuple[t.Any], **kwargs: t.Dict[str, t.Any]
-            ) -> t.Any:
-
-                if self._lock.locked():
-                    flask_restful.abort(
-                        503,
-                        message="An endpoint is currently in use by another process.",
-                    )
-
-                with self._lock:
-                    ip = flask.request.remote_addr
-                    if self._has_register_recall and (
-                        not self._registered or self._registered != ip
-                    ):
-                        # respond with 400 if not registered
+                    elif self._lock.locked():
+                        # if another endpoint is currently being used
                         flask_restful.abort(
-                            400, message="Not registered; only one connection at a time"
+                            503,
+                            message="An endpoint is currently in use by another process.",
                         )
                     else:
-                        return resource._post(_self, *args, **kwargs)
-
-            def _head(
-                _self, *args: t.Tuple[t.Any], **kwargs: t.Dict[str, t.Any]
-            ) -> t.Any:
-                if self._lock.locked():
-                    flask_restful.abort(
-                        503,
-                        message="An endpoint is currently in use by another process.",
-                    )
-
-                with self._lock:
-                    ip = flask.request.remote_addr
-                    if self._has_register_recall and (
-                        not self._registered or self._registered != ip
-                    ):
-                        # respond with 400 if not registered
-                        flask_restful.abort(
-                            400, message="Not registered; only one connection at a time"
-                        )
-                    else:
-                        return resource._head(_self, *args, **kwargs)
-
-            def _put(
-                _self, *args: t.Tuple[t.Any], **kwargs: t.Dict[str, t.Any]
-            ) -> t.Any:
-                if self._lock.locked():
-                    flask_restful.abort(
-                        503,
-                        message="An endpoint is currently in use by another process.",
-                    )
-
-                with self._lock:
-                    ip = flask.request.remote_addr
-                    if self._has_register_recall and (
-                        not self._registered or self._registered != ip
-                    ):
-                        # respond with 400 if not registered
-                        flask_restful.abort(
-                            400, message="Not registered; only one connection at a time"
-                        )
-                    else:
-                        return resource._put(_self, *args, **kwargs)
-
-            def _delete(
-                _self, *args: t.Tuple[t.Any], **kwargs: t.Dict[str, t.Any]
-            ) -> t.Any:
-
-                if self._lock.locked():
-                    flask_restful.abort(
-                        503,
-                        message="An endpoint is currently in use by another process.",
-                    )
-
-                with self._lock:
-                    ip = flask.request.remote_addr
-                    if self._has_register_recall and (
-                        not self._registered or self._registered != ip
-                    ):
-                        # respond with 400 if not registered
-                        flask_restful.abort(
-                            400, message="Not registered; only one connection at a time"
-                        )
-                    else:
-                        return resource._delete(_self, *args, **kwargs)
+                        with self._lock:
+                            val = func(_self, *args, **kwargs)
+                    
+                    return val
+                    
+                return _inner
+                
 
             # replace functions in class with new functions that check if registered
             if hasattr(resource, "get"):
-                resource._get = resource.get
-                resource.get = _get
+                resource.get = _dec(resource.get)
             if hasattr(resource, "post"):
-                resource._post = resource.post
-                resource.post = _post
+                resource.post = _dec(resource.post)
             if hasattr(resource, "head"):
-                resource._head = resource.head
-                resource.head = _head
+                resource.head = _dec(resource.head)
             if hasattr(resource, "put"):
-                resource._put = resource.put
-                resource.put = _put
+                resource.put = _dec(resource.put)
             if hasattr(resource, "delete"):
-                resource._delete = resource.delete
-                resource.delete = _delete
+                resource.delete = _dec(resource.delete)
 
             self._all_endpoints.append((endpoint, resource))
 
