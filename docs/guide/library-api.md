@@ -726,6 +726,10 @@ if the serial port is disconnected. The server will spawn another thread that wi
 immediately try to reconnect the serial port if it is disconnected. However, note
 that the receive and send queues will **reset** when the serial port is disconnected.
 
+If another process accesses an endpoint while another is
+currently being used, then it will respond with
+`503 Service Unavailable`.
+
 More information on [Flask](https://flask.palletsprojects.com/en/2.0.x/) and 
 [flask-restful](https://flask-restful.readthedocs.io/en/latest/)
 
@@ -786,6 +790,10 @@ returned a class named "Hello" and another function returned a
 class also named "Hello", then the second class name will be 
 changed to "Hello_". This happens because `flask_restful` 
 interprets duplicate class names as duplicate endpoints.
+
+If another process accesses an endpoint while another is
+currently being used, then it will respond with
+`503 Service Unavailable`.
 
 Parameters:
 
