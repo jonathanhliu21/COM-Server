@@ -6,6 +6,8 @@ These endpoints cannot be used in any case with the `RestApiHandler`, even if `h
 
 These endpoints will not apply if `has_register_recall` is False, and the response will be a `404 Not Found`.
 
+If an endpoint is reached while another process is using another endpoint, then the endpoint will respond with `503 Service Unavailable`.
+
 ```txt
 /register
 ```
@@ -26,6 +28,8 @@ Response:
 - `400 Bad Request`: 
     - `{"message": "Double registration"}` if this endpoint is reached by an IP while it is registered
     - `{"message": "Not registered; only one connection at a time"}` if this endpoint is reached while another IP is registered
+- `503 Service Unavailable`:
+    - `{"message": "An endpoint is currently in use by another process."}` if this endpoint was reached while another endpoint is in use.
 
 ```txt
 /recall
@@ -44,6 +48,8 @@ Response:
 - `400 Bad Request`:
     - `{"message": "Nothing has been registered"}` if try to call without any IP registered
     - `{"message": "Not same user as one in session"}` if called with different IP as the one registered
+- `503 Service Unavailable`:
+    - `{"message": "An endpoint is currently in use by another process."}` if this endpoint was reached while another endpoint is in use.
 
 ## Endpoints from Builtins
 
@@ -74,6 +80,8 @@ Response:
     - `{"message": "Failed to send"}` if something went wrong with sending (i.e. `Connection.send()` returned false)
 - `400 Bad Request`:
     - `{"message": "Not registered; only one connection at a time"}` if `has_register_recall` is True and the user has not registered by going to the /register endpoint
+- `503 Service Unavailable`:
+    - `{"message": "An endpoint is currently in use by another process."}` if this endpoint was reached while another endpoint is in use.
 
 ```txt
 /receive
@@ -110,6 +118,8 @@ Response:
     would be None/null.
 - `400 Bad Request`:
     - `{"message": "Not registered; only one connection at a time"}` if `has_register_recall` is True and the user has not registered by going to the /register endpoint
+- `503 Service Unavailable`:
+    - `{"message": "An endpoint is currently in use by another process."}` if this endpoint was reached while another endpoint is in use.
 
 ```txt
 /receive/all
@@ -142,6 +152,8 @@ Response:
     list of data in the receive queue. The indices for "timestamps" and "data" match.
 - `400 Bad Request`:
     - `{"message": "Not registered; only one connection at a time"}` if `has_register_recall` is True and the user has not registered by going to the /register endpoint
+- `503 Service Unavailable`:
+    - `{"message": "An endpoint is currently in use by another process."}` if this endpoint was reached while another endpoint is in use.
 
 ```txt
 /get
@@ -177,6 +189,8 @@ Response:
     within the timeout specified on the server side.   
 - `400 Bad Request`:
     - `{"message": "Not registered; only one connection at a time"}` if `has_register_recall` is True and the user has not registered by going to the /register endpoint
+- `503 Service Unavailable`:
+    - `{"message": "An endpoint is currently in use by another process."}` if this endpoint was reached while another endpoint is in use.
 
 ```txt
 /send/get_first
@@ -211,6 +225,8 @@ Response:
     within the timeout specified on the server side.   
 - `400 Bad Request`:
     - `{"message": "Not registered; only one connection at a time"}` if `has_register_recall` is True and the user has not registered by going to the /register endpoint
+- `503 Service Unavailable`:
+    - `{"message": "An endpoint is currently in use by another process."}` if this endpoint was reached while another endpoint is in use.
 
 ```txt
 /get/wait
@@ -242,6 +258,8 @@ Response:
     within the timeout specified on the server side.   
 - `400 Bad Request`:
     - `{"message": "Not registered; only one connection at a time"}` if `has_register_recall` is True and the user has not registered by going to the /register endpoint
+- `503 Service Unavailable`:
+    - `{"message": "An endpoint is currently in use by another process."}` if this endpoint was reached while another endpoint is in use.
 
 ```txt
 /send/get
@@ -276,6 +294,8 @@ Response:
     within the timeout specified on the server side.   
 - `400 Bad Request`:
     - `{"message": "Not registered; only one connection at a time"}` if `has_register_recall` is True and the user has not registered by going to the /register endpoint
+- `503 Service Unavailable`:
+    - `{"message": "An endpoint is currently in use by another process."}` if this endpoint was reached while another endpoint is in use.
 
 ```txt
 /connection_state
@@ -302,6 +322,8 @@ Response:
     - `{"message": "OK", "state": {...}}`: where "state" represents an object with items above
 - `400 Bad Request`:
     - `{"message": "Not registered; only one connection at a time"}` if `has_register_recall` is True and the user has not registered by going to the /register endpoint
+- `503 Service Unavailable`:
+    - `{"message": "An endpoint is currently in use by another process."}` if this endpoint was reached while another endpoint is in use.
 
 ```txt
 /connected
@@ -321,6 +343,8 @@ Response:
     - `{"message": "OK", "connected": ...}`: where "connected" (bool) is the connected state: `true` if connected, `false` if not.
 - `400 Bad Request`:
     - `{"message": "Not registered; only one connection at a time"}` if `has_register_recall` is True and the user has not registered by going to the /register endpoint
+- `503 Service Unavailable`:
+    - `{"message": "An endpoint is currently in use by another process."}` if this endpoint was reached while another endpoint is in use.
 
 ```txt
 /list_ports
@@ -342,6 +366,8 @@ Response:
     technical description
 - `400 Bad Request`:
     - `{"message": "Not registered; only one connection at a time"}` if `has_register_recall` is True and the user has not registered by going to the /register endpoint
+- `503 Service Unavailable`:
+    - `{"message": "An endpoint is currently in use by another process."}` if this endpoint was reached while another endpoint is in use.
 
 ## What happens if the serial device disconnects?
 

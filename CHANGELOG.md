@@ -1,3 +1,12 @@
+# 0.1.1
+
+Previous version: 0.1
+
+## Changes from previous version:
+
+- Added `q-sz` option indicating the maximum receive queue size, addressing [#81](https://github.com/jonyboi396825/COM-Server/issues/81)
+- Any endpoint will now respond with `503 Service Unavailable` if another endpoint is in use by another process at the time the request is made, addressing [#80](https://github.com/jonyboi396825/COM-Server/issues/80)
+
 # 0.1
 
 Previous version: 0.1b1

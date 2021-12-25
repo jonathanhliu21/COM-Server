@@ -22,7 +22,7 @@ with the serial port in an development environment or a
 production environment.
 
 Usage:
-    com_server run <baud> <serport>... [--env=<env>] [--host=<host>] [--port=<port>] [--s-int=<s-int>] [--to=<to>] [--cors] [--no-rr] [-v | --verbose] 
+    com_server run <baud> <serport>... [--env=<env>] [--host=<host>] [--port=<port>] [--s-int=<s-int>] [--to=<to>] [--q-sz=<q-sz>] [--cors] [--no-rr] [-v | --verbose] 
     com_server -h | --help
     com_server --version
 
@@ -33,6 +33,7 @@ Options:
     --s-int=<s-int>  
                     How long, in seconds, the program should wait between sending to serial port [default: 1].
     --to=<to>       How long, in seconds, the program should wait before exiting when performing time-consuming tasks [default: 1].
+    --q-sz=<q-sz>   The maximum size of the receive queue [default: 256].
     --cors          If set, then the program will add cross origin resource sharing.
     --no-rr         If set, then turns off /register and /recall endpoints, same as setting has_register_recall=False
     -v, --verbose   Prints arguments each endpoints receives to stdout. Should not be used in production.
@@ -73,6 +74,7 @@ def main() -> None:
         port = args["--port"].strip()
         timeout = args["--to"].strip()
         send_interval = args["--s-int"].strip()
+        queue_size = args["--q-sz"].strip()
         add_cors = args["--cors"]
         verbose = args["--verbose"]
         has_rr = not args["--no-rr"]
@@ -89,6 +91,7 @@ def main() -> None:
             port,
             timeout,
             send_interval,
+            queue_size,
             add_cors,
             has_rr,
             verbose,
