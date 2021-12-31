@@ -27,7 +27,7 @@ class Builtins:
         - `/v0/connection_state` (GET): Get the properties of the `Connection` object: connected, timeout, send_interval, conn_obj, available, port
         - `/v0/connected` (GET): Indicates if the serial port is currently connected or not
         - `/v0/list_ports` (GET): Lists all available Serial ports
-    
+
     These endpoints cannot be added later.
     """
 
@@ -126,7 +126,7 @@ class Builtins:
                 res = self.conn.send(
                     *args["data"],
                     ending=args["ending"],
-                    concatenate=args["concatenate"]
+                    concatenate=args["concatenate"],
                 )
 
                 if not res:
@@ -321,7 +321,7 @@ class Builtins:
                     ending=args["ending"],
                     concatenate=args["concatenate"],
                     read_until=args["read_until"],
-                    strip=args["strip"]
+                    strip=args["strip"],
                 )
 
                 if res is None:
@@ -426,7 +426,7 @@ class Builtins:
                     ending=args["ending"],
                     concatenate=args["concatenate"],
                     read_until=args["read_until"],
-                    strip=args["strip"]
+                    strip=args["strip"],
                 )
 
                 if not res:
