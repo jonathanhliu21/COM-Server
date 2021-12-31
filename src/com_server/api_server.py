@@ -204,7 +204,7 @@ class RestApiHandler:
             def _dec(func: t.Callable) -> t.Callable:
                 def _inner(
                     _self, *args: t.Tuple[t.Any], **kwargs: t.Dict[str, t.Any]
-                ) -> t.Callable:
+                ) -> t.Any:
                     ip = flask.request.remote_addr
 
                     if self._has_register_recall and (
