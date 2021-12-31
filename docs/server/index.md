@@ -10,7 +10,7 @@ Currently, the supported versions are:
 
 ## Adding the built-in routes
 
-The simplest way to start a server with all endpoints is to use the CLI. The CLI will add all the routes from all the versions. See the [CLI docs](../../guide/cli) for more details.
+The simplest way to start a server with all endpoints is to use the CLI. The CLI will add all the routes from all the versions. See the [CLI docs](../guide/cli) for more details.
 
 To add the built-in routes into your program, you need to use the `com_server.api` module. This module provides the built-in routes for all supported versions of the API. For example, to use version 0 of the API, you can simply import the `V0` class from the `com_server.api` module and wrap it around the `RestApiHandler` object. When the server is launched, this will add all routes from version 0, prefixed with `/v0`.
 
