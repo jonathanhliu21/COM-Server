@@ -2,11 +2,14 @@
 
 Previous version: 0.1.1
 
+## IMPORTANT: BREAKING changes from previous version:
+
+- Added versioning in built-in API, addressing [#90](https://github.com/jonyboi396825/COM-Server/issues/90)
+
 ## Changes from previous version:
 
 - Fixed return type annotation in `api_server.py`, addressing [#88](https://github.com/jonyboi396825/COM-Server/issues/88)
 - Fixed dependency list in `setup.py`
-- Added versioning in built-in API, addressing [#90](https://github.com/jonyboi396825/COM-Server/issues/90)
 
 # 0.1.1
 
