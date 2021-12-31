@@ -10,7 +10,6 @@ nav:
     - "Getting Started": "guide/getting-started.md"
     - "Library API": "guide/library-api.md"
     - "Custom IO Thread": "guide/custom-io-thread.md"
-  - "Using COM-Server":
     - "CLI": "guide/cli.md"
   - "Server API": 
     - "Getting started": "server/index.md"

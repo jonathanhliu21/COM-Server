@@ -245,7 +245,7 @@ conn.disconnect()
 
 ### Adding built-in endpoints
 
-See [here](/server).
+See [the server API docs](../../server).
 
 Note that when using builtin endpoints, you cannot use those endpoints or the program will raise a `EndpointExistsException`.
 
@@ -280,4 +280,4 @@ Assuming that you're using the `com_server` command to run or `has_register_reca
 
 When you are beginning to use the serial port, send a GET request to `/register`, and when you are finished, send a GET request to `/recall`. There are no arguments needed.
 
-There is a built-in endpoint for almost every of the methods in `Connection`, in addition to the `send` and `receive` methods of `BaseConnection`. See the [Server API](/server/server-api) for more information on how to use them. Note that if you send a request to the `/send` endpoint or a send-based endpoint (an endpoint that sends any data to the serial port) too rapidly (under the time specified in `send_interval`), it will respond with a 502 error. 
+There is a built-in endpoint for almost every of the methods in `Connection`, in addition to the `send` and `receive` methods of `BaseConnection`. See the [Server API](../../server) for more information on how to use them. Note that if you send a request to the `/send` endpoint or a send-based endpoint (an endpoint that sends any data to the serial port) too rapidly (under the time specified in `send_interval`), it will respond with a 502 error. 
