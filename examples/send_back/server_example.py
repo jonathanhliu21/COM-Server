@@ -8,7 +8,8 @@ Includes examples of how to add the built-in endpoints and how to make
 your own endpoints.
 """
 
-from com_server import Builtins, Connection, ConnectionResource, RestApiHandler
+from com_server import Connection, ConnectionResource, RestApiHandler
+from com_server.api import Builtins
 
 # make the Connection object
 conn = Connection(baud=115200, port="/dev/ttyUSB0") # if Linux
@@ -27,15 +28,17 @@ Builtins(handler)
 # - "/recall" (GET) - Used to unregister IP and allow others to access the endpoints
 
 # NOTE: these endpoints CANNOT be used after adding built-ins
-# - `/send` (POST): Send something through the serial port
-# - `/receive` (GET, POST): Respond with the most recent received string from the serial port
-# - `/receive/all` (GET, POST): Returns the entire receive queue
-# - `/get` (GET, POST): Respond with the first string from serial port after request
-# - `/send/get_first` (POST): Responds with the first string response from the serial port after sending data, with data and parameters in request
-# - `/get/wait` (POST): Waits until connection receives string data given in request
-# - `/send/get` (POST): Continues sending something until connection receives data given in request
-# - `/connected` (GET): Indicates if the serial port is currently connected or not
-# - `/list_ports` (GET): Lists all available Serial ports
+# - `/<version>/send` (POST): Send something through the serial port
+# - `/<version>/receive` (GET, POST): Respond with the most recent received string from the serial port
+# - `/<version>/receive/all` (GET, POST): Returns the entire receive queue
+# - `/<version>/get` (GET, POST): Respond with the first string from serial port after request
+# - `/<version>/send/get_first` (POST): Responds with the first string response from the serial port after sending data, with data and parameters in request
+# - `/<version>/get/wait` (POST): Waits until connection receives string data given in request
+# - `/<version>/send/get` (POST): Continues sending something until connection receives data given in request
+# - `/<version>/connected` (GET): Indicates if the serial port is currently connected or not
+# - `/<version>/list_ports` (GET): Lists all available Serial ports
+# where <version> is any supported version of the built-in API.
+# See API docs for more details.
 
 # adding a custom endpoint:
 @handler.add_endpoint("/hello_world")
