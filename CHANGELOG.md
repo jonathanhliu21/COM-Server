@@ -1,3 +1,11 @@
+# 0.1.3
+
+Previous version: 0.1.2
+
+## Changes from pervious version
+
+- Fixed broken links, addressing [#92](https://github.com/jonyboi396825/COM-Server/issues/92) and [#93](https://github.com/jonyboi396825/COM-Server/issues/93)
+
 # 0.1.2
 
 Previous version: 0.1.1
