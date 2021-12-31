@@ -5,7 +5,8 @@
 Contains implementation of `run` argument from the CLI.
 """
 
-from . import Connection, RestApiHandler, Builtins
+from . import Connection, RestApiHandler
+from .api import Builtins
 
 
 def run(
