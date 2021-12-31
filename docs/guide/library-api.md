@@ -896,7 +896,9 @@ Have `get()`, `post()`, and other methods for the types of responses you need.
 
 ### com_server.api
 
-See the [Server API](/server).
+This is the server API module for the built-in endpoints of COM-Server.
+
+See the [Server API](../../server).
 
 ---
 

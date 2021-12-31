@@ -19,4 +19,4 @@ from .connection import Connection
 from .constants import *
 from .tools import ReceiveQueue, SendQueue, all_ports
 
-__version__ = "0.1.2"
+__version__ = "0.1.3"
