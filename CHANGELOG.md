@@ -1,3 +1,24 @@
+# 0.1.3
+
+Previous version: 0.1.2
+
+## Changes from previous version
+
+- Fixed broken links, addressing [#92](https://github.com/jonyboi396825/COM-Server/issues/92) and [#93](https://github.com/jonyboi396825/COM-Server/issues/93)
+
+# 0.1.2
+
+Previous version: 0.1.1
+
+## IMPORTANT: BREAKING changes from previous version:
+
+- Added versioning in built-in API, addressing [#90](https://github.com/jonyboi396825/COM-Server/issues/90)
+
+## Changes from previous version:
+
+- Fixed return type annotation in `api_server.py`, addressing [#88](https://github.com/jonyboi396825/COM-Server/issues/88)
+- Fixed dependency list in `setup.py`
+
 # 0.1.1
 
 Previous version: 0.1

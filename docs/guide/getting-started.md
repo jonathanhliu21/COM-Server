@@ -245,47 +245,19 @@ conn.disconnect()
 
 ### Adding built-in endpoints
 
-By default, the `/register` and `/recall` endpoints are reserved and you cannot use them. However, adding the built-in endpoints adds a list of endpoints that you cannot use. These endpoints are:
+See [the server API docs](../../server).
 
-- `/send`
-- `/receive` 
-- `/receive/all` 
-- `/get` 
-- `/send/get_first` 
-- `/get/wait` 
-- `/send/get` 
-- `/connected`
-- `/list_ports`
-
-For more information on these endpoints and how to use them, see [here](/server/server-api).
-
-This is how to add those endpoints:
-```py
-import flask
-import flask_restful
-from com_server import Connection, RestApiHandler, Builtins
-
-conn = Connection(port="/dev/ttyUSB0", baud=115200)
-handler = RestApiHandler(conn)
-Builtins(handler)
-
-handler.run_dev(host="0.0.0.0", port=8080)
-
-conn.disconnect()
-```
-
-There is no need to assign a variable to `Builtins` as all it does is add the endpoints to the `RestApiHandler` object declared above. 
-
-`run_dev()` calls `Flask.run()`, which means that its arguments are also the arguments of `Flask.run()`. To run on a production server, use `run_prod()` rather than `run_dev()`, which calls `waitress.serve()`. See more info [here](http://localhost:8000/guide/library-api/#restapihandlerrun_dev).
+Note that when using builtin endpoints, you cannot use those endpoints or the program will raise a `EndpointExistsException`.
 
 ### Adding custom endpoints
 
 To add custom endpoints, use the `add_endpoints` decorator above a function with a nested class in it. The nested class should extend `ConnectionResource` and have functions similar to the classes of `flask_restful`. See [here](https://flask-restful.readthedocs.io/en/latest/quickstart.html#a-minimal-api) for more info. The function needs to have a `conn` parameter indicating the connection object and lastly needs to return the nested class.
 
-The example below adds an endpoint at `/hello_world`, sends "`Hello world\n`" to the serial port, then returns `{"Hello": "world"}` when there is a GET request.
+The example below adds a route at `/hello_world`, sends "`Hello world\n`" to the serial port, then returns `{"Hello": "world"}` when there is a GET request.
 
 ```py
-from com_server import Connection, RestApiHandler, Builtins, ConnectionResource
+from com_server import Connection, RestApiHandler, ConnectionResource
+from com_server.api import Builtins
 
 conn = Connection(port="/dev/ttyUSB0", baud=115200)
 handler = RestApiHandler(conn)
@@ -302,12 +274,10 @@ handler.run_dev(host="0.0.0.0", port=8080)
 conn.disconnect()
 ```
 
-Again, note that the endpoints listed above cannot be used.
-
 ## Using the endpoints
 
 Assuming that you're using the `com_server` command to run or `has_register_recall` is False when initializing your `RestApiHandler`, then you need to access the `/register` and `/recall` to ensure to the program that there is only one IP/device connecting (see [Recommended Use](/#recommended-use)). 
 
 When you are beginning to use the serial port, send a GET request to `/register`, and when you are finished, send a GET request to `/recall`. There are no arguments needed.
 
-There is a built-in endpoint for almost every of the methods in `Connection`, in addition to the `send` and `receive` methods of `BaseConnection`. See the [Server API](/server/server-api) for more information on how to use them. Note that if you send a request to the `/send` endpoint or a send-based endpoint (an endpoint that sends any data to the serial port) too rapidly (under the time specified in `send_interval`), it will respond with a 502 error. 
+There is a built-in endpoint for almost every of the methods in `Connection`, in addition to the `send` and `receive` methods of `BaseConnection`. See the [Server API](../../server) for more information on how to use them. Note that if you send a request to the `/send` endpoint or a send-based endpoint (an endpoint that sends any data to the serial port) too rapidly (under the time specified in `send_interval`), it will respond with a 502 error. 

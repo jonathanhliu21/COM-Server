@@ -12,6 +12,7 @@ import pytest
 import time
 
 SERVER = "http://127.0.0.1:8080"
+V = "http://127.0.0.1:8080/v0"
 
 # don't start unless running
 try:
@@ -21,7 +22,7 @@ except requests.exceptions.ConnectionError:
         reason="Server not launched. Make sure it is running on 0.0.0.0 with port 8080, or run \"com_server run <baud> <serport>\".")
 
 def test_rcv_before_register() -> None:
-    r = requests.get(SERVER + "/receive")
+    r = requests.get(V + "/receive")
     assert r.status_code == 400
 
 def test_register() -> None:
@@ -48,21 +49,21 @@ class TestSendRcv:
         }
 
         # normal test (tests send with data)
-        r = requests.post(SERVER + "/send", data=data)
+        r = requests.post(V + "/send", data=data)
         loaded = json.loads(r.text)
         assert r.status_code == 200
         assert "message" in loaded and loaded["message"] == "OK"
 
         # tests parses correctly
         data["notanarg"] = "notanarg"
-        r = requests.post(SERVER + "/send", data=data)
+        r = requests.post(V + "/send", data=data)
         loaded = json.loads(r.text)
         assert r.status_code == 400
         assert "message" in loaded
 
         # tests that send interval is working
         del data["notanarg"]
-        r = requests.post(SERVER + "/send", data=data)
+        r = requests.post(V + "/send", data=data)
         loaded = json.loads(r.text)
         assert r.status_code == 502
         assert "message" in loaded and loaded["message"] == "Failed to send"
@@ -79,7 +80,7 @@ class TestSendRcv:
         }
 
         # tests getting to the endpoint works
-        r = requests.post(SERVER + "/receive", data=data)
+        r = requests.post(V + "/receive", data=data)
         loaded = json.loads(r.text)
         assert r.status_code == 200
         assert "message" in loaded and loaded["message"] == "OK" and "timestamp" in loaded and "data" in loaded
@@ -106,10 +107,10 @@ class TestGet:
             "ending": "\n",
             "concatenate": ";"
         }
-        requests.post(SERVER+"/send", data=data)
+        requests.post(V+"/send", data=data)
 
         # gets data from endpoint
-        r = requests.get(SERVER + "/get")
+        r = requests.get(V + "/get")
         loaded = json.loads(r.text)
 
         time.sleep(1) # for send interval; put before assertions so the program waits even if it fails
@@ -128,7 +129,7 @@ class TestGet:
         """
 
         # gets data from endpoint
-        r = requests.get(SERVER + "/get")
+        r = requests.get(V + "/get")
         loaded = json.loads(r.text)
         assert r.status_code == 502
         assert loaded["message"] != "OK"
@@ -153,12 +154,12 @@ class TestGet:
         }
 
         # sends a new piece of data
-        requests.post(SERVER + "/send", data=data)
+        requests.post(V + "/send", data=data)
 
         time.sleep(1) # For send interval
 
         # gets data
-        r = requests.get(SERVER + "/receive/all")
+        r = requests.get(V + "/receive/all")
         loaded = json.loads(r.text)
 
         # checks that difference in index between is 2

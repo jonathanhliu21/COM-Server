@@ -52,7 +52,6 @@ It is likely that this library will not work for non-USB ports.
         - [com_server.Connection](guide/library-api/#com_serverconnection)
         - [com_server.RestApiHandler](guide/library-api/#com_serverrestapihandler)
         - [com_server.ConnectionResource](guide/library-api/#com_serverconnectionresource)
-        - [com_server.Builtins](guide/library-api/#com_serverbuiltins)
         - [com_server.SendQueue](guide/library-api/#com_serversendqueue)
         - [com_server.ReceiveQueue](guide/library-api/#com_serverreceivequeue)
     - [Constants](guide/library-api/#constants)
@@ -60,10 +59,8 @@ It is likely that this library will not work for non-USB ports.
         - [com_server.ConnectException](guide/library-api/#com_serverconnectexception)
         - [com_server.EndpointExistsException](guide/library-api/#com_serverendpointexistsexception)
 - [Command line interface](guide/cli/)
-- [Server API](server/server-api)
-    - [Endpoints from RestApiHandler](server/server-api/#endpoints-from-restapihandler)
-    - [Endpoints from Builtins](server/server-api/#endpoints-from-builtins)
-    - [Escape characters](server/server-api/#escape-characters)
+- [Server API](server)
+    - [Version 0](server/v0)
 
 ## Recommended use
 COM-Server is **not** meant to be used like a normal JSON API, even though it uses Flask and Flask-restful. If there are many different devices accessing the endpoints at the same time, data will be backed up, since the serial communication is relatively slow and things cannot be sent to the serial device at the same time. 

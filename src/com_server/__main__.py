@@ -21,6 +21,9 @@ A simple command line tool to start the API server that interacts
 with the serial port in an development environment or a 
 production environment.
 
+The server started by the CLI will contain routes for all supported 
+versions of the builtin API.
+
 Usage:
     com_server run <baud> <serport>... [--env=<env>] [--host=<host>] [--port=<port>] [--s-int=<s-int>] [--to=<to>] [--q-sz=<q-sz>] [--cors] [--no-rr] [-v | --verbose] 
     com_server -h | --help

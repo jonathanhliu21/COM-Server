@@ -13,6 +13,7 @@ import pytest
 import requests
 
 SERVER = "http://127.0.0.1:8080"
+V = "http://127.0.0.1:8080/v0"
 
 # don't start unless running
 try:
@@ -38,8 +39,8 @@ class TestAdvanced:
             "concatenate": ";"
         }
 
-        r = requests.post(SERVER+"/send/get_first", data=data)
-        r2 = requests.post(SERVER+"/send/get_first", data=data)
+        r = requests.post(V+"/send/get_first", data=data)
+        r2 = requests.post(V+"/send/get_first", data=data)
 
         time.sleep(1) # send interval; put before assertions to make sure the send interval passes
 
@@ -68,7 +69,7 @@ class TestAdvanced:
             "concatenate": ";"
         }
 
-        requests.post(SERVER+"/send", data=data)
+        requests.post(V+"/send", data=data)
 
         # wait for sent data
         s = f"Got: \"5;6;7;8;{send_time}\""
@@ -77,7 +78,7 @@ class TestAdvanced:
             "response": s,
             "strip": True
         }
-        r = requests.post(SERVER+"/get/wait", data=data_get_back)
+        r = requests.post(V+"/get/wait", data=data_get_back)
 
         time.sleep(1) # send interval; put before assertions to make sure the send interval passes
 
@@ -103,8 +104,8 @@ class TestAdvanced:
             "strip": True
         }
 
-        r = requests.post(SERVER+"/send/get", data=data)
-        r2 = requests.post(SERVER+"/send/get", data=data_fail)
+        r = requests.post(V+"/send/get", data=data)
+        r2 = requests.post(V+"/send/get", data=data_fail)
 
         time.sleep(1) # send interval; put before assertions to make sure the send interval passes
 
