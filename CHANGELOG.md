@@ -1,3 +1,11 @@
+# 0.1.2
+
+Previous version: 0.1.1
+
+## Changes from previous version:
+
+- Fixed return type annotation in `api_server.py`, addressing [#88](https://github.com/jonyboi396825/COM-Server/issues/88)
+
 # 0.1.1
 
 Previous version: 0.1
