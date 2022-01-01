@@ -5,9 +5,21 @@
 Contains implementation of `run` argument from the CLI.
 """
 
+import logging
+
 from . import Connection, RestApiHandler
 from .api import Builtins
 
+# logger setup
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
+
+handler = logging.StreamHandler()
+handler.setLevel(logging.INFO)
+fmt = logging.Formatter("%(levelname)s [%(asctime)s] - %(message)s")
+handler.setFormatter(fmt)
+
+logger.addHandler(handler)
 
 def run(
     baud: int,
@@ -18,13 +30,14 @@ def run(
     timeout: int,
     send_interval: int,
     queue_size: int,
+    logf: str,
     cors: bool,
     has_rr: bool,
     verbose: bool,
 ) -> None:
     # init connection
 
-    print("Starting up connection with serial port...")
+    logger.info("Starting up connection with serial port...")
     with Connection(
         baud,
         ser_port[0],
@@ -33,14 +46,14 @@ def run(
         send_interval=send_interval,
         queue_size=queue_size
     ) as conn:
-        print("Connection with serial port established at", conn.port)
+        logger.info(f"Connection with serial port established at {conn.port}")
 
         handler = RestApiHandler(conn, add_cors=cors, has_register_recall=has_rr)
         Builtins(handler, verbose=verbose)
 
         if env == "dev":
-            print("Launching Flask app...")
-            handler.run_dev(host=host, port=port)
+            logger.info("Launching Flask app...")
+            handler.run_dev(host=host, port=port, logfile=logf)
         else:
-            print("Launching Waitress server...")
-            handler.run_prod(host=host, port=port)
+            logger.info("Launching Waitress server...")
+            handler.run_prod(host=host, port=port, logfile=logf)

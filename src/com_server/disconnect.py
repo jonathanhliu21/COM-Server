@@ -5,8 +5,10 @@
 Contains disconnect handling for the `RestApiHandler`
 """
 
+import logging
 import threading
 import time
+import typing as t
 
 from . import connection  # for typing
 
@@ -16,7 +18,7 @@ class Reconnector(threading.Thread):
     Object that detects whenever a connection is disconnected and reconnects
     """
 
-    def __init__(self, conn: connection.Connection, v: bool) -> None:
+    def __init__(self, conn: connection.Connection, prod: bool, logfile: t.Optional[str] = None) -> None:
         """Constructor
 
         Takes in the connection object to watch and reconnect if it is disconnected.
@@ -25,12 +27,27 @@ class Reconnector(threading.Thread):
 
         Arguments:
         - `conn` (Connection): connection to watch and reconnect to.
-        - `v` (bool): verbose; if the program should print when the serial device disconnects
+        - `prod` (bool): indicates if this is a production server
+        - `logfile` (str, None): the path to the file to log disconnects to
         """
 
         self._conn = conn
-        self._v = v
+        self._logf = logfile
 
+        # logging stuff
+        if prod:
+            self._logger = logging.getLogger("waitress")
+            self._logger.handlers.clear()
+        else:
+            self._logger = logging.getLogger(__name__)
+
+        self._logger.setLevel(logging.INFO)
+        self._init_logger()
+
+        if self._logf:
+            self._init_logger_file()
+
+        # threading
         super().__init__(daemon=True)
 
     def run(self) -> None:
@@ -41,13 +58,33 @@ class Reconnector(threading.Thread):
 
         while True:
             if not self._conn.connected:
-                if self._v:
-                    print("Device disconnected")
-                    print("Attempting to reconnect...")
+                self._logger.warning("Device disconnected")
+                self._logger.info("Attempting to reconnect...")
 
                 self._conn.reconnect()
 
-                if self._v:
-                    print(f"Device reconnected at {self._conn.port}")
+                self._logger.info(f"Device reconnected at {self._conn.port}")
 
             time.sleep(0.01)
+
+    def _init_logger(self) -> None:
+        """Initializes logger to stdout"""
+
+        handler = logging.StreamHandler()
+        handler.setLevel(logging.INFO)
+        
+        fmt = logging.Formatter("%(levelname)s [%(asctime)s] - %(message)s")
+        handler.setFormatter(fmt)
+
+        self._logger.addHandler(handler)
+    
+    def _init_logger_file(self) -> None:
+        """Initializes logger to file"""
+
+        handler = logging.FileHandler(self._logf)
+        handler.setLevel(logging.INFO)
+        
+        fmt = logging.Formatter("%(levelname)s [%(asctime)s] - %(message)s")
+        handler.setFormatter(fmt)
+
+        self._logger.addHandler(handler)

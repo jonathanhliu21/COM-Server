@@ -257,8 +257,12 @@ class RestApiHandler:
 
         return self._api.add_resource(*args, **kwargs)
 
-    def run_dev(self, **kwargs: t.Dict[str, t.Any]) -> None:
+    def run_dev(self, logfile: t.Optional[str] = None, **kwargs: t.Dict[str, t.Any]) -> None:
         """Launches the Flask app as a development server.
+
+        Parameters:
+        - `logfile` (str, None): The path of the file to log serial disconnect and reconnect events to.
+        Leave as None if you do not want to log to a file. By default None.
 
         All arguments in `**kwargs` will be passed to `Flask.run()`.
         For more information, see [here](https://flask.palletsprojects.com/en/2.0.x/api/#flask.Flask.run).
@@ -281,15 +285,19 @@ class RestApiHandler:
             self._api.add_resource(resource, endpoint)
 
         # add disconnect handler, verbose is True
-        _disconnect_handler = disconnect.Reconnector(self._conn, True)
+        _disconnect_handler = disconnect.Reconnector(self._conn, False, logfile)
         _disconnect_handler.start()
 
         self._app.run(**kwargs)
 
         self._conn.disconnect()  # disconnect if stop running
 
-    def run_prod(self, **kwargs: t.Dict[str, t.Any]) -> None:
+    def run_prod(self, logfile: t.Optional[str] = None, **kwargs: t.Dict[str, t.Any]) -> None:
         """Launches the Flask app as a Waitress production server.
+
+        Parameters:
+        - `logfile` (str, None): The path of the file to log serial disconnect and reconnect events to.
+        Leave as None if you do not want to log to a file. By default None.
 
         All arguments in `**kwargs` will be passed to `waitress.serve()`.
         For more information, see [here](https://docs.pylonsproject.org/projects/waitress/en/stable/arguments.html#arguments).
@@ -306,7 +314,7 @@ class RestApiHandler:
             self._api.add_resource(resource, endpoint)
 
         # add disconnect handler, verbose is False
-        _disconnect_handler = disconnect.Reconnector(self._conn, False)
+        _disconnect_handler = disconnect.Reconnector(self._conn, True, logfile)
         _disconnect_handler.start()
 
         waitress.serve(self._app, **kwargs)

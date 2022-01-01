@@ -7,6 +7,7 @@ CLI for COM_Server.
 Contains commands to run the COM server.
 """
 
+import logging
 import sys
 
 from docopt import docopt
@@ -14,6 +15,17 @@ from flask import __version__ as f_v
 from serial import __version__ as s_v
 
 from . import __version__, runner
+
+# logger setup
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
+
+handler = logging.StreamHandler()
+handler.setLevel(logging.INFO)
+fmt = logging.Formatter("%(levelname)s [%(asctime)s] - %(message)s")
+handler.setFormatter(fmt)
+
+logger.addHandler(handler)
 
 PARSE = """COM_Server command line tool
 
@@ -25,7 +37,7 @@ The server started by the CLI will contain routes for all supported
 versions of the builtin API.
 
 Usage:
-    com_server run <baud> <serport>... [--env=<env>] [--host=<host>] [--port=<port>] [--s-int=<s-int>] [--to=<to>] [--q-sz=<q-sz>] [--cors] [--no-rr] [-v | --verbose] 
+    com_server run <baud> <serport>... [--env=<env>] [--host=<host>] [--port=<port>] [--s-int=<s-int>] [--to=<to>] [--q-sz=<q-sz>] [--logf=<logf>] [--cors] [--no-rr] [-v | --verbose] 
     com_server -h | --help
     com_server --version
 
@@ -37,6 +49,7 @@ Options:
                     How long, in seconds, the program should wait between sending to serial port [default: 1].
     --to=<to>       How long, in seconds, the program should wait before exiting when performing time-consuming tasks [default: 1].
     --q-sz=<q-sz>   The maximum size of the receive queue [default: 256].
+    --logf=<logf>   File to log disconnect and reconnect events to.
     --cors          If set, then the program will add cross origin resource sharing.
     --no-rr         If set, then turns off /register and /recall endpoints, same as setting has_register_recall=False
     -v, --verbose   Prints arguments each endpoints receives to stdout. Should not be used in production.
@@ -78,12 +91,13 @@ def main() -> None:
         timeout = args["--to"].strip()
         send_interval = args["--s-int"].strip()
         queue_size = args["--q-sz"].strip()
+        logf = args["--logf"]
         add_cors = args["--cors"]
         verbose = args["--verbose"]
         has_rr = not args["--no-rr"]
 
         if env not in ("dev", "prod"):
-            print('Value of <env> must be "dev" or "prod".')
+            logger.error('Value of <env> must be "dev" or "prod".')
             sys.exit(1)
 
         runner.run(
@@ -95,12 +109,13 @@ def main() -> None:
             timeout,
             send_interval,
             queue_size,
+            logf,
             add_cors,
             has_rr,
             verbose,
         )
 
-        print("Exited")
+        logger.info("Exited")
 
 
 if __name__ == "__main__":
