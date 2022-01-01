@@ -257,7 +257,9 @@ class RestApiHandler:
 
         return self._api.add_resource(*args, **kwargs)
 
-    def run_dev(self, logfile: t.Optional[str] = None, **kwargs: t.Dict[str, t.Any]) -> None:
+    def run_dev(
+        self, logfile: t.Optional[str] = None, **kwargs: t.Dict[str, t.Any]
+    ) -> None:
         """Launches the Flask app as a development server.
 
         Parameters:
@@ -292,7 +294,9 @@ class RestApiHandler:
 
         self._conn.disconnect()  # disconnect if stop running
 
-    def run_prod(self, logfile: t.Optional[str] = None, **kwargs: t.Dict[str, t.Any]) -> None:
+    def run_prod(
+        self, logfile: t.Optional[str] = None, **kwargs: t.Dict[str, t.Any]
+    ) -> None:
         """Launches the Flask app as a Waitress production server.
 
         Parameters:

@@ -18,7 +18,9 @@ class Reconnector(threading.Thread):
     Object that detects whenever a connection is disconnected and reconnects
     """
 
-    def __init__(self, conn: connection.Connection, prod: bool, logfile: t.Optional[str] = None) -> None:
+    def __init__(
+        self, conn: connection.Connection, prod: bool, logfile: t.Optional[str] = None
+    ) -> None:
         """Constructor
 
         Takes in the connection object to watch and reconnect if it is disconnected.
@@ -72,18 +74,18 @@ class Reconnector(threading.Thread):
 
         handler = logging.StreamHandler()
         handler.setLevel(logging.INFO)
-        
+
         fmt = logging.Formatter("%(levelname)s [%(asctime)s] - %(message)s")
         handler.setFormatter(fmt)
 
         self._logger.addHandler(handler)
-    
+
     def _init_logger_file(self) -> None:
         """Initializes logger to file"""
 
         handler = logging.FileHandler(self._logf)
         handler.setLevel(logging.INFO)
-        
+
         fmt = logging.Formatter("%(levelname)s [%(asctime)s] - %(message)s")
         handler.setFormatter(fmt)
 

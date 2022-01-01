@@ -21,6 +21,7 @@ handler.setFormatter(fmt)
 
 logger.addHandler(handler)
 
+
 def run(
     baud: int,
     ser_port: list,
@@ -44,7 +45,7 @@ def run(
         *ser_port[1:],
         timeout=timeout,
         send_interval=send_interval,
-        queue_size=queue_size
+        queue_size=queue_size,
     ) as conn:
         logger.info(f"Connection with serial port established at {conn.port}")
 
