@@ -14,7 +14,7 @@ The server started by the CLI will contain routes for all supported
 versions of the builtin API.
 
 Usage:
-    com_server run <baud> <serport>... [--env=<env>] [--host=<host>] [--port=<port>] [--s-int=<s-int>] [--to=<to>] [--cors] [--no-rr] [-v | --verbose] 
+    com_server run <baud> <serport>... [--env=<env>] [--host=<host>] [--port=<port>] [--s-int=<s-int>] [--to=<to>] [--q-sz=<q-sz>] [--logf=<logf>] [--cors] [--no-rr] [-v | --verbose] 
     com_server -h | --help
     com_server --version
 
@@ -26,6 +26,7 @@ Options:
                     How long, in seconds, the program should wait between sending to serial port [default: 1].
     --to=<to>       How long, in seconds, the program should wait before exiting when performing time-consuming tasks [default: 1].
     --q-sz=<q-sz>   The maximum size of the receive queue [default: 256].
+    --logf=<logf>   File to log disconnect and reconnect events to.
     --cors          If set, then the program will add cross origin resource sharing.
     --no-rr         If set, then turns off /register and /recall endpoints, same as setting has_register_recall=False
     -v, --verbose   Prints arguments each endpoints receives to stdout. Should not be used in production.

@@ -832,6 +832,11 @@ def run_dev(**kwargs)
 
 Launches the Flask app as a development server.
 
+Parameters:
+
+- `logfile` (str, None): The path of the file to log serial disconnect and reconnect events to.
+Leave as None if you do not want to log to a file. By default None.
+
 All arguments in `**kwargs` will be passed to `Flask.run()`.
 For more information, see [here](https://flask.palletsprojects.com/en/2.0.x/api/#flask.Flask.run).
 For documentation on Flask in general, see [here](https://flask.palletsprojects.com/en/2.0.x/).
@@ -857,6 +862,11 @@ def run_prod(**kwargs)
 ```
 
 Launches the Flask app as a Waitress production server.
+
+Parameters:
+
+- `logfile` (str, None): The path of the file to log serial disconnect and reconnect events to.
+Leave as None if you do not want to log to a file. By default None.
 
 All arguments in `**kwargs` will be passed to `waitress.serve()`.
 For more information, see [here](https://docs.pylonsproject.org/projects/waitress/en/stable/arguments.html#arguments).

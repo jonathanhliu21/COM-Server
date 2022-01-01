@@ -104,6 +104,5 @@ Any request made to any endpoint the requires use of the serial port will have a
 Notes:
 
 - When it reconnects, it calls the `reconnect()` method in the `Connection` object. It will try to reconnect to the ports given in `__init__()`, which means that if the port was changed somehow between disconnecting and reconnecting, it will not reconnect and will require restarting the server.
-- When running a development server, it will print out the disconnect and reconnect events to stdout. It will not when running a production server.
+- Disconnect and reconnect events will be logged to `stdout` for both development and production servers. You can specify a file to log these events to in the `logfile` parameter when calling [`RestApiHandler.run_dev()`](http://localhost:8000/guide/library-api/#restapihandlerrun_dev) or [`RestApiHandler.run_prod()`](http://localhost:8000/guide/library-api/#restapihandlerrun_prod). The time, logging level (INFO and WARNING), and disconnect and reconnect messages will be logged to the file.
 - Disconnecting the serial device will **reset** the receive and send queues.
-
