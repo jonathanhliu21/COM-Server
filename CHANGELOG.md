@@ -1,3 +1,11 @@
+# 0.2 Beta Release 0
+
+Previous version: 0.1.*
+
+## Changes from previous version
+
+- Added logging using Python's `logging` module and also added logging to file when disconnects happen, addressing [#73](https://github.com/jonyboi396825/COM-Server/issues/73)
+
 # 0.1.3
 
 Previous version: 0.1.2
