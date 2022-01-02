@@ -22,26 +22,9 @@ if os.name == "posix":
 
 
 class Connection(base_connection.BaseConnection):
-    """A more user-friendly interface with the serial port.
+    """Class that interfaces with the serial port.
 
-    In addition to the four basic methods (see `BaseConnection`),
-    it makes other methods that may also be useful to the user
-    when communicating with the classes.
-
-    Some of the methods include:
-    - `get()`: Gets first response after the time that the method was called
-    - `get_all_rcv()`: Returns the entire receive queue
-    - `get_all_rcv_str()`: Returns the entire receive queue, converted to strings
-    - `receive_str()`: Receives as a string rather than bytes object
-    - `get_first_response()`: Gets the first response from the serial port after sending something (breaks when timeout reached)
-    - `send_for_response()`: Continues sending something until the connection receives a given response (breaks when timeout reached)
-    - `wait_for_response()`: Waits until the connection receives a given response (breaks when timeout reached)
-    - `reconnect()`: Attempts to reconnect given a new port
-
-    Other methods can generally help the user with interacting with the classes:
-    - `all_ports()`: Lists all available COM ports.
-
-    **Warning**: Before making this object go out of scope, make sure to call `disconnect()` in order to avoid thread leaks.
+    **Warning**: Before making this object go out of scope, make sure to call `disconnect()` in order to avoid zombie threads.
     If this does not happen, then the IO thread will still be running for an object that has already been deleted.
     """
 
@@ -120,6 +103,7 @@ class Connection(base_connection.BaseConnection):
         Returns:
         - None if no data received (timeout reached)
         - A `bytes` object indicating the data received if `type` is `bytes`
+        - A `str` object indicating the data received, then passed through `conv_bytes_to_str()`, if `type` is `str`
         """
 
         call_time = time.time()  # time that the function was called
@@ -319,9 +303,8 @@ class Connection(base_connection.BaseConnection):
     ) -> bool:
         """Waits until the connection receives a given response.
 
-        This method will call `receive()` repeatedly until it
-        returns a string that matches `response` whose timestamp
-        is greater than given timestamp (`after_timestamp`).
+        This method will wait for a response that matches given `response`
+        whose time received is greater than given timestamp `after_timestamp`.
 
         Parameters:
         - `response` (str, bytes): The receive data that the program is looking for.
