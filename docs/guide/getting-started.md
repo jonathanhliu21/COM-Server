@@ -190,14 +190,14 @@ Increase the value of `num_before` to get the next most recent, next next more r
 
 If there has not been any received data, then returns `None`.
 
-To wait for the first data to be received, use the `get()` method:
+To wait for data to be received, use the `get()` method:
 
 ```py
 rcv = conn.get(bytes) # gets first bytes after the method is called
 rcv = conn.get(str) # gets first string after method is called
 ```
 
-If the timeout is reached, then the method will return `None`.
+If no data gets received before the timeout is reached, then the method will return `None`.
 
 ### Full example
 
@@ -251,7 +251,7 @@ Note that when using builtin endpoints, you cannot use those endpoints or the pr
 
 ### Adding custom endpoints
 
-To add custom endpoints, use the `add_endpoints` decorator above a function with a nested class in it. The nested class should extend `ConnectionResource` and have functions similar to the classes of `flask_restful`. See [here](https://flask-restful.readthedocs.io/en/latest/quickstart.html#a-minimal-api) for more info. The function needs to have a `conn` parameter indicating the connection object and lastly needs to return the nested class.
+To add custom endpoints, use the `add_endpoint` decorator above a class. The class has to extend `ConnectionResource` and should have functions similar to the classes of `flask_restful`. See [here](https://flask-restful.readthedocs.io/en/latest/quickstart.html#a-minimal-api) for more info. To use the connection object, you can use the `self.conn` attribute of the class.
 
 The example below adds a route at `/hello_world`, sends "`Hello world\n`" to the serial port, then returns `{"Hello": "world"}` when there is a GET request.
 
@@ -276,8 +276,10 @@ conn.disconnect()
 
 ## Using the endpoints
 
-Assuming that you're using the `com_server` command to run or `has_register_recall` is False when initializing your `RestApiHandler`, then you need to access the `/register` and `/recall` to ensure to the program that there is only one IP/device connecting (see [Recommended Use](/#recommended-use)). 
+Assuming that you're using the `com_server` command to run or `has_register_recall` is False when initializing your `RestApiHandler`, then you need to access the `/register` and `/recall` to ensure to the program that there is only one IP/device connecting (see [Recommended Use](/#recommended-use)), unless `has_register_recall` is False. 
+
+However, if you visit an endpoint added using `add_endpoint()` while that endpoint or another endpoint also added using `add_endpoint()` is being used, it will respond with `503 Service Unavailable`.
 
 When you are beginning to use the serial port, send a GET request to `/register`, and when you are finished, send a GET request to `/recall`. There are no arguments needed.
 
-There is a built-in endpoint for almost every of the methods in `Connection`, in addition to the `send` and `receive` methods of `BaseConnection`. See the [Server API](../../server) for more information on how to use them. Note that if you send a request to the `/send` endpoint or a send-based endpoint (an endpoint that sends any data to the serial port) too rapidly (under the time specified in `send_interval`), it will respond with a 502 error. 
+This library comes with many built-in routes to interact with the serial port. See the [Server API](../../server) for more information on how to use them.
