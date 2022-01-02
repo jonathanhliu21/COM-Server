@@ -54,7 +54,7 @@ For beta releases, use the `--pre` option:
 ## Quickstart
 
 ```py
-# launches a development server on http://0.0.0.0:8080
+# launches a server on http://0.0.0.0:8080
 
 import com_server
 
@@ -62,7 +62,7 @@ conn = com_server.Connection(<baud>, "<serport>")
 handler = com_server.RestApiHandler(conn) 
 com_server.Builtins(handler) 
 
-handler.run_dev(host="0.0.0.0", port=8080) 
+handler.run(host="0.0.0.0", port=8080) 
 
 conn.disconnect()
 ```

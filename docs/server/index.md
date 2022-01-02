@@ -22,7 +22,7 @@ conn = Connection(<baud>, "<port>")
 handler = RestApiHandler(conn)
 V0(handler) # adds built-in endpoints from version 0
 
-handler.run_dev(host="0.0.0.0", port=8080)
+handler.run(host="0.0.0.0", port=8080)
 ```
 
 All class names and prefixes are listed above, in "supported versions".
@@ -37,7 +37,7 @@ conn = Connection(<baud>, "<port>")
 handler = RestApiHandler(conn)
 Builtins(handler) # adds all built-in endpoints from all versions
 
-handler.run_dev(host="0.0.0.0", port=8080)
+handler.run(host="0.0.0.0", port=8080)
 ```
 
 This will launch a server with routes from all versions with their corresponding URL prefixes, listed above.
@@ -104,5 +104,5 @@ Any request made to any endpoint the requires use of the serial port will have a
 Notes:
 
 - When it reconnects, it calls the `reconnect()` method in the `Connection` object. It will try to reconnect to the ports given in `__init__()`, which means that if the port was changed somehow between disconnecting and reconnecting, it will not reconnect and will require restarting the server.
-- Disconnect and reconnect events will be logged to `stdout` for both development and production servers. You can specify a file to log these events to in the `logfile` parameter when calling [`RestApiHandler.run_dev()`](http://localhost:8000/guide/library-api/#restapihandlerrun_dev) or [`RestApiHandler.run_prod()`](http://localhost:8000/guide/library-api/#restapihandlerrun_prod). The time, logging level (INFO and WARNING), and disconnect and reconnect messages will be logged to the file.
+- Disconnect and reconnect events will be logged to `stdout` for both development and production servers. You can specify a file to log these events to in the `logfile` parameter when calling [`RestApiHandler.run()`](http://localhost:8000/guide/library-api/#restapihandlerrun_dev) or [`RestApiHandler.run_dev()`](http://localhost:8000/guide/library-api/#restapihandlerrun_prod). The time, logging level (INFO and WARNING), and disconnect and reconnect messages will be logged to the file.
 - Disconnecting the serial device will **reset** the receive and send queues.

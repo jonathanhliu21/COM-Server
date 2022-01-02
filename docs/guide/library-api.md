@@ -641,6 +641,28 @@ See [here](https://flask-restful.readthedocs.io/en/latest/api.html#flask_restful
 for more info on `add_resource` and [here](https://flask-restful.readthedocs.io)
 for more info on `flask_restful` in general. 
 
+#### RestApiHandler.run()
+
+```py
+def run(**kwargs)
+```
+
+Launches the Flask app as a Waitress production server (recommended).
+
+Parameters:
+
+- `logfile` (str, None): The path of the file to log serial disconnect and reconnect events to.
+Leave as None if you do not want to log to a file. By default None.
+
+All arguments in `**kwargs` will be passed to `waitress.serve()`.
+For more information, see [here](https://docs.pylonsproject.org/projects/waitress/en/stable/arguments.html#arguments).
+For Waitress documentation, see [here](https://docs.pylonsproject.org/projects/waitress/en/stable/).
+
+If nothing is included, then runs on `http://0.0.0.0:8080`
+
+Automatically disconnects the `Connection` object after
+the server is closed.
+
 #### RestApiHandler.run_dev()
 
 ```py
@@ -648,6 +670,10 @@ def run_dev(**kwargs)
 ```
 
 Launches the Flask app as a development server.
+
+Not recommended because this is slower, and development features
+such as debug mode and restarting do not work most of the time.
+Use `run()` instead.
 
 Parameters:
 
@@ -665,7 +691,7 @@ Some arguments include:
 
 - `host`: The host of the server. Ex: `localhost`, `0.0.0.0`, `127.0.0.1`, etc.
 - `port`: The port to host it on. Ex: `5000` (default), `8000`, `8080`, etc.
-- `debug`: If the app should be used in debug mode. Note that this may break some things because of reloads.
+- `debug`: If the app should be used in debug mode. Very unreliable and most likely will not work.
 
 #### RestApiHandler.run_prod()
 
@@ -673,21 +699,7 @@ Some arguments include:
 def run_prod(**kwargs)
 ```
 
-Launches the Flask app as a Waitress production server.
-
-Parameters:
-
-- `logfile` (str, None): The path of the file to log serial disconnect and reconnect events to.
-Leave as None if you do not want to log to a file. By default None.
-
-All arguments in `**kwargs` will be passed to `waitress.serve()`.
-For more information, see [here](https://docs.pylonsproject.org/projects/waitress/en/stable/arguments.html#arguments).
-For Waitress documentation, see [here](https://docs.pylonsproject.org/projects/waitress/en/stable/).
-
-If nothing is included, then runs on `http://0.0.0.0:8080`
-
-Automatically disconnects the `Connection` object after
-the server is closed.
+Same as `run()` but here for backward compatibility.
 
 #### RestApiHandler.flask_obj
 

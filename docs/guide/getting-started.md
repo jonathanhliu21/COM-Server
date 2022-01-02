@@ -228,7 +228,7 @@ This is the class that handles setting up the server that hosts an API which int
 
 This class uses `Flask` and `flask_restful`'s API class as its back end. More about them [here](https://flask.palletsprojects.com) and [here](https://flask-restful.readthedocs.io).
 
-The example below shows how to create a `RestApiHandler` object and run it as a Flask development server on `https://0.0.0.0:8080`:
+The example below shows how to create a `RestApiHandler` object and run it on `https://0.0.0.0:8080`:
 ```py
 import flask
 import flask_restful
@@ -238,7 +238,7 @@ conn = Connection(port="/dev/ttyUSB0", baud=115200)
 handler = RestApiHandler(conn)
 
 # automatically connects conn
-handler.run_dev(host="0.0.0.0", port=8080)
+handler.run(host="0.0.0.0", port=8080)
 
 conn.disconnect()
 ```
@@ -269,7 +269,7 @@ class HelloWorldEndpoint(ConnectionResource):
         self.conn.send("Hello", "world", ending='\n')
         return {"Hello": "world"}
     
-handler.run_dev(host="0.0.0.0", port=8080)
+handler.run(host="0.0.0.0", port=8080)
 
 conn.disconnect()
 ```

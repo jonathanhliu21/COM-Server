@@ -19,7 +19,7 @@ Usage:
     com_server --version
 
 Options:
-    --env=<env>     Development or production environment. Value must be 'dev' or 'prod'. [default: dev].
+    --env=<env>     Development or production environment. Value must be 'dev' or 'prod'. [default: prod].
     --host=<host>   The name of the host server (optional) [default: 0.0.0.0].
     --port=<port>   The port of the host server (optional) [default: 8080].
     --s-int=<s-int>  
