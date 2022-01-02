@@ -5,6 +5,7 @@ Previous version: 0.1.*
 ## Changes from previous version
 
 - Added logging using Python's `logging` module and also added logging to file when disconnects happen, addressing [#73](https://github.com/jonyboi396825/COM-Server/issues/73)
+- CLI now runs production server instead of development server by default, and now recommending production server, addressing [#97](https://github.com/jonyboi396825/COM-Server/issues/97)
 
 # 0.1.4
 
