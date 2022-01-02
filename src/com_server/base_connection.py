@@ -32,26 +32,8 @@ class ConnectException(Exception):
 class BaseConnection(abc.ABC):
     """A base connection object with a serial or COM port.
 
-    If you want to communicate via serial, it is recommended to
-    either directly use `pyserial` directly or use the `Connection` class.
-
-    This class contains the four basic methods needed to talk with the serial port:
-    - `connect()`: opens a connection with the serial port
-    - `disconnect()`: closes the connection with the serial port
-    - `send()`: sends data to the serial port
-    - `read()`: reads data from the serial port
-
-    It also contains the property `connected` to indicate if it is currently connected to the serial port.
-
-    If the USB port is disconnected while the program is running, then it will automatically detect the exception
-    thrown by `pyserial`, and then it will reset the IO variables and then label itself as disconnected. It will
-    then stop the IO thread. If `exit_on_disconnect` is True, it will send a `SIGTERM` signal to the main thread
-    if the port was disconnected.
-
-    **Warning**: Before making this object go out of scope, make sure to call `disconnect()` in order to avoid thread leaks.
-    If this does not happen, then the IO thread will still be running for an object that has already been deleted.
-
-    **Warning**: There will be NO errors thrown if this object is declared twice with the same port, which may lead to unexpected behavior.
+    Base class that contains implemented basic methods: `send()`, `receive()`, `connect()`,
+    and `disconnect()`, properties of the connection, and an abstract IO thread method.
     """
 
     def __init__(
@@ -67,7 +49,7 @@ class BaseConnection(abc.ABC):
         rest_cpu: bool = True,
         **kwargs: t.Dict[str, t.Any],
     ) -> None:
-        """Initializes the Base Connection class.
+        """Initializes the Connection-like class.
 
         `baud`, `port` (or a port within `ports`), `timeout`, and `kwargs` will be passed to pyserial.
         For more information, see [here](https://pyserial.readthedocs.io/en/latest/pyserial_api.html#serial.Serial).
@@ -325,15 +307,12 @@ class BaseConnection(abc.ABC):
         The IO thread will continuously detect receive data and put the `bytes` objects in the `rcv_queue`.
         If there are no parameters, the method will return the most recent received data.
         If `num_before` is greater than 0, then will return `num_before`th previous data.
-            - Note: Must be less than the current size of the queue and greater or equal to 0
+            - Note: `num_before` must be less than the current size of the queue and greater or equal to 0
                 - If not, returns None (no data)
             - Example:
                 - 0 will return the most recent received data
                 - 1 will return the 2nd most recent received data
                 - ...
-
-        Note that the data will be read as ALL the data available in the serial port,
-        or `Serial.read_all()`.
 
         Parameters:
         - `num_before` (int) (optional): Which receive object to return. Must be nonnegative. By default None.
