@@ -48,7 +48,6 @@ It is likely that this library will not work for non-USB ports.
     - [Functions](guide/library-api/#functions)
         - [com_server.all_ports()](guide/library-api/#com_serverall_ports)
     - [Classes](guide/library-api/#classes)
-        - [com_server.BaseConnection](guide/library-api/#com_serverbaseconnection)
         - [com_server.Connection](guide/library-api/#com_serverconnection)
         - [com_server.RestApiHandler](guide/library-api/#com_serverrestapihandler)
         - [com_server.ConnectionResource](guide/library-api/#com_serverconnectionresource)
