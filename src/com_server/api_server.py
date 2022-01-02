@@ -143,9 +143,9 @@ class RestApiHandler:
         If there are two classes of the same name, even in different
         endpoints, the program will append underscores to the name
         until there are no more repeats. For example, if one class is
-        named "Hello" and another class is also named "Hello", 
-        then the second class name will be changed to "Hello_". 
-        This happens because `flask_restful` interprets duplicate class 
+        named "Hello" and another class is also named "Hello",
+        then the second class name will be changed to "Hello_".
+        This happens because `flask_restful` interprets duplicate class
         names as duplicate endpoints.
 
         If another process accesses an endpoint while another is
@@ -241,8 +241,8 @@ class RestApiHandler:
         return _outer
 
     def add_resource(self, *args: t.Tuple[t.Any], **kwargs: t.Dict[str, t.Any]) -> None:
-        """Calls `flask_restful.add_resource`. 
-        
+        """Calls `flask_restful.add_resource`.
+
         Allows adding endpoints that do not interact with the serial port.
 
         See [here](https://flask-restful.readthedocs.io/en/latest/api.html#flask_restful.Api.add_resource)
@@ -256,6 +256,10 @@ class RestApiHandler:
         self, logfile: t.Optional[str] = None, **kwargs: t.Dict[str, t.Any]
     ) -> None:
         """Launches the Flask app as a development server.
+
+        Not recommended because this is slower, and development features
+        such as debug mode and restarting do not work most of the time.
+        Use `run()` instead.
 
         Parameters:
         - `logfile` (str, None): The path of the file to log serial disconnect and reconnect events to.
@@ -271,7 +275,7 @@ class RestApiHandler:
         Some arguments include:
         - `host`: The host of the server. Ex: `localhost`, `0.0.0.0`, `127.0.0.1`, etc.
         - `port`: The port to host it on. Ex: `5000` (default), `8000`, `8080`, etc.
-        - `debug`: If the app should be used in debug mode.
+        - `debug`: If the app should be used in debug mode. Very unreliable and most likely will not work.
         """
 
         if not self._conn.connected:
@@ -289,10 +293,10 @@ class RestApiHandler:
 
         self._conn.disconnect()  # disconnect if stop running
 
-    def run_prod(
+    def run(
         self, logfile: t.Optional[str] = None, **kwargs: t.Dict[str, t.Any]
     ) -> None:
-        """Launches the Flask app as a Waitress production server.
+        """Launches the Flask app as a Waitress production server (recommended).
 
         Parameters:
         - `logfile` (str, None): The path of the file to log serial disconnect and reconnect events to.
@@ -322,6 +326,9 @@ class RestApiHandler:
         waitress.serve(self._app, **kwargs)
 
         self._conn.disconnect()  # disconnect if stop running
+
+    # backward compatibility
+    run_prod = run
 
     @property
     def flask_obj(self) -> flask.Flask:

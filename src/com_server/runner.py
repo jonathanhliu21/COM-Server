@@ -57,4 +57,4 @@ def run(
             handler.run_dev(host=host, port=port, logfile=logf)
         else:
             logger.info("Launching Waitress server...")
-            handler.run_prod(host=host, port=port, logfile=logf)
+            handler.run(host=host, port=port, logfile=logf)
