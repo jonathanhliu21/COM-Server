@@ -287,7 +287,7 @@ class RestApiHandler:
             self._api.add_resource(resource, endpoint)
 
         # add disconnect handler, verbose is True
-        _logger = logging.getLogger(__name__)
+        _logger = logging.getLogger("com_server_dev")
         _disconnect_handler = disconnect.Reconnector(self._conn, _logger, logfile)
         _disconnect_handler.start()
 
