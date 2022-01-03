@@ -18,6 +18,9 @@ from . import __version__, runner
 
 # logger setup
 logger = logging.getLogger(__name__)
+logger.propagate = (
+    False  # prevents from logging twice because waitress calls basicConfig()
+)
 logger.setLevel(logging.INFO)
 
 handler = logging.StreamHandler()

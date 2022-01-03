@@ -6,6 +6,7 @@ This file contains the implementation to the HTTP server that serves
 the web API for the Serial port.
 """
 
+import logging
 import threading
 import typing as t
 
@@ -286,7 +287,8 @@ class RestApiHandler:
             self._api.add_resource(resource, endpoint)
 
         # add disconnect handler, verbose is True
-        _disconnect_handler = disconnect.Reconnector(self._conn, False, logfile)
+        _logger = logging.getLogger(__name__)
+        _disconnect_handler = disconnect.Reconnector(self._conn, _logger, logfile)
         _disconnect_handler.start()
 
         self._app.run(**kwargs)
@@ -319,8 +321,10 @@ class RestApiHandler:
         for endpoint, resource in self._all_endpoints:
             self._api.add_resource(resource, endpoint)
 
+        _logger = logging.getLogger("waitress")
+
         # add disconnect handler, verbose is False
-        _disconnect_handler = disconnect.Reconnector(self._conn, True, logfile)
+        _disconnect_handler = disconnect.Reconnector(self._conn, _logger, logfile)
         _disconnect_handler.start()
 
         waitress.serve(self._app, **kwargs)

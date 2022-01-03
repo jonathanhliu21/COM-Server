@@ -19,7 +19,10 @@ class Reconnector(threading.Thread):
     """
 
     def __init__(
-        self, conn: connection.Connection, prod: bool, logfile: t.Optional[str] = None
+        self,
+        conn: connection.Connection,
+        logger: logging.Logger,
+        logfile: t.Optional[str] = None,
     ) -> None:
         """Constructor
 
@@ -36,13 +39,10 @@ class Reconnector(threading.Thread):
         self._conn = conn
         self._logf = logfile
 
-        # logging stuff
-        if prod:
-            self._logger = logging.getLogger("waitress")
-            self._logger.handlers.clear()
-        else:
-            self._logger = logging.getLogger(__name__)
-
+        self._logger = logger
+        self._logger.propagate = (
+            False  # prevents from logging twice because waitress calls basicConfig()
+        )
         self._logger.setLevel(logging.INFO)
         self._init_logger()
 
