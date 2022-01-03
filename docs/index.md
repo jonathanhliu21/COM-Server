@@ -100,10 +100,11 @@ You can use `python3` depending on what command you are using for python 3.
 # launches a server on http://0.0.0.0:8080
 
 import com_server
+from com_server.api import Builtins
 
 conn = com_server.Connection(<baud>, "<serport>") 
 handler = com_server.RestApiHandler(conn) 
-com_server.Builtins(handler) 
+Builtins(handler) 
 
 handler.run(host="0.0.0.0", port=8080) 
 
