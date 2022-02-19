@@ -146,7 +146,7 @@ class ConnectionRoutes:
 def add_resources(api: Api, *routes: ConnectionRoutes) -> None:
     """Adds all resources given in `servers` to the given `Api`.
 
-    This has to be called **before** calling `serve_app` along with `start_conns()`.
+    This has to be called **before** calling `start_app()` along with `start_conns()`.
 
     Parameters:
     - `api`: The `flask_restful` `Api` object that adds the resources
@@ -165,10 +165,10 @@ def start_conns(
 ) -> None:
     """Initializes serial connections and disconnect handler.
 
-    This has to be called **before** calling `serve_app` along with `add_resources()`.
+    This has to be called **before** calling `start_app()` along with `add_resources()`.
 
     Note that adding multiple routes to `start_conns` is experimental and currently
-    not being tested, and it has multiple issues right now.
+    not being tested, and it probably has multiple issues right now.
 
     Parameters:
     - `routes`: The `ConnectionRoutes` objects to initialize connections from
@@ -214,7 +214,7 @@ def start_conns(
 def disconnect_conns(*routes: ConnectionRoutes) -> None:
     """Disconnects all `Connection` objects in provided `ConnectionRoutes` objects
 
-    It is recommended to call this after `serve_app()` to make sure that the serial
+    It is recommended to call this after `start_app()` to make sure that the serial
     connections are closed.
 
     Note that calling this will exit the program using `sys.exit()`.
@@ -241,11 +241,8 @@ def start_app(
 ) -> None:
     """Starts a waitress production server that serves the app
 
-    `linear` determines if `Connection` objects should be
-    started in a thread pool or one by one.
-
     Note that connection objects between `ConnectionRoutes`
-    can share no ports in common if `linear` is False.
+    can share no ports in common.
 
     Using this is recommended over calling `add_resources()`,
     `start_conns()`, `serve_app()`, and `disconnect_conns()`

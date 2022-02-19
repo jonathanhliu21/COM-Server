@@ -13,6 +13,94 @@ Gets all ports from serial interface.
 Gets ports from Serial interface by calling `serial.tools.list_ports.comports()`.
 See [here](https://pyserial.readthedocs.io/en/latest/tools.html#module-serial.tools.list_ports) for more info.
 
+### com_server.start_app()
+
+```py
+def start_app(app, api, *routes, logfile, host, port, cleanup, **kwargs)
+```
+
+Starts a waitress production server that serves the Flask app
+given `ConnectionRoutes` objects.
+
+Using this is recommended over calling `add_resources()`,
+`start_conns()`, `serve_app()`, and `disconnect_conns()`
+separately.
+
+All `Connection`s in `routes` have to be connected initially, or an exception will be thrown.
+
+Note that connection objects between `ConnectionRoutes`
+can share no ports in common.
+
+**Also note that adding multiple `ConnectionRoutes` is
+not tested and may result in very unexpected behavior
+when disconnecting and reconnecting**.
+
+Lastly, note that `sys.exit()` will be called in this,
+so add any cleanup operations to the `cleanup` parameter.
+
+Parameters:
+
+- `app`: The Flask object that runs the server
+- `api`: The `flask_restful` `Api` object that adds the resources
+- `*routes`: The `ConnectionRoutes` objects to add to the server
+- `logfile`: The path of the file to log serial disconnect and reconnect events to.
+Leave as None if you do not want to log to a file. By default None.
+- `host`: The host of server (e.g. 0.0.0.0 or 127.0.0.1). By default 0.0.0.0
+- `port`: The port to host the server on (e.g. 8080, 8000, 5000). By default 8080.
+- `cleanup`: cleanup function to be called after waitress is done serving app. By default None.
+- `**kwargs`: will be passed to `waitress.serve()`
+
+### com_server.add_resources()
+
+```py
+def add_resources(api, *routes)
+```
+
+Adds all resources given in `servers` to the given `Api`.
+
+This has to be called **before** calling `start_app()` along with `start_conns()`.
+
+Parameters:
+
+- `api`: The `flask_restful` `Api` object that adds the resources
+- `routes`: The `ConnectionRoutes` objects to add to the server
+
+
+### com_server.start_conns()
+
+```py
+def start_conns(logger, *routes, logfile)
+```
+Initializes serial connections and disconnect handler.
+
+This has to be called **before** calling `start_app()` along with `add_resources()`.
+
+Note that adding multiple routes to `start_conns` is experimental and currently
+not being tested, and it probably has multiple issues right now.
+
+Parameters:
+
+- `routes`: The `ConnectionRoutes` objects to initialize connections from
+- `logger`: a python logging object
+- `logfile`: file to log messages to
+
+### com_server.disconnect_conns()
+
+```py
+def disconnect_conns(*routes)
+```
+
+Disconnects all `Connection` objects in provided `ConnectionRoutes` objects
+
+It is recommended to call this after `start_app()` to make sure that the serial
+connections are closed.
+
+Note that calling this will exit the program using `sys.exit()`.
+
+Parameters:
+
+- `routes`: The `ConnectionRoutes` objects to disconnect connections from
+
 ---
 
 ## Classes
@@ -536,6 +624,75 @@ Getter:
 
 - Gets the current port of the connection 
 
+---
+
+### com_server.ConnectionRoutes
+
+A wrapper for Flask objects for adding routes involving a `Connection` object
+
+This class allows the user to easily add REST API routes that interact
+with a serial connection by using `flask_restful`.
+
+When the connection is disconnected, a `500 Internal Server Error`
+will occur when a route relating to the connection is visited.
+A thread will detect this event and will try to reconnect the serial port.
+Note that this will cause the send and receive queues to **reset**.
+
+If a resource is accessed while it is being used by another process,
+then it will respond with `503 Service Unavailable`.
+
+More information on [Flask](https://flask.palletsprojects.com/en/2.0.x/) and [flask-restful](https://flask-restful.readthedocs.io/en/latest/).
+
+#### ConnectionRoutes.\_\_init\_\_()
+
+```py
+def __init__(conn)
+```
+
+Constructor
+
+Parameters:
+
+- `conn` (`Connection`): The `Connection` object the API is going to be associated with.
+
+There should only be one `ConnectionRoutes` object that wraps each `Connection` object.
+Having multiple may result in an error.
+
+Note that `conn` needs to be connected when starting
+the server or else an error will be raised.
+
+#### ConnectionRoutes.add_resource()
+
+```py
+def add_resource(resource)
+```
+
+Decorator that adds a resource
+
+The resource should interact with the serial port.
+If not, use `Api.add_resource()` instead.
+
+This decorator works the same as [Api.resource()](https://flask-restful.readthedocs.io/en/latest/api.html#flask_restful.Api.resource).
+
+However, the class under the decorator should
+not extend `flask_restful.Resource` but
+instead `com_server.ConnectionResource`. This is
+because `ConnectionResource` contains `Connection`
+attributes that can be used in the resource.
+
+Unlike a resource added using `Api.add_resource()`,
+if a process accesses this resource while it is
+currently being used by another process, then it will
+respond with `503 Service Unavailable`.
+
+Parameters:
+
+- `endpoint` (str): The endpoint to the resource.
+
+#### ConnectionRoutes.all_resources
+
+A property that returns a dictionary of resource paths mapped to resource classes.
+
 
 ---
 
@@ -721,7 +878,7 @@ This can be used to modify and customize the `Api` object in this class.
 
 ### com_server.ConnectionResource
 
-A custom resource object that is built to be used with `RestApiHandler`.
+A custom resource object that is built to be used with `RestApiHandler` and `ConnectionRoutes`.
 
 This class is to be extended and used like the `Resource` class.
 Have `get()`, `post()`, and other methods for the types of responses you need.

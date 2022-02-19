@@ -24,7 +24,7 @@ class EndpointExistsException(Exception):
 
 
 class ConnectionResource(flask_restful.Resource):
-    """A custom resource object that is built to be used with `RestApiHandler`.
+    """A custom resource object that is built to be used with `RestApiHandler` and `ConnectionRoutes`.
 
     This class is to be extended and used like the `Resource` class.
     Have `get()`, `post()`, and other methods for the types of responses you need.
