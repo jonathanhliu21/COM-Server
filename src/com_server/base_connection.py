@@ -40,14 +40,14 @@ class BaseConnection(abc.ABC):
         self,
         baud: int,
         port: str,
-        *ports: t.Tuple[str],
+        *ports: str,
         exception: bool = True,
         timeout: float = 1,
         send_interval: float = 1,
         queue_size: int = constants.RCV_QUEUE_SIZE_NORMAL,
         exit_on_disconnect: bool = False,
         rest_cpu: bool = True,
-        **kwargs: t.Dict[str, t.Any],
+        **kwargs: t.Any,
     ) -> None:
         """Initializes the Connection-like class.
 
@@ -115,9 +115,8 @@ class BaseConnection(abc.ABC):
 
         return (
             f"Connection<id=0x{hex(id(self))}>"
-            f"{{port={self._port}, baud={self._baud}, timeout={self._timeout}, queue_size={self._queue_size}, send_interval={self._send_interval}, "
-            f"Serial={self._conn}, "
-            f"last_sent={self._last_sent}, rcv_queue={str(self._rcv_queue)}, send_queue={str(self._to_send)}}}"
+            f"{{Serial={self._conn}, "
+            f"timeout={self._timeout}, max_queue_size={self._queue_size}, send_interval={self._send_interval}}}"
         )
 
     def __enter__(self) -> "BaseConnection":

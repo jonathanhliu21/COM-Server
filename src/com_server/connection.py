@@ -217,7 +217,7 @@ class Connection(base_connection.BaseConnection):
 
     def get_first_response(
         self,
-        *args: t.Tuple[t.Any],
+        *args: t.Any,
         is_bytes: bool = True,
         check_type: bool = True,
         ending: str = "\r\n",
@@ -348,7 +348,7 @@ class Connection(base_connection.BaseConnection):
     def send_for_response(
         self,
         response: t.Union[str, bytes],
-        *args: t.Tuple[t.Any],
+        *args: t.Any,
         read_until: t.Optional[str] = None,
         strip: bool = True,
         check_type: bool = True,

@@ -32,6 +32,7 @@ class ConnectionResource(flask_restful.Resource):
 
     # typing for autocompletion
     conn: connection.Connection
+    other: t.Dict[str, connection.Connection]
 
     # functions will be implemented in subclasses
 
@@ -74,7 +75,7 @@ class RestApiHandler:
         has_register_recall: bool = True,
         add_cors: bool = False,
         catch_all_404s: bool = True,
-        **kwargs: t.Dict[str, t.Any],
+        **kwargs: t.Any,
     ) -> None:
         """Constructor for class
 
@@ -197,9 +198,7 @@ class RestApiHandler:
 
             # req methods; _self is needed as these will be part of class functions
             def _dec(func: t.Callable) -> t.Callable:
-                def _inner(
-                    _self, *args: t.Tuple[t.Any], **kwargs: t.Dict[str, t.Any]
-                ) -> t.Any:
+                def _inner(_self, *args: t.Any, **kwargs: t.Any) -> t.Any:
                     ip = flask.request.remote_addr
 
                     if self._has_register_recall and (
@@ -241,7 +240,7 @@ class RestApiHandler:
 
         return _outer
 
-    def add_resource(self, *args: t.Tuple[t.Any], **kwargs: t.Dict[str, t.Any]) -> None:
+    def add_resource(self, *args: t.Any, **kwargs: t.Any) -> None:
         """Calls `flask_restful.add_resource`.
 
         Allows adding endpoints that do not interact with the serial port.
@@ -253,9 +252,7 @@ class RestApiHandler:
 
         return self._api.add_resource(*args, **kwargs)
 
-    def run_dev(
-        self, logfile: t.Optional[str] = None, **kwargs: t.Dict[str, t.Any]
-    ) -> None:
+    def run_dev(self, logfile: t.Optional[str] = None, **kwargs: t.Any) -> None:
         """Launches the Flask app as a development server.
 
         Not recommended because this is slower, and development features
@@ -295,9 +292,7 @@ class RestApiHandler:
 
         self._conn.disconnect()  # disconnect if stop running
 
-    def run(
-        self, logfile: t.Optional[str] = None, **kwargs: t.Dict[str, t.Any]
-    ) -> None:
+    def run(self, logfile: t.Optional[str] = None, **kwargs: t.Any) -> None:
         """Launches the Flask app as a Waitress production server (recommended).
 
         Parameters:

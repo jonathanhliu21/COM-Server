@@ -12,7 +12,7 @@ import typing as t
 import serial.tools.list_ports
 
 
-def all_ports(**kwargs: t.Dict[str, t.Any]) -> t.Any:
+def all_ports(**kwargs: t.Any) -> t.Any:
     """Gets all ports from serial interface.
 
     Gets ports from Serial interface by calling `serial.tools.list_ports.comports()`.
@@ -161,7 +161,7 @@ class ReceiveQueue:
 
         return f"ReceiveQueue{self._rcv_queue}"
 
-    def pushitems(self, *args: t.Tuple[bytes]) -> None:
+    def pushitems(self, *args: bytes) -> None:
         """Adds a list of items to the receive queue.
 
         All items in `*args` must be a `bytes` object. A
