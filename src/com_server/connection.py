@@ -665,7 +665,7 @@ class Connection(base_connection.BaseConnection):
         """
 
         # flush buffers
-        self._conn.flush()
+        conn.flush()
 
         # keep on trying to poll data as long as connection is still alive
         if conn.in_waiting:
@@ -673,10 +673,7 @@ class Connection(base_connection.BaseConnection):
             incoming = b""
             while conn.in_waiting:
                 incoming += conn.read()
-
-                if sys.platform.startswith("darwin"):
-                    # fix partial data for small strings on MacOS
-                    time.sleep(0.001)
+                time.sleep(0.001)
 
             # add to queue
             rcv_queue.pushitems(incoming)
