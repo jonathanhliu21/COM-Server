@@ -1,109 +1,121 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-import com_server
-import pytest
+from com_server import Connection, start_conns, ConnectionRoutes, ConnectionResource, DuplicatePortException
 from flask_restful import Resource
+import pytest
 
-def test_endpointexistsexception() -> None:
-    """
-    Tests if EndpointExistsException is being thrown
-    """
-
-    conn = com_server.Connection(115200, "/dev/ttyUSB0")
-    handler = com_server.RestApiHandler(conn)
-
-    @handler.add_endpoint("/test1")
-    class Test1(com_server.ConnectionResource):
-        pass
-
-    # should raise EndpointExistsException
-    with pytest.raises(com_server.api_server.EndpointExistsException) as e:
-        @handler.add_endpoint("/test1")
-        class Test1(com_server.ConnectionResource):
-            pass
-
-    ex = e.value
-    assert isinstance(ex, com_server.api_server.EndpointExistsException)
-    
 def test_subclass_type_exception() -> None:
     """
     Tests if exception is being thrown if subclass extends wrong type
     """
 
-    conn = com_server.Connection(115200, "/dev/ttyUSB0")
-    handler = com_server.RestApiHandler(conn)
+    conn = Connection(115200, "/dev/ttyUSB0")
+    handler = ConnectionRoutes(conn)
 
     # should raise TypeError
     with pytest.raises(TypeError) as e:
-        @handler.add_endpoint("/test2")
+        @handler.add_resource("/test2")
         class Test1(Resource):
             pass
+    
+    # no exception
+    @handler.add_resource("/test1")
+    class Test2(ConnectionResource):
+        pass
     
     ex = e.value
     assert isinstance(ex, TypeError)
 
-def test_duplicate_class_no_exception() -> None:
+def test_mult_ports_exception() -> None:
     """
-    Tests if duplicate class names lead to exceptions
-    """
-    
-    conn = com_server.Connection(115200, "/dev/ttyUSB0")
-    handler = com_server.RestApiHandler(conn)
-
-    @handler.add_endpoint("/hello_world")
-    class Hello_World_(com_server.ConnectionResource):
-        def get(self):
-            return {"hello": "world"} 
-    
-    @handler.add_endpoint("/hello_world_2")
-    class Hello_World_(com_server.ConnectionResource):
-        def get(self):
-            return {"hello": "world2"}    
-    
-    for e, r in handler._all_endpoints: 
-        handler._api.add_resource(r, e)
-    
-    assert len(handler._all_endpoints) == 2
-
-def test_duplicate_func_name_no_exception() -> None:
-    """
-    Tests if functions of the same name will lead to exceptions
+    If any shared ports between connection objects, should raise exception
     """
 
-    conn = com_server.Connection(115200, "/dev/ttyUSB0")
-    handler = com_server.RestApiHandler(conn)
+    conn1 = Connection(115200, "port1", "port2", "port3")
+    conn2 = Connection(115200, "port4", "port5", "port6", "port10", "port11", "port12")
+    conn3 = Connection(115200, "port3", "port7", "port8", "port9", "port10")
 
-    @handler.add_endpoint("/hello_world")
-    class Hello_World_(com_server.ConnectionResource):
-        def get(self):
-            return {"hello": "world"}
+    h1 = ConnectionRoutes(conn1)
+    h2 = ConnectionRoutes(conn2)
+    h3 = ConnectionRoutes(conn3)
     
-    
-    @handler.add_endpoint("/hello_world_2")
-    class Hello_World_(com_server.ConnectionResource):
-        def get(self):
-            return {"hello": "world2"}    
-    
-    for e, r in handler._all_endpoints: 
-        handler._api.add_resource(r, e)
-    
-    assert len(handler._all_endpoints) == 2
+    with pytest.raises(DuplicatePortException):
+        start_conns(h1, h2, h3)
 
-if (__name__ == "__main__"):
-    # pytest should not run this
+# below are tests for ConnectionRoutes all_resources dictionary
 
-    conn = com_server.Connection(115200, "/dev/ttyUSB0")
-    handler = com_server.RestApiHandler(conn)
+def test_add_one_route_map_one() -> None:
+    """
+    Adding one route should result in size 1 and classname being mapped to class
+    """
 
-    @handler.add_endpoint("/hello_world")
-    class Hello_World_(com_server.ConnectionResource):
-        def get(self):
-            return {"hello": "world"} 
+    conn1 = Connection(115200, "port1") 
+    h1 = ConnectionRoutes(conn1)
+
+    @h1.add_resource("/abcd")
+    class ABCD(ConnectionResource):
+        pass
+
+    assert len(h1.all_resources) == 1
+    assert h1.all_resources["/abcd"] == ABCD
+
+def test_add_two_route_map_two() -> None:
+    """
+    Adding two different routes with different classnames should have both in map
+    """
+
+    conn1 = Connection(115200, "port1")
+    h1 = ConnectionRoutes(conn1)
+
+    @h1.add_resource("/route1")
+    class Route1(ConnectionResource):
+        pass
     
-    class Hello_World_(com_server.ConnectionResource):
-        def get(self):
-            return {"hello": "world2"}    
+    @h1.add_resource("/route2")
+    class Route2(ConnectionResource):
+        pass
+
+    assert len(h1.all_resources) == 2
+    assert h1.all_resources["/route1"] == Route1
+    assert h1.all_resources["/route2"] == Route2
+
+def test_add_one_route_map_two() -> None:
+    """
+    Adding one route path to 2 different classnames should result in 2nd classname in map
+    """
+
+    conn1 = Connection(115200, "port1")
+    h1 = ConnectionRoutes(conn1)
+
+    @h1.add_resource("/route1")
+    class Route1(ConnectionResource):
+        pass
     
-    handler.run_dev(host='0.0.0.0', port=8080)
+    @h1.add_resource("/route1")
+    class Route2(ConnectionResource):
+        pass
+
+    assert len(h1.all_resources) == 1
+    assert h1.all_resources["/route1"] == Route2
+
+def test_add_two_routes_map_one() -> None:
+    """
+    Adding two route paths with one classname should result in different class objects
+    """
+
+    conn1 = Connection(115200, "port1")
+    h1 = ConnectionRoutes(conn1)
+
+    @h1.add_resource("/route1")
+    class Route1(ConnectionResource):
+        a = 5
     
+    @h1.add_resource("/route2")
+    class Route1(ConnectionResource):
+        # to distinguish which Route1 class
+        b = 6
+    
+    assert len(h1.all_resources) == 2
+    assert h1.all_resources["/route1"].a == 5
+    assert h1.all_resources["/route2"].b == 6
