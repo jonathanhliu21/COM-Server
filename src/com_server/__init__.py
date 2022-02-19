@@ -23,6 +23,7 @@ from .server import (
     disconnect_conns,
     start_app,
     start_conns,
+    DuplicatePortException,
 )
 from .tools import ReceiveQueue, SendQueue, all_ports
 
