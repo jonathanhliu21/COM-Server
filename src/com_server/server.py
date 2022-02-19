@@ -124,8 +124,8 @@ class ConnectionRoutes:
             # replace functions in class with new functions that check if registered
             for method in SUPPORTED_HTTP_METHODS:
                 if hasattr(resource_cls, method):
-                    meth_attr = getattr(resource, method)
-                    setattr(resource, method, _dec(meth_attr))
+                    meth_attr = getattr(resource_cls, method)
+                    setattr(resource_cls, method, _dec(meth_attr))
 
             self._all_resources[resource] = resource_cls
 
@@ -153,14 +153,15 @@ def add_resources(api: Api, *routes: ConnectionRoutes) -> None:
     - `routes`: The `ConnectionRoutes` objects to add to the server
     """
 
-    res = (route.all_resources for route in routes)
+    res = [route.all_resources for route in routes]
 
-    for route in res:
-        api.add_resource(res[route], route)
+    for routes_obj in res:
+        for endpoint in routes_obj:
+            api.add_resource(routes_obj[endpoint], endpoint)
 
 
 def start_conns(
-    *routes: ConnectionRoutes, logger: logging.Logger, logfile: t.Optional[str] = None
+    logger: logging.Logger, *routes: ConnectionRoutes, logfile: t.Optional[str] = None
 ) -> None:
     """Initializes serial connections and disconnect handler.
 
@@ -191,13 +192,17 @@ def start_conns(
         route._conn.connect()
 
     with ThreadPoolExecutor() as executor:
-        executor.map(_initializer, routes)
+        futures = executor.map(_initializer, routes)
+
+        for _ in futures:
+            # prints out errors
+            pass
 
     # check that all connections are connected
     # if not, raise ConnectException
     for route in routes:
         if not route._conn.connected:
-            raise ConnectException("Connection failed. Check output above for details.")
+            raise ConnectException("Connection failed.")
 
     conns = (route._conn for route in routes)
     reconnector = MultiReconnector(logger, *conns, logfile=logfile)
@@ -270,7 +275,7 @@ def start_app(
 
     # get waitress logger
     _logger = logging.getLogger("waitress")
-    start_conns(*routes, _logger, logfile)
+    start_conns(_logger, *routes, logfile=logfile)
 
     # serve on waitress
     waitress.serve(app, host=host, port=port, **kwargs)

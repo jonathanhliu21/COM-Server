@@ -150,20 +150,24 @@ class MultiReconnector(BaseReconnector):
                 return
 
             cur_reconn.add(conn)
+
+            self._logger.warning(f"Device at {conn.port} disconnected")
+            self._logger.info("Attempting to reconnect...")
+
             conn.reconnect()
+
+            self._logger.info(f"Device reconnected at {conn.port}")
 
             # remove of set of currently reconnecting objects after reconnected
             cur_reconn.remove(conn)
 
         while True:
             for conn in self._conns:
+                if conn in cur_reconn:
+                    continue
+
                 if not conn.connected:
-
-                    self._logger.warning(f"Device at {conn.port} disconnected")
-                    self._logger.info("Attempting to reconnect...")
-
+                    # start thread to reconnect
                     threading.Thread(target=_reconn, args=(conn,), daemon=True).start()
-
-                    self._logger.info(f"Device reconnected at {conn.port}")
 
             time.sleep(0.01)
