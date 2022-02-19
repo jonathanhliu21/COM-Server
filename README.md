@@ -9,27 +9,15 @@ COM-Server is a Python library and a local web server that hosts an API locally 
 
 The serial communication uses [pyserial](https://pyserial.readthedocs.io/en/latest/pyserial.html) as its back-end and the server uses [flask-restful](https://flask-restful.readthedocs.io/en/latest/quickstart.html) and [Flask](https://flask.palletsprojects.com/en/2.0.x/). Reading their documentations may help with developing with COM-Server.
 
-**NOTE**: COM-Server has only been tested on:  
-Operating systems:
+**NOTE**: COM-Server is mainly tested on a Raspberry Pi connected to an Arduino UNO running Raspberry Pi OS Buster with Python 3.7.3. It has also been tested on:
 
-- Ubuntu 20.04 (Focal Fossa)
-- Raspberry Pi OS 10 (Buster)
-- Mac OS 10.15.x (Catalina)
-- Mac OS 11.6 (Big Sur)
-- Windows 10
+OS | Version
+---- | ----
+Linux | Ubuntu 20.04 with Python 3.8.10
+MacOS | Big Sur with Python 3.8.9
+Windows | Windows 10 with Python 3.9.7, Windows 11 with Python 3.9.7
 
-Python versions:
-
-- Python 3.7.2
-- Python 3.7.3
-- Python 3.8.10
-- Python 3.9.7
-- Python 3.10.0
-
-Serial ports:
-
-- Arduino UNO
-- Arduino Nano
+It is likely that this library will not work for non-USB ports. 
 
 ## Recommended use
 COM-Server is **not** meant to be used like a normal JSON API, even though it uses Flask and Flask-restful. If there are many different devices accessing the endpoints at the same time, data will be backed up, since the serial communication is relatively slow and things cannot be sent to the serial device at the same time. 
