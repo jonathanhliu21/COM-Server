@@ -50,6 +50,10 @@ Leave as None if you do not want to log to a file. By default None.
 - `cleanup`: cleanup function to be called after waitress is done serving app. By default None.
 - `**kwargs`: will be passed to `waitress.serve()`
 
+Returns:
+
+- nothing
+
 ### com_server.add_resources()
 
 ```py
@@ -64,6 +68,10 @@ Parameters:
 
 - `api`: The `flask_restful` `Api` object that adds the resources
 - `routes`: The `ConnectionRoutes` objects to add to the server
+
+Returns:
+
+- nothing
 
 
 ### com_server.start_conns()
@@ -84,6 +92,10 @@ Parameters:
 - `logger`: a python logging object
 - `logfile`: file to log messages to
 
+Returns:
+
+- nothing
+
 ### com_server.disconnect_conns()
 
 ```py
@@ -100,6 +112,10 @@ Note that calling this will exit the program using `sys.exit()`.
 Parameters:
 
 - `routes`: The `ConnectionRoutes` objects to disconnect connections from
+
+Returns:
+
+- nothing
 
 ---
 

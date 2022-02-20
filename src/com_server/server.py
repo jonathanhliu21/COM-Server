@@ -151,6 +151,9 @@ def add_resources(api: Api, *routes: ConnectionRoutes) -> None:
     Parameters:
     - `api`: The `flask_restful` `Api` object that adds the resources
     - `routes`: The `ConnectionRoutes` objects to add to the server
+
+    Returns:
+    Nothing
     """
 
     res = [route.all_resources for route in routes]
@@ -174,6 +177,9 @@ def start_conns(
     - `routes`: The `ConnectionRoutes` objects to initialize connections from
     - `logger`: a python logging object
     - `logfile`: file to log messages to
+
+    Returns:
+    Nothing
     """
 
     # check no duplicate serial ports
@@ -221,6 +227,9 @@ def disconnect_conns(*routes: ConnectionRoutes) -> None:
 
     Parameters:
     - `routes`: The `ConnectionRoutes` objects to disconnect connections from
+
+    Returns:
+    Nothing
     """
 
     for route in routes:
@@ -265,6 +274,9 @@ def start_app(
     - `port`: The port to host the server on (e.g. 8080, 8000, 5000). By default 8080.
     - `cleanup`: cleanup function to be called after waitress is done serving app. By default None.
     - `**kwargs`: will be passed to `waitress.serve()`
+
+    Returns:
+    Nothing
     """
 
     # initialize app by adding resources and staring connections and disconnect handlers
