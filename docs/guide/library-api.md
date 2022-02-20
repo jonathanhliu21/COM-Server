@@ -701,6 +701,18 @@ if a process accesses this resource while it is
 currently being used by another process, then it will
 respond with `503 Service Unavailable`.
 
+Currently, supported methods are:
+
+- `GET`
+- `POST`
+- `PUT`
+- `PATCH`
+- `DELETE`
+- `OPTIONS`
+- `HEAD`
+
+Make sure to put method names in lowercase
+
 Parameters:
 
 - `endpoint` (str): The endpoint to the resource.
