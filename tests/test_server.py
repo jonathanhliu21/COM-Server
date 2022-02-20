@@ -119,3 +119,51 @@ def test_add_two_routes_map_one() -> None:
     assert len(h1.all_resources) == 2
     assert h1.all_resources["/route1"].a == 5
     assert h1.all_resources["/route2"].b == 6
+
+# below methods test http methods
+
+def test_http_methods_in_class() -> None:
+    """
+    Tests that HTTP methods get added to class correctly
+    """
+
+    conn1 = Connection(115200, "port1")
+    h1 = ConnectionRoutes(conn1)
+
+    @h1.add_resource("/route1")
+    class Route1(ConnectionResource):
+        def get(self):
+            pass
+        
+        def post(self):
+            pass
+
+        def put(self):
+            pass
+    
+    cls = h1.all_resources["/route1"]
+
+    has = ("get", "post", "put")
+    for i in has:
+        assert hasattr(cls, i)
+    
+    hasnot = ("patch", "delete", "options", "head")
+    for i in hasnot:
+        assert not hasattr(cls, i)
+
+def test_other_method_still_copied() -> None:
+    """
+    Non-HTTP methods should still be copied
+    """
+
+    conn1 = Connection(115200, "port1")
+    h1 = ConnectionRoutes(conn1)
+
+    @h1.add_resource("/route1")
+    class Route1(ConnectionResource):
+        def non_http_method(self):
+            pass
+    
+    cls = h1.all_resources["/route1"]
+
+    assert hasattr(cls, "non_http_method")
