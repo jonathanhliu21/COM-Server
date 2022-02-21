@@ -7,7 +7,7 @@ Version 1 of Builtin API. All endpoints below will be prefixed with /v1/ and can
 
 import typing as t
 
-from flask_restful import reqparse
+from flask_restful import reqparse, abort
 
 from .. import ConnectionResource, ConnectionRoutes, all_ports
 
@@ -80,13 +80,16 @@ class V1:
                 # abort if failed to send
                 return {"message": "Failed to send"}
 
-            return {"message": "OK"}
+            return {"message": "OK", "data": args}
 
     class _Receiver(ConnectionResource):
         """/receive/<int:num_before>"""
 
         def get(self, num_before: int) -> dict:
             res = self.conn.receive_str(num_before=num_before)
+
+            if not isinstance(res, tuple):
+                abort(404, message="Receive item not found")
 
             return {
                 "message": "OK",
