@@ -34,4 +34,4 @@ jobs:
       
       - name: Run pytest and then test the version greater test
         run: |
-          pytest -vv
+          python3 tests/passive_test.py -vv
