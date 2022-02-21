@@ -81,7 +81,8 @@ Replace "&lt;baud&gt;" and "&lt;serport&gt;" with the baud and serial port of yo
 
 Use the testing scripts:
 ```sh
-> pytest -vv 
+> python3 tests/passive_test.py -vv
+> python3 tests/active_test.py -vv
 ```
 
 Make sure that all tests pass.

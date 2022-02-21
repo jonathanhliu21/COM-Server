@@ -12,7 +12,7 @@ import configparser
 import requests
 from com_server import __version__
 
-from cmp_version import Version
+from passive.cmp_version import Version
 
 def test_version_greater() -> None:
     """Tests if current version is greater than version on master branch on github"""
