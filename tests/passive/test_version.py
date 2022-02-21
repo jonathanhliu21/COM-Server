@@ -9,7 +9,7 @@ import pytest
 from com_server import __version__
 from pkg_resources import get_distribution
 
-from cmp_version import Version
+from tests.cmp_version import Version
 
 
 def test_version():
