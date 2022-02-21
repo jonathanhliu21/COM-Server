@@ -158,7 +158,7 @@ class ConnectionRoutes:
 def add_resources(api: Api, *routes: ConnectionRoutes) -> None:
     """Adds all resources given in `servers` to the given `Api`.
 
-    This has to be called **before** calling `start_app()` along with `start_conns()`.
+    This has to be called along with `start_conns()` **before** calling `start_app()` or running a flask app.
 
     Parameters:
     - `api`: The `flask_restful` `Api` object that adds the resources
@@ -180,7 +180,7 @@ def start_conns(
 ) -> None:
     """Initializes serial connections and disconnect handler.
 
-    This has to be called **before** calling `start_app()` along with `add_resources()`.
+    This has to be called along with `add_resources()` **immediately before** calling `start_app()` or runing a flask app.
 
     Note that adding multiple routes to `start_conns` is experimental and currently
     not being tested, and it probably has multiple issues right now.
