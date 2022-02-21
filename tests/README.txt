@@ -1,1 +1,0 @@
-General tests to make sure the right errors are thrown when something goes wrong on the user side.
