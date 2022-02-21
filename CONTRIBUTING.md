@@ -79,16 +79,16 @@ Launch the server:
 
 Replace "&lt;baud&gt;" and "&lt;serport&gt;" with the baud and serial port of your serial device.
 
-Use pytest:
+Use the testing scripts:
 ```sh
 > pytest -vv 
 ```
 
 Make sure that all tests pass.
 
-Some tests need the `com_server` command to be run or the Arduino to be plugged in. Make sure the listed command is run and and Arduino is plugged in to make sure that every test passes and none of them are skipped.
+Some tests need the `com_server` command to be run or the Arduino to be plugged in. Make sure to run both commands above and also ensure that the Arduino is plugged in.
 
-When writing tests, use the `pytest` library, and make them as specific as possible, testing a specific part of what you are making.
+When writing tests, use the `pytest` library, and make them as specific as possible, testing a specific part of what you are making. Tests that do not require a serial port or a server should go into the `tests/passive` directory, and tests that do require an Arduino should go into the `tests/active` directory.
 
 I am also open to those who write new tests to already existing code, especially ones that can test if the methods of the `BaseConnection` and `Connection` classes are behaving properly.
 
