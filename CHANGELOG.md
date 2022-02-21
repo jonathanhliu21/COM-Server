@@ -7,6 +7,7 @@ Previous version: 0.1.*
 - Added logging using Python's `logging` module and also added logging to file when disconnects happen, addressing [#73](https://github.com/jonyboi396825/COM-Server/issues/73)
 - CLI now runs production server instead of development server by default, and now recommending production server, addressing [#97](https://github.com/jonyboi396825/COM-Server/issues/97)
 - Updated `__repr__` for `Connection`
+- CLI now used click instead of docopt and serves V1 API
 
 # 0.1.4
 

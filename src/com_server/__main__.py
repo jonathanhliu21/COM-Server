@@ -10,11 +10,17 @@ Contains commands to run the COM server.
 import logging
 import sys
 
-from docopt import docopt
+import click
+from flask import Flask
 from flask import __version__ as f_v
+from flask_cors import CORS
+from flask_restful import Api
 from serial import __version__ as s_v
 
-from . import __version__, runner
+from . import __version__
+from .api import V1
+from .connection import Connection
+from .server import ConnectionRoutes, start_app
 
 # logger setup
 logger = logging.getLogger(__name__)
@@ -30,37 +36,6 @@ handler.setFormatter(fmt)
 
 logger.addHandler(handler)
 
-PARSE = """COM_Server command line tool
-
-A simple command line tool to start the API server that interacts
-with the serial port in an development environment or a 
-production environment.
-
-The server started by the CLI will contain routes for all supported 
-versions of the builtin API.
-
-Usage:
-    com_server run <baud> <serport>... [--env=<env>] [--host=<host>] [--port=<port>] [--s-int=<s-int>] [--to=<to>] [--q-sz=<q-sz>] [--logf=<logf>] [--cors] [--no-rr] [-v | --verbose] 
-    com_server -h | --help
-    com_server --version
-
-Options:
-    --env=<env>     Development or production environment. Value must be 'dev' or 'prod'. [default: prod].
-    --host=<host>   The name of the host server (optional) [default: 0.0.0.0].
-    --port=<port>   The port of the host server (optional) [default: 8080].
-    --s-int=<s-int>  
-                    How long, in seconds, the program should wait between sending to serial port [default: 1].
-    --to=<to>       How long, in seconds, the program should wait before exiting when performing time-consuming tasks [default: 1].
-    --q-sz=<q-sz>   The maximum size of the receive queue [default: 256].
-    --logf=<logf>   File to log disconnect and reconnect events to.
-    --cors          If set, then the program will add cross origin resource sharing.
-    --no-rr         If set, then turns off /register and /recall endpoints, same as setting has_register_recall=False
-    -v, --verbose   Prints arguments each endpoints receives to stdout. Should not be used in production.
-
-    -h, --help      Show help.
-    --version       Show version.
-"""
-
 
 def _display_version() -> None:
     _pyth_v = sys.version_info
@@ -72,54 +47,119 @@ def _display_version() -> None:
         f"Python version: {_pyth_v.major}.{_pyth_v.minor}.{_pyth_v.micro}"
     )
 
-    print(p_o)
+    click.echo(p_o)
     sys.exit()
 
 
-def main() -> None:
-    args = docopt(PARSE)
+@click.group(invoke_without_command=True)
+@click.pass_context
+@click.option("--version", is_flag=True, help="Print version of COM-Server")
+def main(ctx: click.Context, version: bool) -> None:
+    if ctx.invoked_subcommand:
+        return
 
-    if args["--version"]:
-        # if asking for version
+    if version:
         _display_version()
-
-    if args["run"]:
-        # if asking to run
-
-        baud = args["<baud>"].strip()
-        serport = args["<serport>"]
-        env = args["--env"].strip()
-        host = args["--host"].strip()
-        port = args["--port"].strip()
-        timeout = args["--to"].strip()
-        send_interval = args["--s-int"].strip()
-        queue_size = args["--q-sz"].strip()
-        logf = args["--logf"]
-        add_cors = args["--cors"]
-        verbose = args["--verbose"]
-        has_rr = not args["--no-rr"]
-
-        if env not in ("dev", "prod"):
-            logger.error('Value of <env> must be "dev" or "prod".')
-            sys.exit(1)
-
-        runner.run(
-            baud,
-            serport,
-            env,
-            host,
-            port,
-            timeout,
-            send_interval,
-            queue_size,
-            logf,
-            add_cors,
-            has_rr,
-            verbose,
-        )
-
-        logger.info("Exited")
+    else:
+        ctx = click.get_current_context()
+        click.echo(ctx.get_help())
 
 
-if __name__ == "__main__":
-    main()
+@main.command()
+@click.argument("baud", type=int)
+@click.argument("serport", type=str, nargs=-1)
+@click.option(
+    "--host",
+    type=str,
+    default="0.0.0.0",
+    help="The name of the host server[default: 0.0.0.0].",
+)
+@click.option(
+    "--port",
+    type=int,
+    default=8080,
+    help="The port of the host server (optional) [default: 8080].",
+)
+@click.option(
+    "--send-int",
+    type=int,
+    default=1,
+    help="How long, in seconds, the program should wait between sending to serial port [default: 1].",
+)
+@click.option(
+    "--timeout",
+    type=int,
+    default=1,
+    help="How long, in seconds, the program should wait before exiting when performing time-consuming tasks [default: 1].",
+)
+@click.option(
+    "--queue-size",
+    type=int,
+    default=256,
+    help="The maximum size of the receive queue [default: 256].",
+)
+@click.option(
+    "--logfile",
+    type=str,
+    help="Path to file to log disconnect and reconnect events to.",
+)
+@click.option(
+    "--cors",
+    is_flag=True,
+    help="If set, then the program will add cross origin resource sharing.",
+)
+def run(
+    baud: int,
+    serport: str,
+    host: str,
+    port: int,
+    send_int: int,
+    timeout: int,
+    queue_size: int,
+    logfile: str,
+    cors: bool,
+) -> None:
+    """
+    Launches waitress server with builtin API
+
+    Given baud rate and list of ports, the program will try to connect to
+    each one in the order given until a connection works. Then, the
+    program will start a web API with routes to interact with the port.
+
+    The prefix to the routes will be /v1/ (e.g. localhost:8080/v1/...)
+
+    Example usage:
+
+    com_server 115200 /dev/ttyUSB0 /dev/ttyUSB1
+
+    This will start a serial connection with baud rate 115200, and the
+    program will first try to connect to /dev/ttyUSB0. If that fails,
+    it will try to connect to /dev/ttyUSB1, and if both fail, there
+    will be an error.
+    """
+
+    # start connection and server
+
+    logger.info("Starting up connection with serial port...")
+    with Connection(
+        baud,
+        serport[0],
+        *serport[1:],
+        timeout=timeout,
+        send_interval=send_int,
+        queue_size=queue_size,
+    ) as conn:
+        logger.info(f"Connection with serial port established at {conn.port}")
+
+        app = Flask(__name__)
+        api = Api(app)
+
+        if cors:
+            CORS(app)
+
+        handler = ConnectionRoutes(conn)
+        V1(handler)
+
+        start_app(app, api, handler, logfile=logfile, host=host, port=port)
+
+    logger.info("exited")

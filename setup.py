@@ -10,7 +10,6 @@ setup(
         "pyserial>=3.5",
         "flask_restful>=0.3.9",
         "flask-cors>=3.0.10",
-        "docopt>=0.6.2",
         "waitress>=2.0.0"
     ]
 )
