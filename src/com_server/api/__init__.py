@@ -11,31 +11,13 @@ from com_server.api import <VERSION>
 ```
 
 Current supported versions (routes are in parenthesis) are:
-- `V0` (`/v0/*`)
+- `V0`
+- `V1`
 
-To use all versions, import `Builtins`:
-
-```py
-from com_server.api import Builtins
-```
-
-Each version will be prefixed by their own route (see list above).
+For versions >= V1, multiple versions can be used
+to wrap a `ConnectionRoutes` object to add endpoints
+of multiple versions.
 """
 
-from .. import RestApiHandler
 from .v0 import Builtins as V0
-
-
-class Builtins:
-    def __init__(self, handler: RestApiHandler, *args: tuple, **kwargs: dict) -> None:
-        """
-        Adds builtin endpoints for all versions.
-
-        Parameters:
-
-        - `handler`: The `RestApiHandler` class that this class should wrap around
-
-        Other parameters will be passed to the different versions.
-        """
-
-        V0(handler, *args, **kwargs)
+from .v1 import V1
