@@ -125,6 +125,9 @@ class ConnectionRoutes:
                             503,
                             message="An endpoint is currently in use by another process.",
                         )
+                    elif not _self.conn.connected:
+                        # if not connected
+                        abort(500, message="Serial port disconnected.")
                     else:
                         with self._lock:
                             val = func(_self, *args, **kwargs)
