@@ -152,7 +152,7 @@ def run(
         logger.info(f"Connection with serial port established at {conn.port}")
 
         app = Flask(__name__)
-        api = Api(app)
+        api = Api(app, catch_all_404s=True)
 
         if cors:
             CORS(app)
