@@ -207,7 +207,8 @@ def start_conns(
 
     # start threads
     def _initializer(route: ConnectionRoutes) -> None:
-        route._conn.connect()
+        if not route._conn.connected:
+            route._conn.connect()
 
     with ThreadPoolExecutor() as executor:
         futures = executor.map(_initializer, routes)
