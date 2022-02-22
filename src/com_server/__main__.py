@@ -55,6 +55,8 @@ def _display_version() -> None:
 @click.pass_context
 @click.option("--version", is_flag=True, help="Print version of COM-Server")
 def main(ctx: click.Context, version: bool) -> None:
+    """Simple command line tool for COM-Server"""
+
     if ctx.invoked_subcommand:
         return
 
