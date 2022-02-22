@@ -84,13 +84,13 @@ def main(ctx: click.Context, version: bool) -> None:
     "--send-int",
     type=int,
     default=1,
-    help="How long, in seconds, the program should wait between sending to serial port [default: 1].",
+    help="How long, in seconds, the program should wait between sending to serial port (aka the send interval) [default: 1].",
 )
 @click.option(
     "--timeout",
     type=int,
     default=1,
-    help="How long, in seconds, the program should wait before exiting when performing time-consuming tasks [default: 1].",
+    help="How long, in seconds, the program should wait before exiting when performing time-consuming tasks (aka the timeout) [default: 1].",
 )
 @click.option(
     "--queue-size",
@@ -106,7 +106,7 @@ def main(ctx: click.Context, version: bool) -> None:
 @click.option(
     "--cors",
     is_flag=True,
-    help="If set, then the program will add cross origin resource sharing.",
+    help="If set, then the program will add cross origin resource sharing to all routes.",
 )
 def run(
     baud: int,
