@@ -38,6 +38,7 @@ class V1:
             "/receive": self._All_Received,
             "/get": self._Get,
             "/first_response": self._Get_First,
+            "/send_until": self._Send_Until,
             "/connection_state": self._Connection_State,
             "/all_ports": self._All_Ports,
         }
@@ -156,6 +157,48 @@ class V1:
                 return {"message": "Nothing received"}
 
             return {"message": "OK", "data": res}
+
+    class _Send_Until(ConnectionResource):
+        """/send_until"""
+
+        parser = reqparse.RequestParser()
+
+        parser.add_argument(
+            "response",
+            required=True,
+            help="Which response the program should wait for",
+        )
+        parser.add_argument(
+            "data",
+            required=True,
+            action="append",
+            help="Data the serial port should send",
+        )
+        parser.add_argument(
+            "ending",
+            default="\r\n",
+            help="Ending that will be appended to the end of data before sending over serial port; default carriage return + newline",
+        )
+        parser.add_argument(
+            "concatenate",
+            default=" ",
+            help="What the strings in data should be concatenated by if list; by default a space",
+        )
+
+        def post(self) -> dict:
+            args = self.parser.parse_args(strict=True)
+
+            res = self.conn.send_for_response(
+                args["response"],
+                *args["data"],
+                ending=args["ending"],
+                concatenate=args["concatenate"],
+            )
+
+            if not res:
+                return {"message": "Nothing received"}
+
+            return {"message": "OK"}
 
     class _Connection_State(ConnectionResource):
         """/connection_state"""
