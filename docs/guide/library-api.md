@@ -725,6 +725,9 @@ A property that returns a dictionary of resource paths mapped to resource classe
 ---
 
 ### com_server.RestApiHandler
+
+**NOTE: This will not be supported for versions >=0.2. Use `ConnectionRoutes` instead.**
+
 A handler for creating endpoints with the `Connection` and `Connection`-based objects.
 
 This class provides the framework for adding custom endpoints for doing
@@ -1183,3 +1186,7 @@ This exception is raised whenever a user tries to do an operation with the `Conn
 ### com_server.EndpointExistsException
 
 This exception is raised if the user tries to add a route to the `RestApiHandler` that already exists.
+
+### com_server.DuplicatePortException
+
+Raised when trying to start a server with two or more `ConnectionRoutes` objects (**experimental**) and any of them share a common serial port. This is needed to prevent confusion when reconnecting to the ports.

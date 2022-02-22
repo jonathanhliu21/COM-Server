@@ -10,9 +10,9 @@ nav:
     - "Getting Started": "guide/getting-started.md"
     - "Library API": "guide/library-api.md"
     - "Custom IO Thread": "guide/custom-io-thread.md"
-    - "CLI": "guide/cli.md"
   - "Server API": 
-    - "Getting started": "server/index.md"
+    - "Server Overview": "server/index.md"
+    - "Version 1": "server/v1.md"
     - "Version 0": "server/v0.md"
   
 theme:

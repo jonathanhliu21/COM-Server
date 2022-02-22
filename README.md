@@ -41,19 +41,24 @@ For beta releases, use the `--pre` option:
 
 ## Quickstart
 
+The examples below will start an API server that interacts with the port at http://0.0.0.0:8080
+
 ```py
 # launches a server on http://0.0.0.0:8080
 
-import com_server
-from com_server.api import Builtins
+from com_server import Connection, ConnectionRoutes, start_app
+from com_server.api import V1
+from flask import Flask
+from flask_restful import Api
 
-conn = com_server.Connection(<baud>, "<serport>") 
-handler = com_server.RestApiHandler(conn) 
-Builtins(handler) 
+app = Flask(__name__)
+api = Api(app)
 
-handler.run(host="0.0.0.0", port=8080) 
+conn = Connection(<baud>, "<serport>") 
+handler = ConnectionRoutes(conn)
+V1(handler)
 
-conn.disconnect()
+start_app(app, api, handler)
 ```
 Replace "&lt;serport&gt;" and "&lt;baud&gt;" with the serial port and baud rate.
 
