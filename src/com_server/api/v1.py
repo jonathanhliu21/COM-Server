@@ -198,7 +198,7 @@ class V1:
             if not res:
                 return {"message": "Nothing received"}
 
-            return {"message": "OK"}
+            return {"message": "OK", "data": args}
 
     class _Connection_State(ConnectionResource):
         """/connection_state"""
