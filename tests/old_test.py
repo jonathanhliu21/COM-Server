@@ -9,7 +9,7 @@ import os
 import pytest
 import sys
 
-def main() -> None:
+def main() -> int:
     return pytest.main([os.path.join("tests", "old")] + sys.argv[1:])
 
 if __name__ == "__main__":
