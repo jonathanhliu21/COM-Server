@@ -14,10 +14,11 @@ from cmp_version import Version
 
 def test_version():
     """Tests if __version__ and version in setup.cfg matches"""
-    
+
     pkg = get_distribution("com_server")
 
     assert pkg.version == __version__
+
 
 def test_version_class_parse_working() -> None:
     """Tests if Version class is working with parsing"""
@@ -36,6 +37,7 @@ def test_version_class_parse_working() -> None:
         Version(".0.0")
     with pytest.raises(ValueError):
         Version("a0.0")
+
 
 def test_version_cmp_working() -> None:
     """Tests if comparing is working"""
@@ -59,6 +61,6 @@ def test_version_cmp_working() -> None:
     assert Version("1.0a0") == Version("1.0a0")
 
 
-if (__name__ == "__main__"):
+if __name__ == "__main__":
     v = Version("0.0bbb0")
     print(v)

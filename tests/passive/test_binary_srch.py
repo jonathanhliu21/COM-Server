@@ -8,6 +8,7 @@ Tests binary search of BaseConnection and exception thrown when available is cal
 import pytest
 from com_server import Connection, ConnectException
 
+
 def test_bin_srch() -> None:
     b = Connection(port="test", baud=123)
 

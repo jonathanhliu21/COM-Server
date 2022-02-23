@@ -5,6 +5,7 @@ from com_server import Connection, ConnectionRoutes, RestApiHandler
 from com_server.api import V1
 import pytest
 
+
 def test_all_routes_being_added() -> None:
     """Tests that all routes from V1 API are being added with correct prefix"""
 
@@ -30,6 +31,7 @@ def test_all_routes_being_added() -> None:
     for i in _endpoints:
         assert f"/{pref}{i}" in handler.all_resources
 
+
 def test_not_connection_routes_raises_exception() -> None:
     """Tests that wrapping other class should raise an exception"""
 
@@ -38,4 +40,3 @@ def test_not_connection_routes_raises_exception() -> None:
 
     with pytest.raises(TypeError):
         V1(handler)
-
