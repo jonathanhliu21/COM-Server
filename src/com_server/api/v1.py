@@ -29,6 +29,9 @@ class V1:
         - `prefix`: The prefix of the routes (`http://hostname/{prefix}/...`). By default "v1".
         """
 
+        if not isinstance(handler, ConnectionRoutes):
+            raise TypeError("handler must be of type `ConnectionRoutes`")
+
         self._handler = handler
         self._prefix = prefix
 
@@ -54,7 +57,7 @@ class V1:
             "data",
             required=True,
             action="append",
-            help="Data the serial port should send",
+            help="Data to send to serial port.",
         )
         parser.add_argument(
             "ending",
