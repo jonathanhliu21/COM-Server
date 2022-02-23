@@ -14,6 +14,11 @@ from .connection import Connection
 
 
 class BaseReconnector(threading.Thread):
+    """Base reconnector class"""
+
+    _logger: logging.Logger
+    _logf: t.Optional[str]
+
     def _init_logger(self) -> None:
         """Initializes logger to stdout"""
 
@@ -27,6 +32,8 @@ class BaseReconnector(threading.Thread):
 
     def _init_logger_file(self) -> None:
         """Initializes logger to file"""
+
+        assert self._logf is not None, "No logfile provided"  # mypy
 
         handler = logging.FileHandler(self._logf)
         handler.setLevel(logging.INFO)

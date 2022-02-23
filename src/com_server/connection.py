@@ -7,7 +7,6 @@ Contains implementation of connection object.
 
 import copy
 import os
-import sys
 import time
 import typing as t
 import serial
@@ -39,7 +38,10 @@ class Connection(base_connection.BaseConnection):
         return self
 
     def conv_bytes_to_str(
-        self, rcv: bytes, read_until: t.Optional[str] = None, strip: bool = True
+        self,
+        rcv: t.Optional[bytes],
+        read_until: t.Optional[str] = None,
+        strip: bool = True,
     ) -> t.Optional[str]:
         """Convert bytes receive object to a string.
 
@@ -158,10 +160,15 @@ class Connection(base_connection.BaseConnection):
         if not self.connected:
             raise base_connection.ConnectException("No connection established")
 
-        return [
-            (ts, self.conv_bytes_to_str(rcv, read_until=read_until, strip=strip))
-            for ts, rcv in self.get_all_rcv()
-        ]
+        ret: t.List[t.Tuple[float, str]] = []
+
+        for ts, rcv in self.get_all_rcv():
+            to_str = self.conv_bytes_to_str(rcv, read_until=read_until, strip=strip)
+            assert to_str  # mypy
+
+            ret.append((ts, to_str))
+
+        return ret
 
     def receive_str(
         self,
@@ -213,6 +220,10 @@ class Connection(base_connection.BaseConnection):
             rcv_tuple[1], read_until=read_until, strip=strip
         )
 
+        if not str_data:
+            # mypy
+            return None
+
         return (rcv_tuple[0], str_data)
 
     def get_first_response(
@@ -262,18 +273,15 @@ class Connection(base_connection.BaseConnection):
             *args, check_type=check_type, ending=ending, concatenate=concatenate
         )
 
-        # for receiving string or bytes
-        rcv_func = self.receive if is_bytes else self.receive_str
-
         if not send_success:
             return None
 
-        r = None
+        r: t.Any = None
         if is_bytes:
-            r = rcv_func()
+            r = self.receive()
         else:
             # strings have read_until option
-            r = rcv_func(read_until=read_until, strip=strip)
+            r = self.receive_str(read_until=read_until, strip=strip)
 
         st = time.time()
 
@@ -285,18 +293,19 @@ class Connection(base_connection.BaseConnection):
                 return None
 
             if is_bytes:
-                r = rcv_func()
+                r = self.receive()
             else:
                 # strings have read_until option
-                r = rcv_func(read_until=read_until)
+                r = self.receive_str(read_until=read_until)
 
             time.sleep(0.05)
 
-        return r[1]
+        ret: t.Union[str, bytes] = r[1]
+        return ret
 
     def wait_for_response(
         self,
-        response: t.Union[str, bytes],
+        response: t.Any,
         after_timestamp: float = -1.0,
         read_until: t.Optional[str] = None,
         strip: bool = True,
@@ -384,6 +393,9 @@ class Connection(base_connection.BaseConnection):
 
         if not self._check_connect():
             return False
+
+        if "_last_sent_outer" not in vars(self):
+            self._last_sent_outer = 0.0
 
         try:
             self._last_sent_outer  # this is for the interval for calling send_for_response
@@ -488,7 +500,7 @@ class Connection(base_connection.BaseConnection):
 
         return tools.all_ports(**kwargs)
 
-    def custom_io_thread(self, func) -> t.Callable:
+    def custom_io_thread(self, func: t.Callable) -> t.Callable:
         """A decorator custom IO thread rather than using the default one.
 
         It is recommended to read `pyserial`'s documentation before creating a custom IO thread.

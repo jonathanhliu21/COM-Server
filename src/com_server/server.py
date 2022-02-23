@@ -59,7 +59,7 @@ class ConnectionRoutes:
         self._conn = conn
 
         # dictionary of all resource paths mapped to resource classes
-        self._all_resources = dict()
+        self._all_resources: t.Dict[str, t.Type[ConnectionResource]] = dict()
 
         # for making sure only one thread is accessing Connection obj at a time
         self._lock = threading.Lock()
@@ -198,7 +198,7 @@ def start_conns(
     """
 
     # check no duplicate serial ports
-    tot = tuple()
+    tot: tuple = tuple()
     for route in routes:
         tot += route._conn._ports_list
     tot_s = set(tot)

@@ -104,12 +104,12 @@ class RestApiHandler:
             CORS(self._app)
 
         # other
-        self._all_endpoints = (
-            []  # list of all endpoints in tuple (endpoint str, resource class)
-        )
-        self._registered = (
-            None  # keeps track of who is registered; None if not registered
-        )
+        self._all_endpoints: t.List[
+            t.Tuple[str, t.Type[ConnectionResource]]
+        ] = []  # list of all endpoints in tuple (endpoint str, resource class)
+        self._registered: t.Optional[
+            str
+        ] = None  # keeps track of who is registered; None if not registered
         self._lock = (
             threading.Lock()
         )  # for making sure only one thread is accessing Connection obj at a time
@@ -240,7 +240,7 @@ class RestApiHandler:
 
         return _outer
 
-    def add_resource(self, *args: t.Any, **kwargs: t.Any) -> None:
+    def add_resource(self, *args: t.Any, **kwargs: t.Any) -> t.Any:
         """Calls `flask_restful.add_resource`.
 
         Allows adding endpoints that do not interact with the serial port.

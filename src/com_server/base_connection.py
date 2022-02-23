@@ -89,20 +89,22 @@ class BaseConnection(abc.ABC):
             raise EnvironmentError("exit_on_fail is not supported on Windows")
 
         # initialize Serial object
-        self._conn = None
+        self._conn: t.Optional[serial.Serial] = None
 
         # other
         self._last_sent = time.time()  # prevents from sending too rapidly
         self._last_rcv = (
             0.0,
-            None,
+            b"",
         )  # stores the data that the user previously received
 
         # IO variables
-        self._rcv_queue = (
+        self._rcv_queue: t.List[
+            t.Tuple[float, bytes]
+        ] = (
             []
         )  # stores previous received strings and timestamps, tuple (timestamp, str)
-        self._to_send = []  # queue data to send
+        self._to_send: t.List[bytes] = []  # queue data to send
 
         # this lock makes sure data from the receive queue
         # and send queue are written to and read safely
@@ -226,7 +228,7 @@ class BaseConnection(abc.ABC):
 
     def send(
         self,
-        *args: t.Tuple[t.Any],
+        *args: t.Any,
         check_type: bool = True,
         ending: str = "\r\n",
         concatenate: str = " ",
@@ -282,21 +284,21 @@ class BaseConnection(abc.ABC):
         self._last_sent = time.time()
 
         # check `check_type`, then converts each element
-        send_data = []
+        send_data: str = ""
         if check_type:
             send_data = concatenate.join([self._check_output(i) for i in args])
         else:
             send_data = concatenate.join([str(i) for i in args])
 
         # add ending to string
-        send_data = (send_data + ending).encode("utf-8")
+        send_data_bytes = (send_data + ending).encode("utf-8")
 
         # make sure nothing is reading/writing to the receive queue
         # while reading/assigning the variable
         with self._lock:
             if len(self._to_send) < SEND_QUEUE_MAX_SIZE:
                 # only append if limit has not been reached
-                self._to_send.append(send_data)
+                self._to_send.append(send_data_bytes)
 
         return True
 
@@ -372,6 +374,15 @@ class BaseConnection(abc.ABC):
 
         return self._timeout
 
+    @timeout.setter
+    def timeout(self, value: float) -> None:
+        self._timeout = abs(float(value))
+
+        if self._conn is not None:
+            self._conn.timeout = (
+                self._timeout if self._timeout != constants.NO_TIMEOUT else None
+            )
+
     @property
     def send_interval(self) -> float:
         """A property to determine the send interval of this object.
@@ -384,6 +395,10 @@ class BaseConnection(abc.ABC):
         """
 
         return self._send_interval
+
+    @send_interval.setter
+    def send_interval(self, value: float) -> None:
+        self._send_interval = abs(float(value))
 
     @property
     def conn_obj(self) -> serial.Serial:
@@ -426,18 +441,7 @@ class BaseConnection(abc.ABC):
 
         return self._port
 
-    @timeout.setter
-    def timeout(self, value: float) -> None:
-        self._timeout = abs(float(value))
-        self._conn.timeout = (
-            self._timeout if self._timeout != constants.NO_TIMEOUT else None
-        )
-
-    @send_interval.setter
-    def send_interval(self, value: float) -> None:
-        self._send_interval = abs(float(value))
-
-    def _check_output(self, output: str) -> str:
+    def _check_output(self, output: t.Any) -> str:
         """Argument processing
         - If the argument is `bytes` then decodes to `str`
         - If argument is `list` or `dict` then passes through `json.dumps`

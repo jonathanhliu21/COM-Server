@@ -35,7 +35,7 @@ class SendQueue:
     and does not directly add or delete anything from the queue.
     """
 
-    def __init__(self, send_queue: list) -> None:
+    def __init__(self, send_queue: t.List[bytes]) -> None:
         """Constructor for send queue object.
 
         Parameters:

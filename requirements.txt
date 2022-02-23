@@ -11,3 +11,4 @@ requests>=2.26.0
 pytest>=6.2.5
 mkdocs>=1.2.3
 black>=22.1.0
+mypy>=0.931
