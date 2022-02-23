@@ -59,6 +59,17 @@ class Test_Connection_State:
     def test_availability_working(self, example_data):
         """tests that the 'available' key is working correctly"""
 
+        # get data to reset availability
+        requests.get(f"{SERVER}/get")
+
+        r = requests.get(self.res)
+        loaded = json.loads(r.text)
+
+        assert loaded["message"] == "OK"
+        d = loaded["state"]
+
+        assert d["available"] == 0
+
         requests.post(f"{SERVER}/send", data=example_data)
         time.sleep(1)
         requests.post(f"{SERVER}/send", data=example_data)
@@ -71,14 +82,3 @@ class Test_Connection_State:
         d = loaded["state"]
 
         assert d["available"] == 2
-
-        # get data to reset availability
-        requests.get(f"{SERVER}/get")
-
-        r = requests.get(self.res)
-        loaded = json.loads(r.text)
-
-        assert loaded["message"] == "OK"
-        d = loaded["state"]
-
-        assert d["available"] == 0
