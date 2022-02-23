@@ -9,4 +9,8 @@ import os
 import pytest
 import sys
 
-pytest.main([os.path.join("tests", "passive")] + sys.argv[1:])
+def main() -> None:
+    pytest.main([os.path.join("tests", "passive")] + sys.argv[1:])
+
+if __name__ == "__main__":
+    main()

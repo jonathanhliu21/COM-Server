@@ -16,4 +16,8 @@ except requests.exceptions.ConnectionError:
     print("Server not found. Skipping tests and exiting.")
     sys.exit()
 
-pytest.main([os.path.join("tests", "active")] + sys.argv[1:])
+def main() -> None:
+    pytest.main([os.path.join("tests", "active")] + sys.argv[1:])
+
+if __name__ == "__main__":
+    main()
