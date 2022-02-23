@@ -10,7 +10,7 @@ import pytest
 import sys
 
 def main() -> None:
-    pytest.main([os.path.join("tests", "old")] + sys.argv[1:])
+    return pytest.main([os.path.join("tests", "old")] + sys.argv[1:])
 
 if __name__ == "__main__":
-    main()
+    sys.exit(main())
