@@ -2,12 +2,22 @@
 
 Previous version: 0.1.*
 
+## IMPORTANT: BREAKING changes from previous version:
+
+- Deleted `Builtins` because of compatibility issues
+
 ## Changes from previous version
 
 - Added logging using Python's `logging` module and also added logging to file when disconnects happen, addressing [#73](https://github.com/jonyboi396825/COM-Server/issues/73)
 - CLI now runs production server instead of development server by default, and now recommending production server, addressing [#97](https://github.com/jonyboi396825/COM-Server/issues/97)
 - Updated `__repr__` for `Connection`
-- CLI now used click instead of docopt and serves V1 API
+- Added new `ConnectionRoutes` class for adding resources which gives users more flexibility over their Flask app object than the old `RestApiHandler` (check docs for more details)
+- Added `start_app`, `start_conns`, `add_resources`, and `disconnect_conns` as helper functions to `ConnectionRoutes`, which allow it to start the connections and run the server.
+- `ConnectionRoutes` explicitly responds with `500 Internal Server Error` rather than relying on exceptions from the `Connection` class when the connection is disconnected.
+- Added the new V1 API which uses `ConnectionRoutes`
+- CLI now uses `click` instead of `docopt` and serves V1 API
+- Deleted CLI docs because help option is now better
+- Updated all `Getting Started` and homepages to use `ConnectionRoutes`
 
 # 0.1.4
 
