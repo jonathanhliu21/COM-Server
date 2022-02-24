@@ -27,4 +27,4 @@ from .server import (
 )
 from .tools import ReceiveQueue, SendQueue, all_ports
 
-__version__ = "0.2b0"
+__version__ = "0.2b1"
