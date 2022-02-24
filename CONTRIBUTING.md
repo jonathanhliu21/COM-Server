@@ -91,7 +91,7 @@ Some tests need the `com_server` command to be run or the Arduino to be plugged 
 
 When writing tests, use the `pytest` library, and make them as specific as possible, testing a specific part of what you are making. Tests that do not require a serial port or a server should go into the `tests/passive` directory, and tests that do require an Arduino should go into the `tests/active` directory.
 
-I am also open to those who write new tests to already existing code, especially ones that can test if the methods of the `BaseConnection` and `Connection` classes are behaving properly.
+I am also open to those who write new tests to already existing code.
 
 ## Typing:
 
