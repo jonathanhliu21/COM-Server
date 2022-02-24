@@ -11,3 +11,7 @@ It is recommended that you write your **own** IO thread using `Connection.custom
 ## Multiple `ConnectionRoutes` objects
 
 Starting a server with multiple serial connections is currently untested. If any bugs come up, add a new issue in the [issue tracker](https://github.com/jonyboi396825/COM-Server/issues) so I can list them here and (hopefully) fix them.
+
+## Typing
+
+Although COM-Server _technically_ supports static typing with `mypy`, many of its dependencies (pyserial, waitress, flask_restful, and flask_cors) do not, so you may need to ignore those imports in a `mypy.ini` file.
