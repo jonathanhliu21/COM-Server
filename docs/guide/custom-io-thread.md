@@ -34,8 +34,8 @@ with conn:
 Note the three parameters that the function needs to have:
 
 - `conn` represents the pyserial `Serial` object ([docs](https://pyserial.readthedocs.io/en/latest/pyserial_api.html#serial.Serial))
-- `rcv_queue` represents the com_server `ReceiveQueue` object ([docs](/guide/library-api/#com_serversendqueue))
-- `send_queue` represents the com_server `SendQueue` object ([docs](/guide/library-api/#com_serverreceivequeue))
+- `rcv_queue` represents the com_server `ReceiveQueue` object ([docs](../library-api/#com_serversendqueue))
+- `send_queue` represents the com_server `SendQueue` object ([docs](../library-api/#com_serverreceivequeue))
 
 This is how the program will execute the IO thread now:
 
@@ -64,8 +64,8 @@ You could do anything you want, really. However, there are some things to note:
 ### Useful documentation links
 
 - [pyserial `Serial` object](https://pyserial.readthedocs.io/en/latest/pyserial_api.html#serial.Serial)
-- [`SendQueue`](/guide/library-api/#com_serversendqueue)
-- [`ReceiveQueue`](/guide/library-api/#com_serverreceivequeue)
+- [`SendQueue`](../library-api/#com_serversendqueue)
+- [`ReceiveQueue`](../library-api/#com_serverreceivequeue)
 
 ### Example
 

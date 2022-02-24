@@ -24,3 +24,5 @@ RCV_QUEUE_SIZE_XLARGE = 1024
 # server
 DEFAULT_HOST = "0.0.0.0"
 DEFAULT_PORT = 8080
+
+SUPPORTED_HTTP_METHODS = ("get", "post", "put", "patch", "delete", "options", "head")

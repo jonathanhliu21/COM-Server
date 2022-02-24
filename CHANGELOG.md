@@ -1,3 +1,55 @@
+# 0.2 Beta Release 0
+
+Previous version: 0.1.*
+
+## IMPORTANT: BREAKING changes from previous version:
+
+- Deleted `Builtins` because of compatibility issues
+
+## Changes from previous version
+
+- Added logging using Python's `logging` module and also added logging to file when disconnects happen, addressing [#73](https://github.com/jonyboi396825/COM-Server/issues/73)
+- CLI now runs production server instead of development server by default, and now recommending production server, addressing [#97](https://github.com/jonyboi396825/COM-Server/issues/97)
+- Updated `__repr__` for `Connection`
+- Added new `ConnectionRoutes` class for adding resources which gives users more flexibility over their Flask app object than the old `RestApiHandler` (check docs for more details), addressing [#104](https://github.com/jonyboi396825/COM-Server/issues/104)
+- Added `start_app`, `start_conns`, `add_resources`, and `disconnect_conns` as helper functions to `ConnectionRoutes`, which allow it to start the connections and run the server.
+- `ConnectionRoutes` explicitly responds with `500 Internal Server Error` rather than relying on exceptions from the `Connection` class when the connection is disconnected.
+- Added the new V1 API which uses `ConnectionRoutes` and follows RESTful principles more than the V0 API, addressing [#86](https://github.com/jonyboi396825/COM-Server/issues/86)
+- Fixed type annotations such that it passes `mypy` static typing checks
+- Added `tox`, making CI with Github Actions easier
+- CLI now uses `click` instead of `docopt` and serves V1 API
+- Deleted CLI docs because help option is now better
+- Updated all `Getting Started` and homepages to use `ConnectionRoutes`
+
+# 0.1.4
+
+Previous version: 0.1.3
+
+## Changes from previous version
+
+- Fixed parts of docs that were written during version 0 that were not true/very confusing and misleading
+
+# 0.1.3
+
+Previous version: 0.1.2
+
+## Changes from previous version
+
+- Fixed broken links, addressing [#92](https://github.com/jonyboi396825/COM-Server/issues/92) and [#93](https://github.com/jonyboi396825/COM-Server/issues/93)
+
+# 0.1.2
+
+Previous version: 0.1.1
+
+## IMPORTANT: BREAKING changes from previous version:
+
+- Added versioning in built-in API, addressing [#90](https://github.com/jonyboi396825/COM-Server/issues/90)
+
+## Changes from previous version:
+
+- Fixed return type annotation in `api_server.py`, addressing [#88](https://github.com/jonyboi396825/COM-Server/issues/88)
+- Fixed dependency list in `setup.py`
+
 # 0.1.1
 
 Previous version: 0.1

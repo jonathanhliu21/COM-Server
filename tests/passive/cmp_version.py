@@ -6,6 +6,7 @@ A file containing implementation of the version class.
 File not to be tested. 
 """
 
+
 class Version:
     """
     A version object; determines if alpha, beta, or final release
@@ -46,14 +47,14 @@ class Version:
 
         v_arr = v_str.split(".")
 
-        # v_arr should be size 2 or 3 
+        # v_arr should be size 2 or 3
         #   ["X", "Y"]
         #   ["X", "YaN"]
         #   ["X", "YbN"]
-        #   ["X", "Y", "N"] 
+        #   ["X", "Y", "N"]
 
         # test which type of release
-        if (len(v_arr) == 3):
+        if len(v_arr) == 3:
             # if len is 3, then it is a final release
             # x is arr[0], y is arr[1], r is 2, and n is arr[2]
             self.x = int(v_arr[0])
@@ -61,19 +62,19 @@ class Version:
             self.r = 2
             self.n = int(v_arr[2])
 
-        elif (len(v_arr) == 2):
-            if (v_arr[1].count('a') == 1):
+        elif len(v_arr) == 2:
+            if v_arr[1].count("a") == 1:
                 # test if ["X", "YaN"]; alpha release
-                minor_rel = v_arr[1].split('a')
+                minor_rel = v_arr[1].split("a")
 
                 self.x = int(v_arr[0])
                 self.y = int(minor_rel[0])
-                self.r = 0 
+                self.r = 0
                 self.n = int(minor_rel[1])
 
-            elif (v_arr[1].count('b') == 1):
+            elif v_arr[1].count("b") == 1:
                 # test if ["X", "YbN"]; beta release
-                minor_rel = v_arr[1].split('b')
+                minor_rel = v_arr[1].split("b")
 
                 self.x = int(v_arr[0])
                 self.y = int(minor_rel[0])
@@ -82,37 +83,37 @@ class Version:
 
             else:
                 # could be ["X", "Y"]; assumes "X.Y.0"
-                
+
                 self.x = int(v_arr[0])
                 self.y = int(v_arr[1])
                 self.r = 2
                 self.n = 0
-        
+
         else:
             raise ValueError("Version not parsable")
-        
+
         # check that all values are in range
         # all values have to be positive
-        if (self.x < 0 or self.y < 0 or self.r not in (0, 1, 2) or self.n < 0):
+        if self.x < 0 or self.y < 0 or self.r not in (0, 1, 2) or self.n < 0:
             raise ValueError("Version not parsable")
-    
+
     def __repr__(self) -> str:
         """Returns string representation of self; should be same as incoming string"""
 
-        if (self.r == 0):
-            dot = 'a'
-        elif (self.r == 1):
-            dot = 'b'
+        if self.r == 0:
+            dot = "a"
+        elif self.r == 1:
+            dot = "b"
         else:
-            dot = '.'
+            dot = "."
 
         return f"{self.x}.{self.y}{dot}{self.n}"
-    
+
     def __lt__(self, other: "Version") -> bool:
         """Sees if one version is less than another
 
         If one value is less than the other, then returns True and breaks out without checking further.
-        
+
         If one value is greater than the other, then returns False and breaks out without checking further.
 
         If one value is equal to the other, then continues checking.
@@ -120,42 +121,47 @@ class Version:
         1. compare if major version1 < major version2
         2. compare if minor version1 < minor version2
         3. compare if release type 1 < release type 2
-        4. compare if release num 1 < release num 2 
+        4. compare if release num 1 < release num 2
 
         If here, then returns False.
         """
 
         # major version
-        if (self.x < other.x):
+        if self.x < other.x:
             return True
-        elif (self.x > other.x):
+        elif self.x > other.x:
             return False
-        
+
         # minor version
-        if (self.y < other.y):
+        if self.y < other.y:
             return True
-        elif (self.y > other.y):
+        elif self.y > other.y:
             return False
-        
+
         # release
-        if (self.r < other.r):
+        if self.r < other.r:
             return True
-        elif (self.r > other.r):
+        elif self.r > other.r:
             return False
-        
+
         # relase num
-        if (self.n < other.n):
+        if self.n < other.n:
             return True
-        elif (self.n > other.n):
+        elif self.n > other.n:
             return False
-        
+
         return False
-    
+
     def __eq__(self, other: "Version") -> bool:
         """Returns if versions are equal"""
 
-        return self.x == other.x and self.y == other.y and self.r == other.r and self.n == other.n
-    
+        return (
+            self.x == other.x
+            and self.y == other.y
+            and self.r == other.r
+            and self.n == other.n
+        )
+
     def __gt__(self, other: "Version") -> bool:
         """Returns if one version is greater than another (i.e. not less than and not equal)"""
 

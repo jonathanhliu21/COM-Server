@@ -1,3 +1,10 @@
+Examples here are outdated. Refer to the documentation instead.
+
+send_back/ will continue to be used for testing.
+
+
+OLD:
+
 Examples of COM-Server:
 
 NOTE: You need an Arduino, and you have to upload the Arduino sketches provided under each directory before running the scripts in that directory.

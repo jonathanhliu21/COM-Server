@@ -190,14 +190,14 @@ Increase the value of `num_before` to get the next most recent, next next more r
 
 If there has not been any received data, then returns `None`.
 
-To wait for the first data to be received, use the `get()` method:
+To wait for data to be received, use the `get()` method:
 
 ```py
 rcv = conn.get(bytes) # gets first bytes after the method is called
 rcv = conn.get(str) # gets first string after method is called
 ```
 
-If the timeout is reached, then the method will return `None`.
+If no data gets received before the timeout is reached, then the method will return `None`.
 
 ### Full example
 
@@ -222,92 +222,92 @@ while conn.connected:
 conn.disconnect()
 ```
 
-## Creating a RestApiHandler class
+## Creating a ConnectionRoutes class
 
-This is the class that handles setting up the server that hosts an API which interacts with the serial ports.
+`ConnectionRoutes` works similarly to a `flask_restful.Api` object but with only the `resource` decorator. It takes in a `Connection` object and it adds resources that are meant to interact with the `Connection` objects. What this means is that unlike `flask_restful.Api.resource()`, `ConnectionRoutes.add_resource()` gives the class a `conn` attribute representing the `Connection` that you can interact with in the HTTP methods. It also checks if the serial connection is currently being used, and if it is, it will respond with a `503 Service Unavailable`. Lastly, it checks if the connection is disconnected, and if so, it will respond with a `500 Internal Server Error`.
 
-This class uses `Flask` and `flask_restful`'s API class as its back end. More about them [here](https://flask.palletsprojects.com) and [here](https://flask-restful.readthedocs.io).
+The class that the decorator is wrapping must extend `ConnectionResource`.
 
-The example below shows how to create a `RestApiHandler` object and run it as a Flask development server on `https://0.0.0.0:8080`:
-```py
-import flask
-import flask_restful
-from com_server import Connection, RestApiHandler
-
-conn = Connection(port="/dev/ttyUSB0", baud=115200)
-handler = RestApiHandler(conn)
-
-# automatically connects conn
-handler.run_dev(host="0.0.0.0", port=8080)
-
-conn.disconnect()
-```
-
-### Adding built-in endpoints
-
-By default, the `/register` and `/recall` endpoints are reserved and you cannot use them. However, adding the built-in endpoints adds a list of endpoints that you cannot use. These endpoints are:
-
-- `/send`
-- `/receive` 
-- `/receive/all` 
-- `/get` 
-- `/send/get_first` 
-- `/get/wait` 
-- `/send/get` 
-- `/connected`
-- `/list_ports`
-
-For more information on these endpoints and how to use them, see [here](/server/server-api).
-
-This is how to add those endpoints:
-```py
-import flask
-import flask_restful
-from com_server import Connection, RestApiHandler, Builtins
-
-conn = Connection(port="/dev/ttyUSB0", baud=115200)
-handler = RestApiHandler(conn)
-Builtins(handler)
-
-handler.run_dev(host="0.0.0.0", port=8080)
-
-conn.disconnect()
-```
-
-There is no need to assign a variable to `Builtins` as all it does is add the endpoints to the `RestApiHandler` object declared above. 
-
-`run_dev()` calls `Flask.run()`, which means that its arguments are also the arguments of `Flask.run()`. To run on a production server, use `run_prod()` rather than `run_dev()`, which calls `waitress.serve()`. See more info [here](http://localhost:8000/guide/library-api/#restapihandlerrun_dev).
-
-### Adding custom endpoints
-
-To add custom endpoints, use the `add_endpoints` decorator above a function with a nested class in it. The nested class should extend `ConnectionResource` and have functions similar to the classes of `flask_restful`. See [here](https://flask-restful.readthedocs.io/en/latest/quickstart.html#a-minimal-api) for more info. The function needs to have a `conn` parameter indicating the connection object and lastly needs to return the nested class.
-
-The example below adds an endpoint at `/hello_world`, sends "`Hello world\n`" to the serial port, then returns `{"Hello": "world"}` when there is a GET request.
+However, the server can be started separately with `start_app`, and the Flask object is not part of `ConnectionRoutes`, giving the user more flexibility, unlike the old `RestApiHandler`.
 
 ```py
-from com_server import Connection, RestApiHandler, Builtins, ConnectionResource
+from com_server import Connection, ConnectionRoutes, ConnectionResource, start_app
+from flask import Flask
+from flask_restful import Api
 
-conn = Connection(port="/dev/ttyUSB0", baud=115200)
-handler = RestApiHandler(conn)
-Builtins(handler)
+app = Flask(__name__)
+api = Api(app)
 
-@handler.add_endpoint("/hello_world")
-class HelloWorldEndpoint(ConnectionResource):
+conn = Connection(115200, "/dev/ttyUSB0") # change to your own port
+handler = ConnectionRoutes(conn)
+
+# Add your own resources that do not interact with the serial port here with `app` and `api`
+
+@handler.add_resource("/hello_world")
+class Hello_World_Resource(ConnectionResource):
+    """
+    This resource will return the most recently received object
+    on GET and send "Hello world" to the serial device on POST.
+
+    The URL to this resource would be localhost:8080/hello_world
+    """
+
     def get(self):
-        self.conn.send("Hello", "world", ending='\n')
-        return {"Hello": "world"}
+        return {
+            "data": self.conn.receive_str()
+        }
     
-handler.run_dev(host="0.0.0.0", port=8080)
+    def post(self):
+        self.conn.send("Hello world", ending="\n")
+        return {
+            "message": "sent"
+        }
 
-conn.disconnect()
+# app.run() cannot be used because the serial port is disconnected.
+# We have to use start_app(), which automatically connects the serial port
+# before running a production server with waitress on http://0.0.0.0:8080
+
+start_app(app, api, handler)
+
+# Note that start_app calls sys.exit(), so nothing should go after start_app
 ```
 
-Again, note that the endpoints listed above cannot be used.
+## Using the builtin endpoints
 
-## Using the endpoints
+COM-Server comes with a list of builtin endpoints, with each one versioned. The latest version is the V1 API, with supports the `ConnectionRoutes` object. The previous version, V0, uses the old `RestApiHandler` and I do not recommend using it. However, its usage can be found [here](../../server/v0).
 
-Assuming that you're using the `com_server` command to run or `has_register_recall` is False when initializing your `RestApiHandler`, then you need to access the `/register` and `/recall` to ensure to the program that there is only one IP/device connecting (see [Recommended Use](/#recommended-use)). 
+`com_server` has an `api` module that contains all the versions of the builtin endpoints. Note that version V0 is not compatible with version V1 because it uses a completely different handler class.
 
-When you are beginning to use the serial port, send a GET request to `/register`, and when you are finished, send a GET request to `/recall`. There are no arguments needed.
+```py
+from com_server import Connection, ConnectionRoutes, start_app
+from com_server.api import V1
+from flask import Flask
+from flask_restful import Api
 
-There is a built-in endpoint for almost every of the methods in `Connection`, in addition to the `send` and `receive` methods of `BaseConnection`. See the [Server API](/server/server-api) for more information on how to use them. Note that if you send a request to the `/send` endpoint or a send-based endpoint (an endpoint that sends any data to the serial port) too rapidly (under the time specified in `send_interval`), it will respond with a 502 error. 
+app = Flask(__name__)
+api = Api(app)
+
+conn = Connection(<baud>, "<serport>") 
+handler = ConnectionRoutes(conn)
+
+# add your own routes and endpoints here
+
+V1(handler)
+start_app(app, api, handler)
+```
+
+`V1` has an option `prefix`, indicating the prefix of all the routes in the builtin API. The default is `v1`, meaning that all version 1 API endpoints are prefixed with /v1/ (e.g. localhost:8080/v1/send).
+
+Note that if you put V1 right before `start_app` and you have a resource that has the same path as one of the resources in the builtins, then the builtin resource will override your provided resource.
+
+For more information on the builtin endpoints and routes, check out the [Version 1 API docs](../../server/v1).
+
+## Using the CLI
+
+COM-Server provides a command line tool to run the server given serial ports and a baud rate with the builtin V1 API. In your terminal, type in:
+
+```sh
+> com_server --help
+```
+
+for more information.

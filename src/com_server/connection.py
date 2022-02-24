@@ -7,7 +7,6 @@ Contains implementation of connection object.
 
 import copy
 import os
-import sys
 import time
 import typing as t
 import serial
@@ -22,26 +21,9 @@ if os.name == "posix":
 
 
 class Connection(base_connection.BaseConnection):
-    """A more user-friendly interface with the serial port.
+    """Class that interfaces with the serial port.
 
-    In addition to the four basic methods (see `BaseConnection`),
-    it makes other methods that may also be useful to the user
-    when communicating with the classes.
-
-    Some of the methods include:
-    - `get()`: Gets first response after the time that the method was called
-    - `get_all_rcv()`: Returns the entire receive queue
-    - `get_all_rcv_str()`: Returns the entire receive queue, converted to strings
-    - `receive_str()`: Receives as a string rather than bytes object
-    - `get_first_response()`: Gets the first response from the serial port after sending something (breaks when timeout reached)
-    - `send_for_response()`: Continues sending something until the connection receives a given response (breaks when timeout reached)
-    - `wait_for_response()`: Waits until the connection receives a given response (breaks when timeout reached)
-    - `reconnect()`: Attempts to reconnect given a new port
-
-    Other methods can generally help the user with interacting with the classes:
-    - `all_ports()`: Lists all available COM ports.
-
-    **Warning**: Before making this object go out of scope, make sure to call `disconnect()` in order to avoid thread leaks.
+    **Warning**: Before making this object go out of scope, make sure to call `disconnect()` in order to avoid zombie threads.
     If this does not happen, then the IO thread will still be running for an object that has already been deleted.
     """
 
@@ -56,7 +38,10 @@ class Connection(base_connection.BaseConnection):
         return self
 
     def conv_bytes_to_str(
-        self, rcv: bytes, read_until: t.Optional[str] = None, strip: bool = True
+        self,
+        rcv: t.Optional[bytes],
+        read_until: t.Optional[str] = None,
+        strip: bool = True,
     ) -> t.Optional[str]:
         """Convert bytes receive object to a string.
 
@@ -120,6 +105,7 @@ class Connection(base_connection.BaseConnection):
         Returns:
         - None if no data received (timeout reached)
         - A `bytes` object indicating the data received if `type` is `bytes`
+        - A `str` object indicating the data received, then passed through `conv_bytes_to_str()`, if `type` is `str`
         """
 
         call_time = time.time()  # time that the function was called
@@ -174,10 +160,15 @@ class Connection(base_connection.BaseConnection):
         if not self.connected:
             raise base_connection.ConnectException("No connection established")
 
-        return [
-            (ts, self.conv_bytes_to_str(rcv, read_until=read_until, strip=strip))
-            for ts, rcv in self.get_all_rcv()
-        ]
+        ret: t.List[t.Tuple[float, str]] = []
+
+        for ts, rcv in self.get_all_rcv():
+            to_str = self.conv_bytes_to_str(rcv, read_until=read_until, strip=strip)
+            assert to_str  # mypy
+
+            ret.append((ts, to_str))
+
+        return ret
 
     def receive_str(
         self,
@@ -229,11 +220,15 @@ class Connection(base_connection.BaseConnection):
             rcv_tuple[1], read_until=read_until, strip=strip
         )
 
+        if not str_data:
+            # mypy
+            return None
+
         return (rcv_tuple[0], str_data)
 
     def get_first_response(
         self,
-        *args: t.Tuple[t.Any],
+        *args: t.Any,
         is_bytes: bool = True,
         check_type: bool = True,
         ending: str = "\r\n",
@@ -278,18 +273,15 @@ class Connection(base_connection.BaseConnection):
             *args, check_type=check_type, ending=ending, concatenate=concatenate
         )
 
-        # for receiving string or bytes
-        rcv_func = self.receive if is_bytes else self.receive_str
-
         if not send_success:
             return None
 
-        r = None
+        r: t.Any = None
         if is_bytes:
-            r = rcv_func()
+            r = self.receive()
         else:
             # strings have read_until option
-            r = rcv_func(read_until=read_until, strip=strip)
+            r = self.receive_str(read_until=read_until, strip=strip)
 
         st = time.time()
 
@@ -301,27 +293,27 @@ class Connection(base_connection.BaseConnection):
                 return None
 
             if is_bytes:
-                r = rcv_func()
+                r = self.receive()
             else:
                 # strings have read_until option
-                r = rcv_func(read_until=read_until)
+                r = self.receive_str(read_until=read_until)
 
             time.sleep(0.05)
 
-        return r[1]
+        ret: t.Union[str, bytes] = r[1]
+        return ret
 
     def wait_for_response(
         self,
-        response: t.Union[str, bytes],
+        response: t.Any,
         after_timestamp: float = -1.0,
         read_until: t.Optional[str] = None,
         strip: bool = True,
     ) -> bool:
         """Waits until the connection receives a given response.
 
-        This method will call `receive()` repeatedly until it
-        returns a string that matches `response` whose timestamp
-        is greater than given timestamp (`after_timestamp`).
+        This method will wait for a response that matches given `response`
+        whose time received is greater than given timestamp `after_timestamp`.
 
         Parameters:
         - `response` (str, bytes): The receive data that the program is looking for.
@@ -365,7 +357,7 @@ class Connection(base_connection.BaseConnection):
     def send_for_response(
         self,
         response: t.Union[str, bytes],
-        *args: t.Tuple[t.Any],
+        *args: t.Any,
         read_until: t.Optional[str] = None,
         strip: bool = True,
         check_type: bool = True,
@@ -401,6 +393,9 @@ class Connection(base_connection.BaseConnection):
 
         if not self._check_connect():
             return False
+
+        if "_last_sent_outer" not in vars(self):
+            self._last_sent_outer = 0.0
 
         try:
             self._last_sent_outer  # this is for the interval for calling send_for_response
@@ -505,7 +500,7 @@ class Connection(base_connection.BaseConnection):
 
         return tools.all_ports(**kwargs)
 
-    def custom_io_thread(self, func) -> t.Callable:
+    def custom_io_thread(self, func: t.Callable) -> t.Callable:
         """A decorator custom IO thread rather than using the default one.
 
         It is recommended to read `pyserial`'s documentation before creating a custom IO thread.
@@ -682,7 +677,7 @@ class Connection(base_connection.BaseConnection):
         """
 
         # flush buffers
-        self._conn.flush()
+        conn.flush()
 
         # keep on trying to poll data as long as connection is still alive
         if conn.in_waiting:
@@ -690,10 +685,7 @@ class Connection(base_connection.BaseConnection):
             incoming = b""
             while conn.in_waiting:
                 incoming += conn.read()
-
-                if sys.platform.startswith("darwin"):
-                    # fix partial data for small strings on MacOS
-                    time.sleep(0.001)
+                time.sleep(0.001)
 
             # add to queue
             rcv_queue.pushitems(incoming)

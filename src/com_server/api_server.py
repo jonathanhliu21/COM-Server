@@ -6,6 +6,7 @@ This file contains the implementation to the HTTP server that serves
 the web API for the Serial port.
 """
 
+import logging
 import threading
 import typing as t
 
@@ -14,7 +15,7 @@ import flask_restful
 import waitress
 from flask_cors import CORS
 
-from . import base_connection, connection  # for typing
+from . import connection  # for typing
 from . import disconnect
 
 
@@ -23,7 +24,7 @@ class EndpointExistsException(Exception):
 
 
 class ConnectionResource(flask_restful.Resource):
-    """A custom resource object that is built to be used with `RestApiHandler`.
+    """A custom resource object that is built to be used with `RestApiHandler` and `ConnectionRoutes`.
 
     This class is to be extended and used like the `Resource` class.
     Have `get()`, `post()`, and other methods for the types of responses you need.
@@ -31,6 +32,7 @@ class ConnectionResource(flask_restful.Resource):
 
     # typing for autocompletion
     conn: connection.Connection
+    other: t.Dict[str, connection.Connection]
 
     # functions will be implemented in subclasses
 
@@ -42,13 +44,8 @@ class RestApiHandler:
     custom things with the serial connection and running the local server
     that will host the API. It uses a `flask_restful` object as its back end.
 
-    Note that only one connection (one IP address) will be allowed to connect
-    at a time because the serial port can only handle one process.
-    Additionally, endpoints cannot include `/register` or `/recall`, as that
-    will be used to ensure that there is only one connection at a time.
-    Note that unexpected behavior may occur when different processes of the same IP
-    reach the same endpoint as these endpoints only check IPs, not processes.
-    Finally, resource classes have to extend the custom `ConnectionResource` class
+    Note that endpoints cannot have the names `/register` or `/recall`.
+    Additionally, resource classes have to extend the custom `ConnectionResource` class
     from this library, not the `Resource` from `flask_restful`.
 
     `500 Internal Server Error`s will occur with endpoints dealing with the connection
@@ -74,13 +71,11 @@ class RestApiHandler:
 
     def __init__(
         self,
-        conn: t.Union[
-            t.Type[base_connection.BaseConnection], t.Type[connection.Connection]
-        ],
+        conn: connection.Connection,
         has_register_recall: bool = True,
         add_cors: bool = False,
         catch_all_404s: bool = True,
-        **kwargs: t.Dict[str, t.Any],
+        **kwargs: t.Any,
     ) -> None:
         """Constructor for class
 
@@ -109,12 +104,12 @@ class RestApiHandler:
             CORS(self._app)
 
         # other
-        self._all_endpoints = (
-            []  # list of all endpoints in tuple (endpoint str, resource class)
-        )
-        self._registered = (
-            None  # keeps track of who is registered; None if not registered
-        )
+        self._all_endpoints: t.List[
+            t.Tuple[str, t.Type[ConnectionResource]]
+        ] = []  # list of all endpoints in tuple (endpoint str, resource class)
+        self._registered: t.Optional[
+            str
+        ] = None  # keeps track of who is registered; None if not registered
         self._lock = (
             threading.Lock()
         )  # for making sure only one thread is accessing Connection obj at a time
@@ -141,18 +136,19 @@ class RestApiHandler:
         contain implementations of request methods such as
         `get()`, `post()`, etc. similar to the `Resource`
         class from `flask_restful`. To use the connection
-        object, use the `self.conn` attribute.
+        object, use the `self.conn` attribute of the class
+        under the decorator.
 
         For more information, see the `flask_restful` [documentation](https://flask-restful.readthedocs.io).
 
         Note that duplicate endpoints will result in an exception.
         If there are two classes of the same name, even in different
         endpoints, the program will append underscores to the name
-        until there are no more repeats. For example, if one function
-        returned a class named "Hello" and another function returned a
-        class also named "Hello", then the second class name will be
-        changed to "Hello_". This happens because `flask_restful`
-        interprets duplicate class names as duplicate endpoints.
+        until there are no more repeats. For example, if one class is
+        named "Hello" and another class is also named "Hello",
+        then the second class name will be changed to "Hello_".
+        This happens because `flask_restful` interprets duplicate class
+        names as duplicate endpoints.
 
         If another process accesses an endpoint while another is
         currently being used, then it will respond with
@@ -202,9 +198,7 @@ class RestApiHandler:
 
             # req methods; _self is needed as these will be part of class functions
             def _dec(func: t.Callable) -> t.Callable:
-                def _inner(
-                    _self, *args: t.Tuple[t.Any], **kwargs: t.Dict[str, t.Any]
-                ) -> t.Callable:
+                def _inner(_self, *args: t.Any, **kwargs: t.Any) -> t.Any:
                     ip = flask.request.remote_addr
 
                     if self._has_register_recall and (
@@ -246,9 +240,10 @@ class RestApiHandler:
 
         return _outer
 
-    def add_resource(self, *args: t.Tuple[t.Any], **kwargs: t.Dict[str, t.Any]) -> None:
-        """Calls `flask_restful.add_resource`. Allows adding endpoints
-        without needing a connection.
+    def add_resource(self, *args: t.Any, **kwargs: t.Any) -> t.Any:
+        """Calls `flask_restful.add_resource`.
+
+        Allows adding endpoints that do not interact with the serial port.
 
         See [here](https://flask-restful.readthedocs.io/en/latest/api.html#flask_restful.Api.add_resource)
         for more info on `add_resource` and [here](https://flask-restful.readthedocs.io)
@@ -257,8 +252,16 @@ class RestApiHandler:
 
         return self._api.add_resource(*args, **kwargs)
 
-    def run_dev(self, **kwargs: t.Dict[str, t.Any]) -> None:
+    def run_dev(self, logfile: t.Optional[str] = None, **kwargs: t.Any) -> None:
         """Launches the Flask app as a development server.
+
+        Not recommended because this is slower, and development features
+        such as debug mode and restarting do not work most of the time.
+        Use `run()` instead.
+
+        Parameters:
+        - `logfile` (str, None): The path of the file to log serial disconnect and reconnect events to.
+        Leave as None if you do not want to log to a file. By default None.
 
         All arguments in `**kwargs` will be passed to `Flask.run()`.
         For more information, see [here](https://flask.palletsprojects.com/en/2.0.x/api/#flask.Flask.run).
@@ -270,7 +273,7 @@ class RestApiHandler:
         Some arguments include:
         - `host`: The host of the server. Ex: `localhost`, `0.0.0.0`, `127.0.0.1`, etc.
         - `port`: The port to host it on. Ex: `5000` (default), `8000`, `8080`, etc.
-        - `debug`: If the app should be used in debug mode.
+        - `debug`: If the app should be used in debug mode. Very unreliable and most likely will not work.
         """
 
         if not self._conn.connected:
@@ -281,19 +284,27 @@ class RestApiHandler:
             self._api.add_resource(resource, endpoint)
 
         # add disconnect handler, verbose is True
-        _disconnect_handler = disconnect.Reconnector(self._conn, True)
+        _logger = logging.getLogger("com_server_dev")
+        _disconnect_handler = disconnect.Reconnector(self._conn, _logger, logfile)
         _disconnect_handler.start()
 
         self._app.run(**kwargs)
 
         self._conn.disconnect()  # disconnect if stop running
 
-    def run_prod(self, **kwargs: t.Dict[str, t.Any]) -> None:
-        """Launches the Flask app as a Waitress production server.
+    def run(self, logfile: t.Optional[str] = None, **kwargs: t.Any) -> None:
+        """Launches the Flask app as a Waitress production server (recommended).
+
+        Parameters:
+        - `logfile` (str, None): The path of the file to log serial disconnect and reconnect events to.
+        Leave as None if you do not want to log to a file. By default None.
 
         All arguments in `**kwargs` will be passed to `waitress.serve()`.
         For more information, see [here](https://docs.pylonsproject.org/projects/waitress/en/stable/arguments.html#arguments).
         For Waitress documentation, see [here](https://docs.pylonsproject.org/projects/waitress/en/stable/).
+
+        Automatically disconnects the `Connection` object after
+        the server is closed.
 
         If nothing is included, then runs on `http://0.0.0.0:8080`
         """
@@ -305,13 +316,18 @@ class RestApiHandler:
         for endpoint, resource in self._all_endpoints:
             self._api.add_resource(resource, endpoint)
 
+        _logger = logging.getLogger("waitress")
+
         # add disconnect handler, verbose is False
-        _disconnect_handler = disconnect.Reconnector(self._conn, False)
+        _disconnect_handler = disconnect.Reconnector(self._conn, _logger, logfile)
         _disconnect_handler.start()
 
         waitress.serve(self._app, **kwargs)
 
         self._conn.disconnect()  # disconnect if stop running
+
+    # backward compatibility
+    run_prod = run
 
     @property
     def flask_obj(self) -> flask.Flask:

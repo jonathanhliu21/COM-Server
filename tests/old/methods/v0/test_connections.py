@@ -13,13 +13,15 @@ import pytest
 import requests
 
 SERVER = "http://127.0.0.1:8080"
+V = "http://127.0.0.1:8080/v0"
 
 # don't start unless running
 try:
-    requests.get(SERVER+"/recall")
+    requests.get(SERVER + "/recall")
 except requests.exceptions.ConnectionError:
     pytestmark = pytest.mark.skip(
-        reason="Server not launched. Make sure it is running on 0.0.0.0 with port 8080, or run \"com_server run <baud> <serport>\".")
+        reason='Server not launched. Make sure it is running on 0.0.0.0 with port 8080, or run "com_server run <baud> <serport>".'
+    )
 
 
 def test_register() -> None:
@@ -32,7 +34,7 @@ def test_connected():
     Arduino should be connected
     """
 
-    r = requests.get(SERVER+"/connected")
+    r = requests.get(V + "/connected")
     loaded = json.loads(r.text)
 
     assert r.status_code == 200
@@ -44,7 +46,7 @@ def test_list_ports():
     Tests that com_server.list_ports() is the same as the data from request
     """
 
-    r = requests.get(SERVER+"/list_ports")
+    r = requests.get(V + "/list_ports")
     loaded = json.loads(r.text)
 
     a = all_ports()
@@ -54,23 +56,20 @@ def test_list_ports():
 
     assert r.status_code == 200
 
+
 def test_available():
     """
     Tests available property
     """
 
-    requests.get(SERVER+"/receive")
+    requests.get(V + "/receive")
 
-    data = {
-        "data": [1, 2, 3, 4],
-        "ending": "\n",
-        "concatenate": ";"
-    } 
-    requests.post(SERVER+"/send", data=data)
+    data = {"data": [1, 2, 3, 4], "ending": "\n", "concatenate": ";"}
+    requests.post(V + "/send", data=data)
 
-    time.sleep(1) # for send interval
+    time.sleep(1)  # for send interval
 
-    r = requests.get(SERVER+"/connection_state")
+    r = requests.get(V + "/connection_state")
 
     assert r.status_code == 200
 
@@ -79,12 +78,13 @@ def test_available():
 
     assert state["available"] == 1
 
+
 def test_timeout_sendint():
     """
     Tests that timeout and send interval are 1.0
     """
 
-    r = requests.get(SERVER+"/connection_state")
+    r = requests.get(V + "/connection_state")
 
     assert r.status_code == 200
 
@@ -92,6 +92,7 @@ def test_timeout_sendint():
     state = loaded["state"]
 
     assert state["send_interval"] == 1.0 and state["timeout"] == 1.0
+
 
 def test_unregister() -> None:
     r = requests.get(SERVER + "/recall")

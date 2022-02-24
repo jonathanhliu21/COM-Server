@@ -8,27 +8,13 @@ COM-Server is a Python library and a local web server that hosts an API locally 
 
 The serial communication uses [pyserial](https://pyserial.readthedocs.io/en/latest/pyserial.html) as its back-end and the server uses [flask-restful](https://flask-restful.readthedocs.io/en/latest/quickstart.html) and [Flask](https://flask.palletsprojects.com/en/2.0.x/). Reading their documentations may help with developing with COM-Server.
 
-**NOTE**: COM-Server has only been tested on:  
-Operating systems:
+**NOTE**: COM-Server is mainly tested on a Raspberry Pi connected to an Arduino UNO running Raspberry Pi OS Buster with Python 3.7.3. It has also been tested on:
 
-- Ubuntu 20.04 (Focal Fossa)
-- Raspberry Pi OS 10 (Buster)
-- Mac OS 10.15.x (Catalina)
-- Mac OS 11.6 (Big Sur)
-- Windows 10
-
-Python versions:
-
-- Python 3.7.2
-- Python 3.7.3
-- Python 3.8.10
-- Python 3.9.7
-- Python 3.10.0
-
-Serial ports:
-
-- Arduino UNO
-- Arduino Nano
+OS | Version
+---- | ----
+Linux | Ubuntu 20.04 with Python 3.8.10
+MacOS | Big Sur with Python 3.8.9
+Windows | Windows 10 with Python 3.9.7, Windows 11 with Python 3.9.7
 
 It is likely that this library will not work for non-USB ports. 
 
@@ -42,28 +28,30 @@ It is likely that this library will not work for non-USB ports.
     - [License](/#license)
 - [Getting Started](guide/getting-started)
     - [Creating a Connection Class](guide/getting-started/#creating-a-connection-class)
-    - [Creating a RestApiHandler Class](guide/getting-started/#creating-a-restapihandler-class)
-    - [Using the endpoints](guide/getting-started/#using-the-endpoints)
+    - [Creating a ConnectionRoutes Class](guide/getting-started/#creating-a-connectionroutes-class)
+    - [Using the builtin endpoints](guide/getting-started/#using-the-builtin-endpoints)
+    - [Using the CLI](guide/getting-started/#using-the-cli)
 - [Library API](guide/library-api)
     - [Functions](guide/library-api/#functions)
         - [com_server.all_ports()](guide/library-api/#com_serverall_ports)
+        - [com_server.start_app()](guide/library-api/#com_serverstart_app)
+        - [com_server.add_resources()](guide/library-api/#com_serveradd_resources)
+        - [com_server.start_conns()](guide/library-api/#com_serverstart_conns)
     - [Classes](guide/library-api/#classes)
-        - [com_server.BaseConnection](guide/library-api/#com_serverbaseconnection)
         - [com_server.Connection](guide/library-api/#com_serverconnection)
+        - [com_server.ConnectionRoutes](guide/library-api/#com_serverconnectionroutes)
         - [com_server.RestApiHandler](guide/library-api/#com_serverrestapihandler)
         - [com_server.ConnectionResource](guide/library-api/#com_serverconnectionresource)
-        - [com_server.Builtins](guide/library-api/#com_serverbuiltins)
         - [com_server.SendQueue](guide/library-api/#com_serversendqueue)
         - [com_server.ReceiveQueue](guide/library-api/#com_serverreceivequeue)
     - [Constants](guide/library-api/#constants)
     - [Exceptions](guide/library-api/#exceptions)
         - [com_server.ConnectException](guide/library-api/#com_serverconnectexception)
         - [com_server.EndpointExistsException](guide/library-api/#com_serverendpointexistsexception)
-- [Command line interface](guide/cli/)
-- [Server API](server/server-api)
-    - [Endpoints from RestApiHandler](server/server-api/#endpoints-from-restapihandler)
-    - [Endpoints from Builtins](server/server-api/#endpoints-from-builtins)
-    - [Escape characters](server/server-api/#escape-characters)
+        - [com_server.DuplicatePortException](guide/library-api/#com_serverduplicateportexception)
+- [Server API](server)
+    - [Version 0](server/v0)
+    - [Version 1](server/v1)
 
 ## Recommended use
 COM-Server is **not** meant to be used like a normal JSON API, even though it uses Flask and Flask-restful. If there are many different devices accessing the endpoints at the same time, data will be backed up, since the serial communication is relatively slow and things cannot be sent to the serial device at the same time. 
@@ -100,18 +88,24 @@ You can use `python3` depending on what command you are using for python 3.
 
 ## Quickstart
 
+The examples below will start an API server that interacts with the port at http://0.0.0.0:8080
+
 ```py
-# launches a development server on http://0.0.0.0:8080
+# launches a server on http://0.0.0.0:8080
 
-import com_server
+from com_server import Connection, ConnectionRoutes, start_app
+from com_server.api import V1
+from flask import Flask
+from flask_restful import Api
 
-conn = com_server.Connection(<baud>, "<serport>") 
-handler = com_server.RestApiHandler(conn) 
-com_server.Builtins(handler) 
+app = Flask(__name__)
+api = Api(app)
 
-handler.run_dev(host="0.0.0.0", port=8080) 
+conn = Connection(<baud>, "<serport>") 
+handler = ConnectionRoutes(conn)
+V1(handler)
 
-conn.disconnect()
+start_app(app, api, handler)
 ```
 Replace "&lt;serport&gt;" and "&lt;baud&gt;" with the serial port and baud rate.
 

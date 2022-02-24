@@ -32,42 +32,24 @@ class ConnectException(Exception):
 class BaseConnection(abc.ABC):
     """A base connection object with a serial or COM port.
 
-    If you want to communicate via serial, it is recommended to
-    either directly use `pyserial` directly or use the `Connection` class.
-
-    This class contains the four basic methods needed to talk with the serial port:
-    - `connect()`: opens a connection with the serial port
-    - `disconnect()`: closes the connection with the serial port
-    - `send()`: sends data to the serial port
-    - `read()`: reads data from the serial port
-
-    It also contains the property `connected` to indicate if it is currently connected to the serial port.
-
-    If the USB port is disconnected while the program is running, then it will automatically detect the exception
-    thrown by `pyserial`, and then it will reset the IO variables and then label itself as disconnected. It will
-    then stop the IO thread. If `exit_on_disconnect` is True, it will send a `SIGTERM` signal to the main thread
-    if the port was disconnected.
-
-    **Warning**: Before making this object go out of scope, make sure to call `disconnect()` in order to avoid thread leaks.
-    If this does not happen, then the IO thread will still be running for an object that has already been deleted.
-
-    **Warning**: There will be NO errors thrown if this object is declared twice with the same port, which may lead to unexpected behavior.
+    Base class that contains implemented basic methods: `send()`, `receive()`, `connect()`,
+    and `disconnect()`, properties of the connection, and an abstract IO thread method.
     """
 
     def __init__(
         self,
         baud: int,
         port: str,
-        *ports: t.Tuple[str],
+        *ports: str,
         exception: bool = True,
         timeout: float = 1,
         send_interval: float = 1,
         queue_size: int = constants.RCV_QUEUE_SIZE_NORMAL,
         exit_on_disconnect: bool = False,
         rest_cpu: bool = True,
-        **kwargs: t.Dict[str, t.Any],
+        **kwargs: t.Any,
     ) -> None:
-        """Initializes the Base Connection class.
+        """Initializes the Connection-like class.
 
         `baud`, `port` (or a port within `ports`), `timeout`, and `kwargs` will be passed to pyserial.
         For more information, see [here](https://pyserial.readthedocs.io/en/latest/pyserial_api.html#serial.Serial).
@@ -107,20 +89,22 @@ class BaseConnection(abc.ABC):
             raise EnvironmentError("exit_on_fail is not supported on Windows")
 
         # initialize Serial object
-        self._conn = None
+        self._conn: t.Optional[serial.Serial] = None
 
         # other
         self._last_sent = time.time()  # prevents from sending too rapidly
         self._last_rcv = (
             0.0,
-            None,
+            b"",
         )  # stores the data that the user previously received
 
         # IO variables
-        self._rcv_queue = (
+        self._rcv_queue: t.List[
+            t.Tuple[float, bytes]
+        ] = (
             []
         )  # stores previous received strings and timestamps, tuple (timestamp, str)
-        self._to_send = []  # queue data to send
+        self._to_send: t.List[bytes] = []  # queue data to send
 
         # this lock makes sure data from the receive queue
         # and send queue are written to and read safely
@@ -133,9 +117,8 @@ class BaseConnection(abc.ABC):
 
         return (
             f"Connection<id=0x{hex(id(self))}>"
-            f"{{port={self._port}, baud={self._baud}, timeout={self._timeout}, queue_size={self._queue_size}, send_interval={self._send_interval}, "
-            f"Serial={self._conn}, "
-            f"last_sent={self._last_sent}, rcv_queue={str(self._rcv_queue)}, send_queue={str(self._to_send)}}}"
+            f"{{Serial={self._conn}, "
+            f"timeout={self._timeout}, max_queue_size={self._queue_size}, send_interval={self._send_interval}}}"
         )
 
     def __enter__(self) -> "BaseConnection":
@@ -245,7 +228,7 @@ class BaseConnection(abc.ABC):
 
     def send(
         self,
-        *args: t.Tuple[t.Any],
+        *args: t.Any,
         check_type: bool = True,
         ending: str = "\r\n",
         concatenate: str = " ",
@@ -301,21 +284,21 @@ class BaseConnection(abc.ABC):
         self._last_sent = time.time()
 
         # check `check_type`, then converts each element
-        send_data = []
+        send_data: str = ""
         if check_type:
             send_data = concatenate.join([self._check_output(i) for i in args])
         else:
             send_data = concatenate.join([str(i) for i in args])
 
         # add ending to string
-        send_data = (send_data + ending).encode("utf-8")
+        send_data_bytes = (send_data + ending).encode("utf-8")
 
         # make sure nothing is reading/writing to the receive queue
         # while reading/assigning the variable
         with self._lock:
             if len(self._to_send) < SEND_QUEUE_MAX_SIZE:
                 # only append if limit has not been reached
-                self._to_send.append(send_data)
+                self._to_send.append(send_data_bytes)
 
         return True
 
@@ -325,15 +308,12 @@ class BaseConnection(abc.ABC):
         The IO thread will continuously detect receive data and put the `bytes` objects in the `rcv_queue`.
         If there are no parameters, the method will return the most recent received data.
         If `num_before` is greater than 0, then will return `num_before`th previous data.
-            - Note: Must be less than the current size of the queue and greater or equal to 0
+            - Note: `num_before` must be less than the current size of the queue and greater or equal to 0
                 - If not, returns None (no data)
             - Example:
                 - 0 will return the most recent received data
                 - 1 will return the 2nd most recent received data
                 - ...
-
-        Note that the data will be read as ALL the data available in the serial port,
-        or `Serial.read_all()`.
 
         Parameters:
         - `num_before` (int) (optional): Which receive object to return. Must be nonnegative. By default None.
@@ -394,6 +374,15 @@ class BaseConnection(abc.ABC):
 
         return self._timeout
 
+    @timeout.setter
+    def timeout(self, value: float) -> None:
+        self._timeout = abs(float(value))
+
+        if self._conn is not None:
+            self._conn.timeout = (
+                self._timeout if self._timeout != constants.NO_TIMEOUT else None
+            )
+
     @property
     def send_interval(self) -> float:
         """A property to determine the send interval of this object.
@@ -406,6 +395,10 @@ class BaseConnection(abc.ABC):
         """
 
         return self._send_interval
+
+    @send_interval.setter
+    def send_interval(self, value: float) -> None:
+        self._send_interval = abs(float(value))
 
     @property
     def conn_obj(self) -> serial.Serial:
@@ -448,18 +441,7 @@ class BaseConnection(abc.ABC):
 
         return self._port
 
-    @timeout.setter
-    def timeout(self, value: float) -> None:
-        self._timeout = abs(float(value))
-        self._conn.timeout = (
-            self._timeout if self._timeout != constants.NO_TIMEOUT else None
-        )
-
-    @send_interval.setter
-    def send_interval(self, value: float) -> None:
-        self._send_interval = abs(float(value))
-
-    def _check_output(self, output: str) -> str:
+    def _check_output(self, output: t.Any) -> str:
         """Argument processing
         - If the argument is `bytes` then decodes to `str`
         - If argument is `list` or `dict` then passes through `json.dumps`
