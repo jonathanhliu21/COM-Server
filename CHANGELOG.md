@@ -1,3 +1,16 @@
+# 0.2 Beta Release 1
+
+Previous version: 0.2b0
+
+## IMPORTANT: BREAKING changes from previous version:
+
+- All `Connection` methods where the user can choose the return type between `str` and `bytes` now have a `return_bytes` option that defaults to False (except for `receive()`, whose `str` counterpart is still `receive_str()`), addressing [#105](https://github.com/jonyboi396825/COM-Server/issues/105)
+
+## Changes from previous version
+
+- Cleaned up repetitive code in `Connection`, also addressing [#105](https://github.com/jonyboi396825/COM-Server/issues/105)
+- Added automatic documentation and formatted most docstrings (except for `RestApiHandler`) in Google's docstring format. Library API docs now generated using `mkdocstrings`.
+
 # 0.2 Beta Release 0
 
 Previous version: 0.1.*
