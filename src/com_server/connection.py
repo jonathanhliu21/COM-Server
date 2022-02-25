@@ -7,20 +7,21 @@ Contains implementation of connection object.
 
 import copy
 import os
+import signal
 import time
 import typing as t
-import serial
-import signal
 
+import serial
 from serial.serialutil import SerialException
 
-from . import base_connection, tools
+from .base_connection import BaseConnection, ConnectException
+from .tools import ReceiveQueue, SendQueue
 
 if os.name == "posix":
     import termios
 
 
-class Connection(base_connection.BaseConnection):
+class Connection(BaseConnection):
     """Class that interfaces with the serial port.
 
     **Warning**: Before making this object go out of scope, make sure to call `disconnect()` in order to avoid zombie threads.
@@ -43,20 +44,19 @@ class Connection(base_connection.BaseConnection):
         read_until: t.Optional[str] = None,
         strip: bool = True,
     ) -> t.Optional[str]:
-        """Convert bytes receive object to a string.
+        """Converts bytes object to string given parameters
 
-        Parameters:
-        - `rcv` (bytes): A bytes object. If None, then the method will return None.
-        - `read_until` (str, None) (optional): Will return a string that terminates with `read_until`, excluding `read_until`.
-        For example, if the string was `"abcdefg123456\\n"`, and `read_until` was `\\n`, then it will return `"abcdefg123456"`.
-        If there are multiple occurrences of `read_until`, then it will return the string that terminates with the first one.
-        If `read_until` is None or it doesn't exist, the it will return the entire string. By default None.
-        - `strip` (bool) (optional): If True, then strips spaces and newlines from either side of the processed string before returning.
-        If False, returns the processed string in its entirety. By default True.
+        Args:
+            rcv (bytes, None): A bytes object. If None, then the method will return None.
+            read_until (bytes, None, optional): Will return a string that terminates with `read_until`, excluding `read_until`. \
+            For example, if the string is `"abcdefg123456]"`, and `read_until` is `]`, then it will return `"abcdefg123456"`. \
+            If there are multiple occurrences of `read_until`, then it will return the string that terminates with the first one. \
+            If None, the it will return the entire string. Defaults to None.
+            strip (bool, optional): If True, then strips spaces and newlines from either side of the processed string before returning. \
+            If False, returns the processed string in its entirety. Defaults to True.
 
         Returns:
-        - A `str` representing the data
-        - None if `rcv` is None
+            Optional[str]: A string representing the processed data, or None if `rcv` is None
         """
 
         if rcv is None:
@@ -80,89 +80,98 @@ class Connection(base_connection.BaseConnection):
 
     def get(
         self,
-        given_type: t.Type,
+        return_bytes: bool = False,
         read_until: t.Optional[str] = None,
         strip: bool = True,
     ) -> t.Optional[t.Union[bytes, str]]:
         """Gets first response after this method is called.
 
-        This method differs from `receive()` because `receive()` returns
-        the last element of the receive buffer, which could contain objects
-        that were received before this function was called. This function
-        waits for something to be received after it is called until it either
-        gets the object or until the timeout is reached.
+        This method waits for an object to be received from the serial
+        port and returns that object. If the timeout is reached while
+        waiting, then this method will return None.
 
-        Parameters:
-        - `given_type` (type): either `bytes` or `str`, indicating which one to return.
-        Will raise exception if type is invalid, REGARDLESS of `self.exception`. Example: `get(str)` or `get(bytes)`.
-        - `read_until` (str, None) (optional): Will return a string that terminates with `read_until`, excluding `read_until`.
-        For example, if the string was `"abcdefg123456\\n"`, and `read_until` was `\\n`, then it will return `"abcdefg123456"`.
-        If there are multiple occurrences of `read_until`, then it will return the string that terminates with the first one.
-        If `read_until` is None or it doesn't exist, the it will return the entire string. By default None.
-        - `strip` (bool) (optional): If True, then strips spaces and newlines from either side of the processed string before returning.
-        If False, returns the processed string in its entirety. By default True.
+        Args:
+            return_bytes (bool, optional): Will return bytes if True and string if False. If true, other args will be ignored. Defaults to False.
+            read_until (bytes, None, optional): Will return a string that terminates with `read_until`, excluding `read_until`. \
+            For example, if the string is `"abcdefg123456]"`, and `read_until` is `]`, then it will return `"abcdefg123456"`. \
+            If there are multiple occurrences of `read_until`, then it will return the string that terminates with the first one. \
+            If None, the it will return the entire string. Defaults to None.
+            strip (bool, optional): If True, then strips spaces and newlines from either side of the processed string before returning. \
+            If False, returns the processed string in its entirety. Defaults to True.
 
-        Returns:
-        - None if no data received (timeout reached)
-        - A `bytes` object indicating the data received if `type` is `bytes`
-        - A `str` object indicating the data received, then passed through `conv_bytes_to_str()`, if `type` is `str`
-        """
-
-        call_time = time.time()  # time that the function was called
-
-        if given_type != str and given_type != bytes:
-            raise TypeError("given_type must be literal 'str' or 'bytes'")
-
-        if given_type == str:
-            return self._get_str(call_time, read_until=read_until, strip=strip)
-        else:
-            return self._get_bytes(call_time)
-
-    def get_all_rcv(self) -> t.List[t.Tuple[float, bytes]]:
-        """Returns the entire receive queue
-
-        The queue will be a `queue_size`-sized list that contains
-        tuples (timestamp received, received bytes).
+        Raises:
+            ConnectException: If serial port not connected, this exception will be raised.
 
         Returns:
-        - A list of tuples indicating the timestamp received and the bytes object received
+            Optional[Union[bytes, str]]: A bytes or a processed string (depending on `return_bytes`) representing the first object \
+                received from the serial port. None if no object received.
         """
 
         if not self.connected:
-            raise base_connection.ConnectException("No connection established")
+            raise ConnectException("No connection established")
+
+        call_time = time.time()  # time that the function was called
+
+        r: t.Optional[t.Tuple[float, t.Union[bytes, str]]] = None
+        if return_bytes:
+            r = self.receive()
+        else:
+            r = self.receive_str(read_until=read_until, strip=strip)
+
+        st_t = time.time()  # for timeout
+
+        # wait for r to not be None or for received time to be greater than call time
+        while r is None or r[0] < call_time:
+            if time.time() - st_t > self._timeout:
+                # timeout reached
+                return None
+
+            if return_bytes:
+                r = self.receive()
+            else:
+                r = self.receive_str(read_until=read_until, strip=strip)
+            time.sleep(0.01)
+
+        # r received
+        return r[1]
+
+    def all_rcv(
+        self,
+        return_bytes: bool = False,
+        read_until: t.Optional[str] = None,
+        strip: bool = True,
+    ) -> t.Union[t.List[t.Tuple[float, str]], t.List[t.Tuple[float, bytes]]]:
+        """Returns entire receive queue
+
+        Args:
+            return_bytes (bool, optional): Will return bytes if True and string if False. If true, other args will be ignored. Defaults to False.
+            read_until (bytes, None, optional): All strings in the list will terminate with `read_until` without the `read_until` character. \
+            For example, if a string in the list was `"abcdefg123456]"`, and `read_until` is `]`, then the string will become `"abcdefg123456"`. \
+            If None, the it will return the entire string. Defaults to None.
+            strip (bool, optional): If True, then strips spaces and newlines from either side of the processed string before returning. \
+            If False, returns the processed string in its entirety. Defaults to True.
+
+        Raises:
+            ConnectException: If serial port not connected, this exception will be raised.
+
+        Returns:
+            Union[List[Tuple[float, str]], List[Tuple[float, bytes]]]: A list of tuples indicating the timestamp received and the converted string from bytes if `return_bytes` \
+                is false, otherwise a list of tuples indicating the timestamp received and bytes object from serial port.
+        """
+
+        if not self.connected:
+            raise ConnectException("No connection established")
 
         with self._lock:
             _rq = copy.deepcopy(self._rcv_queue)
 
-        return _rq
-
-    def get_all_rcv_str(
-        self, read_until: t.Optional[str] = None, strip: bool = True
-    ) -> t.List[t.Tuple[float, str]]:
-        """Returns entire receive queue as string.
-
-        Each bytes object will be passed into `conv_bytes_to_str()`.
-        This means that `read_until` and `strip` will apply to
-        EVERY element in the receive queue before returning.
-
-        Parameters:
-        - `read_until` (str, None) (optional): Will return a string that terminates with `read_until`, excluding `read_until`.
-        For example, if the string was `"abcdefg123456\\n"`, and `read_until` was `\\n`, then it will return `"abcdefg123456"`.
-        If there are multiple occurrences of `read_until`, then it will return the string that terminates with the first one.
-        If `read_until` is None or it doesn't exist, the it will return the entire string. By default None.
-        - `strip` (bool) (optional): If True, then strips spaces and newlines from either side of the processed string before returning.
-        If False, returns the processed string in its entirety. By default True.
-
-        Returns:
-        - A list of tuples indicating the timestamp received and the converted string from bytes
-        """
-
-        if not self.connected:
-            raise base_connection.ConnectException("No connection established")
+        # _rq is a copy of receive queue, meaning that it is in bytes
+        if return_bytes:
+            return _rq
 
         ret: t.List[t.Tuple[float, str]] = []
 
-        for ts, rcv in self.get_all_rcv():
+        for ts, rcv in _rq:
             to_str = self.conv_bytes_to_str(rcv, read_until=read_until, strip=strip)
             assert to_str  # mypy
 
@@ -176,9 +185,11 @@ class Connection(base_connection.BaseConnection):
         read_until: t.Optional[str] = None,
         strip: bool = True,
     ) -> t.Optional[t.Tuple[float, str]]:
-        """Returns the most recent receive object as a string.
+        """Returns the most recently received object as a processed string.
 
-        The receive thread will continuously detect receive data and put the `bytes` objects in the `rcv_queue`.
+        To get the bytes object, use `Connection.receive()`.
+
+        The IO thread will continuously detect data from the serial port and put the `bytes` objects in the `rcv_queue`.
         If there are no parameters, the method will return the most recent received data.
         If `num_before` is greater than 0, then will return `num_before`th previous data.
             - Note: Must be less than the current size of the queue and greater or equal to 0
@@ -188,28 +199,24 @@ class Connection(base_connection.BaseConnection):
                 - 1 will return the 2nd most recent received data
                 - ...
 
-        Note that the data will be read as ALL the data available in the serial port,
-        or `Serial.read_all()`.
+        Args:
+            num_before (int, optional): The position in the receive queue to return data from. Defaults to 0.
+            read_until (bytes, None, optional): Will return a string that terminates with `read_until`, excluding `read_until`. \
+            For example, if the string is `"abcdefg123456]"`, and `read_until` is `]`, then it will return `"abcdefg123456"`. \
+            If there are multiple occurrences of `read_until`, then it will return the string that terminates with the first one. \
+            If None, the it will return the entire string. Defaults to None.
+            strip (bool, optional): If True, then strips spaces and newlines from either side of the processed string before returning. \
+            If False, returns the processed string in its entirety. Defaults to True.
 
-        This method will take in the input from `receive()` and put it in
-        `conv_bytes_to_str()`, then return it.
-
-        Parameters:
-        - `num_before` (int) (optional): Which receive object to return. By default 0.
-        - `read_until` (str, None) (optional): Will return a string that terminates with `read_until`, excluding `read_until`.
-        For example, if the string was `"abcdefg123456\\n"`, and `read_until` was `\\n`, then it will return `"abcdefg123456"`.
-        If `read_until` is None, the it will return the entire string. By default None.
-        - `strip` (bool) (optional): If True, then strips the received and processed string of whitespace and newlines, then
-        returns the result. If False, then returns the raw result. By default True.
+        Raises:
+            ConnectException: If serial port not connected, this exception will be raised.
 
         Returns:
-        - A `tuple` representing the `(timestamp received, string data)`
-        - `None` if no connection (if self.exception == False), data was found, or port not open
+            Optional[Tuple[float, str]]: A `tuple` representing `(timestamp received, string data)` and None if no data was found
         """
 
-        # checks if connection is open.
-        if not self._check_connect():
-            return None
+        if not self.connected:
+            raise ConnectException("No connection established")
 
         rcv_tuple = self.receive(num_before=num_before)
         if rcv_tuple is None:
@@ -228,9 +235,8 @@ class Connection(base_connection.BaseConnection):
 
     def get_first_response(
         self,
-        *args: t.Any,
-        is_bytes: bool = True,
-        check_type: bool = True,
+        *data: t.Any,
+        return_bytes: bool = False,
         ending: str = "\r\n",
         concatenate: str = " ",
         read_until: t.Optional[str] = None,
@@ -238,70 +244,38 @@ class Connection(base_connection.BaseConnection):
     ) -> t.Optional[t.Union[str, bytes]]:
         """Gets the first response from the serial port after sending something.
 
-        This method works almost the same as `send()` (see `self.send()`).
-        It also returns a string representing the first response from the serial port after sending.
-        All `*args` and `check_type`, `ending`, and `concatenate`, will be sent to `send()`.
+        Args:
+            *data (Any): Everything that is to be sent, each as a separate parameter. Must have at least one parameter.
+            return_bytes (bool, optional): Will return bytes if True and string if False. If true, other args will be ignored. Defaults to False.
+            ending (str, optional): The ending of the bytes object to be sent through the serial port. Defaults to "\\r\\n".
+            concatenate (str, optional): What the strings in args should be concatenated by. Defaults to a space (" ").
+            read_until (bytes, None, optional): Will return a string that terminates with `read_until`, excluding `read_until`. \
+            For example, if the string is `"abcdefg123456]"`, and `read_until` is `]`, then it will return `"abcdefg123456"`. \
+            If there are multiple occurrences of `read_until`, then it will return the string that terminates with the first one. \
+            If None, the it will return the entire string. Defaults to None.
+            strip (bool, optional): If True, then strips spaces and newlines from either side of the processed string before returning. \
+            If False, returns the processed string in its entirety. Defaults to True.
 
-        If there is no response after reaching the timeout, then it breaks out of the method.
-
-        Parameters:
-        - `*args`: Everything that is to be sent, each as a separate parameter. Must have at least one parameter.
-        - `is_bytes`: If False, then passes to `conv_bytes_to_str()` and returns a string
-        with given options `read_until` and `strip`. See `conv_bytes_to_str()` for more details.
-        If True, then returns raw `bytes` data. By default True.
-        - `check_type` (bool) (optional): If types in *args should be checked. By default True.
-        - `ending` (str) (optional): The ending of the bytes object to be sent through the serial port. By default a carraige return ("\\r\\n")
-        - `concatenate` (str) (optional): What the strings in args should be concatenated by. By default a space `' '`.
-
-        These parameters only apply if `is_bytes` is False:
-        - `read_until` (str, None) (optional): Will return a string that terminates with `read_until`, excluding `read_until`.
-        For example, if the string was `"abcdefg123456\\n"`, and `read_until` was `\\n`, then it will return `"abcdefg123456"`.
-        If `read_until` is None, the it will return the entire string. By default None.
-        - `strip` (bool) (optional): If True, then strips the received and processed string of whitespace and newlines, then
-        returns the result. If False, then returns the raw result. By default True.
+        Raises:
+            ConnectException: If serial port not connected, this exception will be raised.
 
         Returns:
-        - A string or bytes representing the first response from the serial port.
-        - None if there was no connection (if self.exception == False), no data, timeout reached, or send interval not reached.
+            Optional[Union[bytes, str]]: A bytes or a processed string (depending on `return_bytes`) representing the first object \
+                received from the serial port. None if no object received.
         """
 
-        if not self._check_connect():
-            return None
+        if not self.connected:
+            raise ConnectException("No connection established")
 
-        send_time = time.time()  # tracks send time
         send_success = self.send(
-            *args, check_type=check_type, ending=ending, concatenate=concatenate
+            *data, check_type=True, ending=ending, concatenate=concatenate
         )
 
         if not send_success:
+            # send interval not reached
             return None
 
-        r: t.Any = None
-        if is_bytes:
-            r = self.receive()
-        else:
-            # strings have read_until option
-            r = self.receive_str(read_until=read_until, strip=strip)
-
-        st = time.time()
-
-        # compares send time to receive time; return the first receive object where the send time < receive time
-        while r is None or r[0] < send_time:
-            if time.time() - st > self._timeout:
-                # reached timeout
-
-                return None
-
-            if is_bytes:
-                r = self.receive()
-            else:
-                # strings have read_until option
-                r = self.receive_str(read_until=read_until)
-
-            time.sleep(0.05)
-
-        ret: t.Union[str, bytes] = r[1]
-        return ret
+        return self.get(return_bytes, read_until, strip)
 
     def wait_for_response(
         self,
@@ -315,98 +289,100 @@ class Connection(base_connection.BaseConnection):
         This method will wait for a response that matches given `response`
         whose time received is greater than given timestamp `after_timestamp`.
 
-        Parameters:
-        - `response` (str, bytes): The receive data that the program is looking for.
-        If given a string, then compares the string to the response after it is decoded in `utf-8`.
-        If given a bytes, then directly compares the bytes object to the response.
-        If given anything else, converts to string.
-        - `after_timestamp` (float) (optional): Look for responses that came after given time as the UNIX timestamp.
-        If negative, the converts to time that the method was called, or `time.time()`. By default -1.0
+        Args:
+            response (Any): The receive data that the program is looking for. \
+            If given a string, then compares the string to the response after it is decoded in `utf-8`. \
+            If given a bytes, then directly compares the bytes object to the response. \
+            If given anything else, converts to string.
+            after_timestamp (float, optional): Look for responses that came after given time as the UNIX timestamp. \
+            If negative, the converts to time that the method was called, or `time.time()`. Defaults to -1.0.
+            read_until (bytes, None, optional): Will return a string that terminates with `read_until`, excluding `read_until`. \
+            For example, if the string is `"abcdefg123456]"`, and `read_until` is `]`, then it will return `"abcdefg123456"`. \
+            If there are multiple occurrences of `read_until`, then it will return the string that terminates with the first one. \
+            If None, the it will return the entire string. Defaults to None.
+            strip (bool, optional): If True, then strips spaces and newlines from either side of the processed string before returning. \
+            If False, returns the processed string in its entirety. Defaults to True.
 
-        These parameters only apply if `response` is a string:
-        - `read_until` (str, None) (optional): Will return a string that terminates with `read_until`, excluding `read_until`.
-        For example, if the string was `"abcdefg123456\\n"`, and `read_until` was `\\n`, then it will return `"abcdefg123456"`.
-        If `read_until` is None, the it will return the entire string. By default None.
-        - `strip` (bool) (optional): If True, then strips the received and processed string of whitespace and newlines, then
-        returns the result. If False, then returns the raw result. By default True.
+        Raises:
+            ConnectException: If serial port not connected, this exception will be raised.
 
         Returns:
-        - True on success
-        - False on failure: timeout reached because response has not been received.
+            bool: True on success and False if timeout reached because response has not been received.
         """
+
+        if not self.connected:
+            raise ConnectException("No connection established")
 
         after_timestamp = float(after_timestamp)
         if after_timestamp < 0:
             # negative number to indicate program to use current time, time in parameter does not work
             after_timestamp = time.time()
 
-        if isinstance(response, str):
-            return self._wait_for_response_str(
-                response, timestamp=after_timestamp, read_until=read_until, strip=strip
-            )
-        elif isinstance(response, bytes):
-            return self._wait_for_response_bytes(response, timestamp=after_timestamp)
+        # convert non-bytes to str
+        if not isinstance(response, bytes):
+            response = str(response)
+
+        call_time = time.time()  # for timeout
+
+        r: t.Optional[t.Tuple[float, t.Union[bytes, str]]] = None
+        if isinstance(response, bytes):
+            r = self.receive()
         else:
-            return self._wait_for_response_str(
-                str(response),
-                timestamp=after_timestamp,
-                read_until=read_until,
-                strip=strip,
-            )
+            r = self.receive_str(read_until=read_until, strip=strip)
+
+        # continue searching until receive object has timestamp greater than after_timestamp
+        # and response matches
+        while r is None or r[0] < after_timestamp or r[1] != response:
+            # timestamp needs to be greater than start of method and response needs to match
+            if time.time() - call_time > self._timeout:
+                # timeout reached
+                return False
+
+            if isinstance(response, bytes):
+                r = self.receive()
+            else:
+                r = self.receive_str(read_until=read_until, strip=strip)
+
+            time.sleep(0.01)
+
+        # correct response has been received
+        return True
 
     def send_for_response(
         self,
-        response: t.Union[str, bytes],
-        *args: t.Any,
+        response: t.Any,
+        *data: t.Any,
         read_until: t.Optional[str] = None,
         strip: bool = True,
-        check_type: bool = True,
         ending: str = "\r\n",
         concatenate: str = " "
     ) -> bool:
-        """Continues sending something until the connection receives a given response.
+        """Sends something until the connection receives a given response or timeout is reached.
 
-        This method will call `send()` and `receive()` repeatedly (calls again if does not match given `response` parameter).
-        See `send()` for more details on `*args` and `check_type`, `ending`, and `concatenate`, as these will be passed to the method.
-        Will return `true` on success and `false` on failure (reached timeout)
+        Args:
+            response (Any): The receive data that the program is looking for. \
+            If given a string, then compares the string to the response after it is decoded in `utf-8`. \
+            If given a bytes, then directly compares the bytes object to the response. \
+            If given anything else, converts to string.
+            *data (Any): Everything that is to be sent, each as a separate parameter. Must have at least one parameter.
+            ending (str, optional): The ending of the bytes object to be sent through the serial port. Defaults to "\\r\\n".
+            concatenate (str, optional): What the strings in args should be concatenated by. Defaults to a space (" ").
+            read_until (bytes, None, optional): Will return a string that terminates with `read_until`, excluding `read_until`. \
+            For example, if the string is `"abcdefg123456]"`, and `read_until` is `]`, then it will return `"abcdefg123456"`. \
+            If there are multiple occurrences of `read_until`, then it will return the string that terminates with the first one. \
+            If None, the it will return the entire string. Defaults to None.
+            strip (bool, optional): If True, then strips spaces and newlines from either side of the processed string before returning. \
+            If False, returns the processed string in its entirety. Defaults to True.
 
-        Parameters:
-        - `response` (str, bytes): The receive data that the program looks for after sending.
-        If given a string, then compares the string to the response after it is decoded in `utf-8`.
-        If given a bytes, then directly compares the bytes object to the response.
-        - `*args`: Everything that is to be sent, each as a separate parameter. Must have at least one parameter.
-        - `check_type` (bool) (optional): If types in *args should be checked. By default True.
-        - `ending` (str) (optional): The ending of the bytes object to be sent through the serial port. By default a carraige return ("\\r\\n")
-        - `concatenate` (str) (optional): What the strings in args should be concatenated by. By default a space `' '`
-
-        These parameters only apply if `response` is a string:
-        - `read_until` (str, None) (optional): Will return a string that terminates with `read_until`, excluding `read_until`.
-        For example, if the string was `"abcdefg123456\\n"`, and `read_until` was `\\n`, then it will return `"abcdefg123456"`.
-        If `read_until` is None, the it will return the entire string. By default None.
-        - `strip` (bool) (optional): If True, then strips the received and processed string of whitespace and newlines, then
-        returns the result. If False, then returns the raw result. By default True.
+        Raises:
+            ConnectException: If serial port not connected, this exception will be raised.
 
         Returns:
-        - `true` on success: The incoming received data matching `response`.
-        - `false` on failure: Connection not established (if self.exception == False), incoming data did not match `response`, or `timeout` was reached, or send interval has not been reached.
+            bool: True on success and False if timeout reached because response has not been received.
         """
 
-        if not self._check_connect():
-            return False
-
-        if "_last_sent_outer" not in vars(self):
-            self._last_sent_outer = 0.0
-
-        try:
-            self._last_sent_outer  # this is for the interval for calling send_for_response
-        except AttributeError:
-            # declare variable if not declared yet
-            self._last_sent_outer = 0.0
-
-        # check interval
-        if time.time() - self._last_sent_outer < self._send_interval:
-            return False
-        self._last_sent_outer = time.time()
+        if not self.connected:
+            raise ConnectException("No connection established")
 
         st_t = time.time()  # for timeout
 
@@ -415,9 +391,7 @@ class Connection(base_connection.BaseConnection):
                 # timeout reached
                 return False
 
-            self.send(
-                *args, check_type=check_type, ending=ending, concatenate=concatenate
-            )
+            self.send(*data, ending=ending, concatenate=concatenate)
 
             if time.time() - st_t > self._timeout:
                 # timeout reached
@@ -442,23 +416,20 @@ class Connection(base_connection.BaseConnection):
         until it reaches given `timeout` seconds. If `timeout` is None, then it will
         continuously try to reconnect indefinitely.
 
-        Will raise `ConnectException` if already connected, regardless
-        of if `exception` is True or not.
+        Args:
+            timeout (float, None, optional): Will try to reconnect for \
+            `timeout` seconds before returning. If None, then will try to reconnect \
+            indefinitely. Defaults to None.
 
-        Note that disconnecting the serial device will **reset** the receive and send queues.
-
-        Parameters:
-        - `timeout` (float, None) (optional): Will try to reconnect for
-        `timeout` seconds before returning. If None, then will try to reconnect
-        indefinitely. By default None.
+        Raises:
+            ConnectException: Raised if already connected.
 
         Returns:
-        - True if able to reconnect
-        - False if not able to reconnect within given timeout
+            bool: true if able to reconnect and false if not able to reconnect within timeout
         """
 
         if self.connected:
-            raise base_connection.ConnectException("Connection already established")
+            raise ConnectException("Connection already established")
 
         st_t = time.time()
 
@@ -486,19 +457,6 @@ class Connection(base_connection.BaseConnection):
                 except SerialException:
                     # port not found
                     time.sleep(0.01)  # rest CPU
-
-    def all_ports(self, **kwargs) -> t.Any:
-        """Lists all available serial ports.
-
-        Calls `tools.all_ports()`, which itself calls `serial.tools.list_ports.comports()`.
-        For more information, see [here](https://pyserial.readthedocs.io/en/latest/tools.html#module-serial.tools.list_ports).
-
-        Parameters: See link above
-
-        Returns: A generator-like object (see link above)
-        """
-
-        return tools.all_ports(**kwargs)
 
     def custom_io_thread(self, func: t.Callable) -> t.Callable:
         """A decorator custom IO thread rather than using the default one.
@@ -553,118 +511,11 @@ class Connection(base_connection.BaseConnection):
 
         return func
 
-    def _check_connect(self) -> bool:
-        """
-        Checks if a connection has been established.
-        Raises exception or returns false if not.
-        """
-
-        if self._conn is None:
-            if self._exception:
-                raise base_connection.ConnectException("No connection established")
-
-            else:
-                return False
-
-        return True
-
-    def _get_str(
-        self, _call_time: float, read_until: t.Optional[str], strip: bool = True
-    ) -> t.Optional[str]:
-        """
-        `get()` but for strings
-        """
-
-        r = self.receive_str(read_until=read_until, strip=strip)
-
-        st_t = time.time()  # for timeout
-
-        # wait for r to not be None or for received time to be greater than call time
-        while r is None or r[0] < _call_time:
-            if time.time() - st_t > self._timeout:
-                # timeout reached
-                return None
-
-            r = self.receive_str(read_until=read_until, strip=strip)
-            time.sleep(0.01)
-
-        # r received
-        return r[1]
-
-    def _get_bytes(self, _call_time: float) -> t.Optional[bytes]:
-        """
-        `get()` but for bytes
-        """
-
-        r = self.receive()
-
-        st_t = time.time()  # for timeout
-
-        # wait for r to not be None or for received time to be greater than call time
-        while r is None or r[0] < _call_time:
-            if time.time() - st_t > self._timeout:
-                # timeout reached
-                return None
-
-            r = self.receive()
-            time.sleep(0.01)
-
-        # r received
-        return r[1]
-
-    def _wait_for_response_str(
-        self,
-        response: str,
-        timestamp: float,
-        read_until: t.Optional[str],
-        strip: bool,
-    ) -> bool:
-        """
-        `self._wait_for_response` but for strings
-        """
-
-        call_time = time.time()  # call timestamp, for timeout
-
-        r = self.receive_str(read_until=read_until, strip=strip)
-
-        while r is None or r[0] < timestamp or r[1] != response:
-            # timestamp needs to be greater than start of method and response needs to match
-            if time.time() - call_time > self._timeout:
-                # timeout reached
-                return False
-
-            r = self.receive_str(read_until=read_until, strip=strip)
-            time.sleep(0.01)
-
-        # correct response has been received
-        return True
-
-    def _wait_for_response_bytes(self, response: bytes, timestamp: float) -> bool:
-        """
-        `self._wait_for_response` but for bytes
-        """
-
-        call_time = time.time()  # call timestamp, for timeout
-
-        r = self.receive()
-
-        while r is None or r[0] < timestamp or r[1] != response:
-            # timestamp needs to be greater than start of method and response needs to match
-            if time.time() - call_time > self._timeout:
-                # timeout reached
-                return False
-
-            r = self.receive()
-            time.sleep(0.01)
-
-        # correct response has been received
-        return True
-
     def _default_cycle(
         self,
         conn: serial.Serial,
-        rcv_queue: tools.ReceiveQueue,
-        send_queue: tools.SendQueue,
+        rcv_queue: ReceiveQueue,
+        send_queue: SendQueue,
     ) -> None:
         """
         What the IO thread executes every 0.01 seconds will be referred to as a "cycle".
@@ -709,8 +560,8 @@ class Connection(base_connection.BaseConnection):
         # make sure other threads cannot read/write variables
         # copy the variables to temporary ones so the locks don't block for so long
         with self._lock:
-            _rcv_queue = tools.ReceiveQueue(self._rcv_queue.copy(), self._queue_size)
-            _send_queue = tools.SendQueue(self._to_send.copy())
+            _rcv_queue = ReceiveQueue(self._rcv_queue.copy(), self._queue_size)
+            _send_queue = SendQueue(self._to_send.copy())
 
         # find number of objects to send; important for pruning send queue later
         _num_to_send_i = len(_send_queue)
@@ -764,7 +615,7 @@ class Connection(base_connection.BaseConnection):
                 try:
                     self._cyc()
                 except (
-                    base_connection.ConnectException,
+                    ConnectException,
                     OSError,
                     serial.SerialException,
                     termios.error,
@@ -785,7 +636,7 @@ class Connection(base_connection.BaseConnection):
                 try:
                     self._cyc()
                 except (
-                    base_connection.ConnectException,
+                    ConnectException,
                     OSError,
                     serial.SerialException,
                 ):

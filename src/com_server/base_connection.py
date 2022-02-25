@@ -49,27 +49,28 @@ class BaseConnection(abc.ABC):
         rest_cpu: bool = True,
         **kwargs: t.Any,
     ) -> None:
-        """Initializes the Connection-like class.
+        """Initializes BaseConnection and Connection-like classes
 
         `baud`, `port` (or a port within `ports`), `timeout`, and `kwargs` will be passed to pyserial.
         For more information, see [here](https://pyserial.readthedocs.io/en/latest/pyserial_api.html#serial.Serial).
 
-        Parameters:
-            - `baud` (int): The baud rate of the serial connection
-            - `port` (str): The serial port
-            - `*ports`: Alternative serial ports to choose if the first port does not work. The program will try the serial ports in order of arguments and will use the first one that works.
-            - `timeout` (float) (optional): How long the program should wait, in seconds, for serial data before exiting. By default 1.
-            - `exception` (bool) (optional): (**DEPRECATED**) Raise an exception when there is a user error in the methods rather than just returning. By default True.
-            - `send_interval` (float) (optional): Indicates how much time, in seconds, the program should wait before sending another message.
-            Note that this does NOT mean that it will be able to send every `send_interval` seconds. It means that the `send()` method will
-            exit if the interval has not reached `send_interval` seconds. NOT recommended to set to small values. By default 1.
-            - `queue_size` (int) (optional): The number of previous data that was received that the program should keep. Must be nonnegative. By default 256.
-            - `exit_on_disconnect` (bool) (optional): If True, sends `SIGTERM` signal to the main thread if the serial port is disconnected. Does NOT work on Windows. By default False.
-            - `rest_cpu` (bool) (optional): If True, will add 0.01 second delay to end of IO thread. Otherwise, removes those delays but will result in increased CPU usage.
-            Not recommended to set to False with the default IO thread. By default True.
-            - `kwargs`: Will be passed to pyserial.
+        Args:
+            baud (int): The baud rate of the serial connection
+            port (str): The default port of the serial connection
+            *ports (str): Alternative ports to try if the default port does not work
+            exception (bool, optional): **DEPRECATED**. Defaults to True.
+            timeout (float, optional): How long the program should wait, in seconds, for serial data before exiting. Defaults to 1.
+            send_interval (float, optional): Indicates how much time, in seconds, the program should wait before sending another message. \
+            Note that this does NOT mean that it will be able to send every `send_interval` seconds. It means that the `send()` method will \
+            exit if the interval has not reached `send_interval` seconds. NOT recommended to set to small values. Defaults to 1.
+            queue_size (int, optional): The number of previous data that was received that the program should keep. Must be nonnegative. Defaults to 256.
+            exit_on_disconnect (bool, optional): If True, sends `SIGTERM` signal to the main thread if the serial port is disconnected. Does not work on Windows. Defaults to False.
+            rest_cpu (bool, optional): If True, will add 0.01 second delay to end of IO thread. Otherwise, removes those delays but will result in increased CPU usage. \
+            Not recommended to set to False with the default IO thread. Defaults to True.
+            **kwargs (Any): Passed to pyserial
 
-        Returns: nothing
+        Raises:
+            EnvironmentError: Raised if `exit_on_disconnect` is True and it is running on a Windows machine.
         """
 
         # from above
@@ -151,9 +152,8 @@ class BaseConnection(abc.ABC):
 
         When called, initializes a serial instance if not initialized already. Also starts the IO thread.
 
-        Parameters: None
-
-        Returns: None
+        Raises:
+            ConnectException: If the connection is already established.
         """
 
         if self._conn is not None:
@@ -212,10 +212,6 @@ class BaseConnection(abc.ABC):
         **NOTE**: This method should be called if the object will not be used anymore
         or before the object goes out of scope, as deleting the object without calling
         this will lead to stray threads.
-
-        Parameters: None
-
-        Returns: None
         """
 
         if self._conn is None:
@@ -228,7 +224,7 @@ class BaseConnection(abc.ABC):
 
     def send(
         self,
-        *args: t.Any,
+        *data: t.Any,
         check_type: bool = True,
         ending: str = "\r\n",
         concatenate: str = " ",
@@ -241,10 +237,10 @@ class BaseConnection(abc.ABC):
         (i.e. "\\r\\n") (or what was given as `ending`), then sends to the serial port.
 
         Note that the data does not send immediately and instead will be added to a queue.
-        The queue size limit is 65536 byte objects. Anything more that is trying to be sent will not be added to the queue.
+        The queue size limit is 65536 byte objects. Calling `send()` more than this limit will not add objects to the queue.
         Sending data too rapidly (e.g. making `send_interval` too small, varies from computer to computer) is not recommended,
-        as the queue will get too large and the send data will get backed up and will be delayed,
-        since it takes a considerable amount of time for data to be sent through the serial port.
+        as the queue will get too large and the send data will get backed up be delayed,
+        because it takes a considerable amount of time for data to be sent through the serial port.
         Additionally, parts of the send queue will be all sent together until it reaches 0.5 seconds,
         which may end up with unexpected behavior in some programs.
         To prevent these problems, either make the value of `send_interval` larger,
@@ -259,24 +255,21 @@ class BaseConnection(abc.ABC):
             - Otherwise, directly convert to `str` and strip
         Otherwise, converts each argument directly to `str` and then concatenates, encodes, and sends.
 
-        Parameters:
-        - `*args`: Everything that is to be sent, each as a separate parameter. Must have at least one parameter.
-        - `check_type` (bool) (optional): If types in *args should be checked. By default True.
-        - `ending` (str) (optional): The ending of the bytes object to be sent through the serial port. By default a carraige return + newline ("\\r\\n")
-        - `concatenate` (str) (optional): What the strings in args should be concatenated by. By default a space `' '`
+        Args:
+            `*data` (Any): Everything that is to be sent, each as a separate parameter. Must have at least one parameter.
+            ending (str, optional): The ending of the bytes object to be sent through the serial port. Defaults to "\\r\\n".
+            concatenate (str, optional): What the strings in args should be concatenated by. Defaults to a space (" ").
+
+        Raises:
+            ConnectException: If serial port not connected.
 
         Returns:
-        - `true` on success (everything has been sent through)
-        - `false` on failure (not open, not waited long enough before sending, did not fully send through, etc.)
+            bool: true on success, false if send interval not reached.
         """
 
         # check if connection open
-        if self._conn is None:
-            if self._exception:
-                # raise exception if true
-                raise ConnectException("No connection established")
-
-            return False
+        if not self.connected:
+            raise ConnectException("No connection established")
 
         # check if it should send by using send_interval.
         if time.time() - self._last_sent <= self._send_interval:
@@ -286,9 +279,9 @@ class BaseConnection(abc.ABC):
         # check `check_type`, then converts each element
         send_data: str = ""
         if check_type:
-            send_data = concatenate.join([self._check_output(i) for i in args])
+            send_data = concatenate.join([self._check_output(i) for i in data])
         else:
-            send_data = concatenate.join([str(i) for i in args])
+            send_data = concatenate.join([str(i) for i in data])
 
         # add ending to string
         send_data_bytes = (send_data + ending).encode("utf-8")
@@ -303,9 +296,9 @@ class BaseConnection(abc.ABC):
         return True
 
     def receive(self, num_before: int = 0) -> t.Optional[t.Tuple[float, bytes]]:
-        """Returns the most recent receive object
+        """Returns the most recent receive object.
 
-        The IO thread will continuously detect receive data and put the `bytes` objects in the `rcv_queue`.
+        The IO thread will continuously detect data from the serial port and put the `bytes` objects in the `rcv_queue`.
         If there are no parameters, the method will return the most recent received data.
         If `num_before` is greater than 0, then will return `num_before`th previous data.
             - Note: `num_before` must be less than the current size of the queue and greater or equal to 0
@@ -315,29 +308,23 @@ class BaseConnection(abc.ABC):
                 - 1 will return the 2nd most recent received data
                 - ...
 
-        Parameters:
-        - `num_before` (int) (optional): Which receive object to return. Must be nonnegative. By default None.
+        Args:
+            num_before (int, optional): The position in the receive queue to return data from. Defaults to 0.
+
+        Raises:
+            ConnectException: If serial port not connected.
+            ValueError: If num_before is negative.
 
         Returns:
-        - A `tuple` representing the `(timestamp received, data in bytes)`
-        - `None` if no data was found or port not open
+            Optional[Tuple[float, bytes]]: A `tuple` representing the `(timestamp received, data in bytes)` and \
+                None if no data was found (receive queue empty)
         """
 
-        if self._conn is None:
-            if self._exception:
-                # raise exception if true
-                raise ConnectException("No connection established")
-
-            return None
+        if not self.connected:
+            raise ConnectException("No connection established")
 
         if num_before < 0:
-            # num before has to be nonnegative
-
-            if self._exception:
-                # raise exception if true
-                raise ValueError("num_before has to be nonnegative")
-
-            return None
+            raise ValueError("num_before has to be nonnegative")
 
         try:
             # make sure nothing is reading/writing to the receive queue
@@ -364,9 +351,11 @@ class BaseConnection(abc.ABC):
         """A property to determine the timeout of this object.
 
         Getter:
+
         - Gets the timeout of this object.
 
         Setter:
+
         - Sets the timeout of this object after checking if convertible to nonnegative float.
         Then, sets the timeout to the same value on the `pyserial` object of this class.
         If the value is `float('inf')`, then sets the value of the `pyserial` object to None.
@@ -388,9 +377,11 @@ class BaseConnection(abc.ABC):
         """A property to determine the send interval of this object.
 
         Getter:
+
         - Gets the send interval of this object.
 
         Setter:
+
         - Sets the send interval of this object after checking if convertible to nonnegative float.
         """
 
@@ -405,6 +396,7 @@ class BaseConnection(abc.ABC):
         """A property to get the Serial object that handles sending and receiving.
 
         Getter:
+
         - Gets the Serial object.
         """
 
