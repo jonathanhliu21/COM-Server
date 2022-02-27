@@ -43,10 +43,10 @@ Make sure you have an Arduino and the [Arduino IDE](https://www.arduino.cc/en/so
 ### Developing:
 
 1. Create a new branch  
-    * Off the `master` branch if bug fix/docs fix
+    * Off the `0.1.x` branch if bug fix/docs fix
     ```sh
     > git fetch
-    > git checkout -b branch-name origin/master
+    > git checkout -b branch-name origin/0.1.x
     ```
     * Off the `develop` branch if adding feature
     ```sh
@@ -55,15 +55,13 @@ Make sure you have an Arduino and the [Arduino IDE](https://www.arduino.cc/en/so
     ```
 2. Make changes and commit for each change
 3. Add tests that apply to your change
-4. Push your commits and create a pull request to merge into the `develop` branch of the base repository.
+4. Push your commits.
 ```sh
 > git push -u fork branch-name
 ```
-I will change the merge branch if needed.
+5. Open a PR into `develop` if adding a feature or into `0.1.x` if addressing a bug fix or a documentation fix.
 
 **NOTE:** In the pull request, please specify the operating system and serial device (e.g. Arduino UNO, Arduino Mega, etc.) you tested COM-Server on.
-
-**NOTE** (only applies to bug/docs fix from master branch): To change the version, type in the below command, which should show the COM-Server version as `X.Y.N`. In `__init__`.py of the module and `setup.cfg`, change the `N`-value of the version to `N+1`. For example, if the version output is `0.0.2`, then change it to `0.0.3`. If it is `X.Y`, then change it to `X.Y.1`.
 
 ```sh
 > com_server --version
