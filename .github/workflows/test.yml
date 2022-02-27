@@ -3,7 +3,7 @@ on:
   push:
     branches:
       - develop
-      - master
+      - '*.x'
     paths-ignore:
       - 'docs/**'
       - '*.md'
@@ -11,7 +11,7 @@ on:
   pull_request:
     branches:
       - develop
-      - master
+      - '*.x'
     paths-ignore:
       - 'docs/**'
       - '*.md'
