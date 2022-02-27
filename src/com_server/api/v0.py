@@ -205,7 +205,7 @@ class Builtins:
             )
 
             def get(self) -> dict:
-                all_rcv = self.conn.get_all_rcv_str()
+                all_rcv = self.conn.all_rcv()
 
                 return {
                     "message": "OK",
@@ -219,7 +219,7 @@ class Builtins:
                 if _self._verbose:
                     print("Arguments for /receive/all:", args)
 
-                all_rcv = self.conn.get_all_rcv_str(
+                all_rcv = self.conn.all_rcv(
                     read_until=args["read_until"], strip=args["strip"]
                 )
 
@@ -250,7 +250,7 @@ class Builtins:
             )
 
             def get(self) -> dict:
-                got = self.conn.get(str)
+                got = self.conn.get()
 
                 if got is None:
                     flask_restful.abort(502, message="Nothing received")
@@ -263,9 +263,7 @@ class Builtins:
                 if _self._verbose:
                     print("Arguments for /get:", args)
 
-                got = self.conn.get(
-                    str, read_until=args["read_until"], strip=args["strip"]
-                )
+                got = self.conn.get(read_until=args["read_until"], strip=args["strip"])
 
                 if got is None:
                     flask_restful.abort(502, message="Nothing received")
@@ -317,7 +315,6 @@ class Builtins:
 
                 res = self.conn.get_first_response(
                     *args["data"],
-                    is_bytes=False,
                     ending=args["ending"],
                     concatenate=args["concatenate"],
                     read_until=args["read_until"],

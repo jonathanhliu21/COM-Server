@@ -19,3 +19,7 @@ theme:
   name: readthedocs
   highlightjs: true
   locale: en
+
+plugins:
+- search
+- mkdocstrings

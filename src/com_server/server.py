@@ -46,14 +46,14 @@ class ConnectionRoutes:
     def __init__(self, conn: Connection) -> None:
         """Constructor
 
-        Parameters:
-        - `conn` (`Connection`): The `Connection` object the API is going to be associated with.
-
         There should only be one `ConnectionRoutes` object that wraps each `Connection` object.
         Having multiple may result in an error.
 
         Note that `conn` needs to be connected when starting
         the server or else an error will be raised.
+
+        Args:
+            conn (Connection): The `Connection` object the API is going to be associated with.
         """
 
         self._conn = conn
@@ -100,8 +100,8 @@ class ConnectionRoutes:
 
         Make sure to put method names in lowercase
 
-        Parameters:
-        - `endpoint` (str): The endpoint to the resource.
+        Args:
+            endpoint (str): The endpoint to the resource.
         """
 
         # outer wrapper
@@ -163,12 +163,9 @@ def add_resources(api: Api, *routes: ConnectionRoutes) -> None:
 
     This has to be called along with `start_conns()` **before** calling `start_app()` or running a flask app.
 
-    Parameters:
-    - `api`: The `flask_restful` `Api` object that adds the resources
-    - `routes`: The `ConnectionRoutes` objects to add to the server
-
-    Returns:
-    Nothing
+    Args:
+        api (Api): The `flask_restful` `Api` object that adds the resources
+        *routes (ConnectionRoutes): The `ConnectionRoutes` objects to add to the server
     """
 
     res = [route.all_resources for route in routes]
@@ -181,20 +178,16 @@ def add_resources(api: Api, *routes: ConnectionRoutes) -> None:
 def start_conns(
     logger: logging.Logger, *routes: ConnectionRoutes, logfile: t.Optional[str] = None
 ) -> None:
-    """Initializes serial connections and disconnect handler.
+    """Initializes serial connections and disconnect handler
 
-    This has to be called along with `add_resources()` **immediately before** calling `start_app()` or runing a flask app.
+    Args:
+        *routes (ConnectionRoutes): The `ConnectionRoutes` objects to initialize connections from
+        logger (Logger): A python logging object
+        logfile (str, None, optional): Path of file to log messages to. Defaults to None.
 
-    Note that adding multiple routes to `start_conns` is experimental and currently
-    not being tested, and it probably has multiple issues right now.
-
-    Parameters:
-    - `routes`: The `ConnectionRoutes` objects to initialize connections from
-    - `logger`: a python logging object
-    - `logfile`: file to log messages to
-
-    Returns:
-    Nothing
+    Raises:
+        DuplicatePortException: If any ports in `ConnectionRoutes` have ports in common
+        ConnectException: If any of the connections failed in the `ConnectionRoutes` objects.
     """
 
     # check no duplicate serial ports
@@ -241,11 +234,8 @@ def disconnect_conns(*routes: ConnectionRoutes) -> None:
 
     Note that calling this will exit the program using `sys.exit()`.
 
-    Parameters:
-    - `routes`: The `ConnectionRoutes` objects to disconnect connections from
-
-    Returns:
-    Nothing
+    Args
+        *routes (ConnectionRoutes): The `ConnectionRoutes` objects to disconnect connections from
     """
 
     for route in routes:
@@ -280,21 +270,17 @@ def start_app(
     Lastly, note that `sys.exit()` will be called in this,
     so add any cleanup operations to the `cleanup` parameter.
 
-    Parameters:
-    - `app`: The Flask object that runs the server
-    - `api`: The `flask_restful` `Api` object that adds the resources
-    - `*routes`: The `ConnectionRoutes` objects to add to the server
-    - `logfile`: The path of the file to log serial disconnect and reconnect events to.
-    Leave as None if you do not want to log to a file. By default None.
-    - `host`: The host of server (e.g. 0.0.0.0 or 127.0.0.1). By default 0.0.0.0
-    - `port`: The port to host the server on (e.g. 8080, 8000, 5000). By default 8080.
-    - `cleanup`: cleanup function to be called after waitress is done serving app. By default None.
-    - `**kwargs`: will be passed to `waitress.serve()`
-
-    Returns:
-    Nothing
+    Args:
+        app (Flask): The flask object that runs the server
+        api (Api): The flask_erstful API object that adds the resources
+        *routes (ConnectionRoutes): The `ConnectionRoutes` objects to add to the server
+        logfile (str, None, optional): The path to the file to log serial disconnect/reconnect events to \
+        Leave as None if you do not want to log to a file. Defaults to None.
+        host (str, optional): The host of the server (e.g. 0.0.0.0 or 127.0.0.1). Defaults to "0.0.0.0".
+        port (int, optional): The port to host the server on (e.g. 8080, 8000, 5000). Defaults to 8080.
+        cleanup (Callable, optional): Cleanup function to be called after waitress is done serving app. Defaults to None.
+        **kwargs (Any): will be passed to `waitress.serve()`
     """
-
     # initialize app by adding resources and staring connections and disconnect handlers
     add_resources(api, *routes)
 

@@ -21,12 +21,14 @@ class V1:
     """
 
     def __init__(self, handler: ConnectionRoutes, prefix: str = "v1") -> None:
-        """Wrapper for handler that adds builtin routes
+        """Wrapper for handler that adds V1 builtin routes
 
-        Parameters:
+        Args:
+            handler (ConnectionRoutes): The ConnectionRoutes object to add builtin routes to
+            prefix (str, optional): The prefix of the routes (`http://hostname/{prefix}/...`). Defaults to "v1".
 
-        - `handler`: The ConnectionRoutes object to add builtin routes to
-        - `prefix`: The prefix of the routes (`http://hostname/{prefix}/...`). By default "v1".
+        Raises:
+            TypeError: If `handler` is not `ConnectionRoutes`.
         """
 
         if not isinstance(handler, ConnectionRoutes):
@@ -105,7 +107,7 @@ class V1:
         """/receive"""
 
         def get(self) -> dict:
-            all_rcv = self.conn.get_all_rcv_str()
+            all_rcv = self.conn.all_rcv()
 
             return {
                 "message": "OK",
@@ -117,7 +119,7 @@ class V1:
         """/get"""
 
         def get(self) -> dict:
-            got = self.conn.get(str)
+            got = self.conn.get()
 
             if got is None:
                 return {"message": "Nothing received"}
@@ -151,7 +153,6 @@ class V1:
 
             res = self.conn.get_first_response(
                 *args["data"],
-                is_bytes=False,
                 ending=args["ending"],
                 concatenate=args["concatenate"],
             )
